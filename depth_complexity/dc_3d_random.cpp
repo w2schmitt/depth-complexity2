@@ -60,8 +60,8 @@ void RDepthComplexity3D::writeRays(std::ostream& out) {
   out << (_maximumRays.size()*2) << " "
       << _maximumRays.size() << " 0\n";
 
-  std::vector<Segment>::const_iterator ite = _maximumRays.begin();
-  std::vector<Segment>::const_iterator end = _maximumRays.end();
+  std::set<Segment,classcomp>::const_iterator ite = _maximumRays.begin();
+  std::set<Segment,classcomp>::const_iterator end = _maximumRays.end();
   for (; ite != end; ++ite) {
     out << ite->a.x << " " << ite->a.y << " " << ite->a.z << "\n"
         << ite->b.x << " " << ite->b.y << " " << ite->b.z << "\n";
@@ -71,13 +71,13 @@ void RDepthComplexity3D::writeRays(std::ostream& out) {
     out << "2 " << i << " " << (i+1) << "\n";
 }
 
-void RDepthComplexity3D::writeRays(std::ostream& out, const std::vector<Segment> & _rays) {
+void RDepthComplexity3D::writeRays(std::ostream& out, const std::set<Segment,classcomp> & _rays) {
   out << "OFF" << "\n";
   out << (_rays.size()*2) << " "
       << _rays.size() << " 0\n";
 
-  std::vector<Segment>::const_iterator ite = _rays.begin();
-  std::vector<Segment>::const_iterator end = _rays.end();
+  std::set<Segment,classcomp>::const_iterator ite = _rays.begin();
+  std::set<Segment,classcomp>::const_iterator end = _rays.end();
   for (; ite != end; ++ite) {
     out << ite->a.x << " " << ite->a.y << " " << ite->a.z << "\n"
         << ite->b.x << " " << ite->b.y << " " << ite->b.z << "\n";
@@ -152,7 +152,7 @@ void RDepthComplexity3D::process(const TriMesh &mesh) {
 
       _intersectionPoints.insert(_intersectionPoints.end(), points.begin(), points.end());
 
-      _maximumRays.push_back(randomSegment);
+      _maximumRays.insert(randomSegment);
       // Shouldn't the histogram be used without regard to the current tempMaximum? (changed it)
     }
     
@@ -160,7 +160,7 @@ void RDepthComplexity3D::process(const TriMesh &mesh) {
       ++_histogram[points.size()];
     
     if(_computeGoodRays && points.size() >= _threshold)
-      _goodRays[points.size()].push_back(randomSegment);
+      _goodRays[points.size()].insert(randomSegment);
   }
 }
 

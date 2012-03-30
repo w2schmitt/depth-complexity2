@@ -6,12 +6,6 @@
 
 const double EPS = 1.0E-5;
 
-bool operator<(const Segment &s1, const Segment &s2) {
-  if (s1.a.x == s2.a.x)
-    return s1.a.y < s2.a.y;
-  return s1.a.x < s2.a.x;
-}
-
 TriMesh
 loadOFFMesh(std::istream& in){
   std::clog << "Loading OFF file" << std::endl;

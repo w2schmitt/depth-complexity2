@@ -6,6 +6,7 @@
 #include <cassert>
 #include <iostream>
 #include <iomanip>
+#include <math.h>
 
 template<class T>
 T mix(const T& a, const T& b, double x) {
@@ -64,8 +65,8 @@ void DepthComplexity3D::writeRays(std::ostream& out) {
   out << (_maximumRays.size()*2) << " "
       << _maximumRays.size() << " 0\n";
 
-  std::vector<Segment>::const_iterator ite = _maximumRays.begin();
-  std::vector<Segment>::const_iterator end = _maximumRays.end();
+  std::set<Segment, classcomp>::const_iterator ite = _maximumRays.begin();
+  std::set<Segment, classcomp>::const_iterator end = _maximumRays.end();
   for (; ite != end; ++ite) {
     out << ite->a.x << " " << ite->a.y << " " << ite->a.z << "\n"
         << ite->b.x << " " << ite->b.y << " " << ite->b.z << "\n";
@@ -75,13 +76,13 @@ void DepthComplexity3D::writeRays(std::ostream& out) {
     out << "2 " << i << " " << (i+1) << "\n";
 }
 
-void DepthComplexity3D::writeRays(std::ostream& out, const std::vector<Segment> & _rays) {
+void DepthComplexity3D::writeRays(std::ostream& out, const std::set<Segment,classcomp> & _rays) {
   out << "OFF" << "\n";
   out << (_rays.size()*2) << " "
       << _rays.size() << " 0\n";
 
-  std::vector<Segment>::const_iterator ite = _rays.begin();
-  std::vector<Segment>::const_iterator end = _rays.end();
+  std::set<Segment,classcomp>::const_iterator ite = _rays.begin();
+  std::set<Segment,classcomp>::const_iterator end = _rays.end();
   for (; ite != end; ++ite) {
     out << ite->a.x << " " << ite->a.y << " " << ite->a.z << "\n"
         << ite->b.x << " " << ite->b.y << " " << ite->b.z << "\n";
@@ -110,6 +111,9 @@ void DepthComplexity3D::process(const TriMesh &mesh) {
 
   processMeshAlign(AlignX, AlignY);
   processMeshAlign(AlignX, AlignZ);
+  
+  //std::set< Segment, classcomp > test;
+  
 }
 
 // Call this varying palign and salign.
@@ -224,14 +228,15 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
           //          _intersectionSegments.clear();
         }
         _maximum = tempMaximum;
-        std::vector<Segment> tempRays = _dc2d->maximumRays();
+        std::set<Segment, classcomp> tempRays = _dc2d->maximumRays();
+        std::set<Segment, classcomp>::iterator it = tempRays.begin();
 
         // Testing rays and saving intersectin points.
-        for (unsigned r=0; r<tempRays.size(); ++r) {
+        for (; it!=tempRays.end(); ++it) {
           for (unsigned s=0; s<segments.size(); ++s) {
             double t1, t2;
-            if(segmentIntersection3D(tempRays[r], segments[s], &t1, &t2)) {
-              _intersectionPoints.push_back(tempRays[r].a + t1*(tempRays[r].b-tempRays[r].a));
+            if(segmentIntersection3D(*it, segments[s], &t1, &t2)) {
+              _intersectionPoints.push_back(it->a + t1*(it->b-it->a));
             }
           }
         }
@@ -239,7 +244,7 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
 //        _intersectionSegments.insert(_intersectionSegments.end(), segments.begin(), segments.end());
 //        _intersectionPoints.insert(_intersectionPoints.end(), points.begin(), points.end());
 
-        _maximumRays.insert(_maximumRays.end(), tempRays.begin(), tempRays.end());
+        _maximumRays.insert(tempRays.begin(), tempRays.end());
         // Shouldn't the histogram be used without regard to the current tempMaximum? (changed it)
       }
       
@@ -251,8 +256,8 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
         //std::cout << "size of goodRays: " << _goodRays.size() << " and _threshold = " << _threshold << std::endl;
         for(unsigned i = _threshold ; i <= tempMaximum ; ++i) {
           //std::cout << "i = " << i << " and size(i) = " << _dc2d->goodRays(i).size() << std::endl;
-          std::vector<Segment> tempRays = _dc2d->goodRays(i);
-          _goodRays[i].insert(_goodRays[i].begin(), tempRays.begin(), tempRays.end());
+          std::set<Segment,classcomp> tempRays = _dc2d->goodRays(i);
+          _goodRays[i].insert(tempRays.begin(), tempRays.end());
         }
       }
     }

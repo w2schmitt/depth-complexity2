@@ -12,6 +12,9 @@
 
 #include "util.h"
 #include <map>
+#include <set>
+#include <cstdlib>
+#include <stdio.h>
 
 // Compute the Depth complexity in 2D
 //
@@ -44,8 +47,8 @@ public:
   // Methods to obtain outputs
   unsigned                         maximum() const           { return _maximum; }
   std::vector<unsigned long long>  histogram()               { return _histogram; }
-  std::vector<Segment>             maximumRays()             { return _maximumRays; }
-  std::vector<Segment>             goodRays(unsigned i)      { return _goodRays[i]; }
+  std::set<Segment,classcomp>      maximumRays()             { return _maximumRays; }
+  std::set<Segment,classcomp>      goodRays(unsigned i)      { return _goodRays[i]; }
   GLuint                           textureId() const         { return _textureId; }
 
 private:
@@ -65,29 +68,29 @@ private:
   void findMaximumRaysAndHistogram();
 
 private:
-  GLuint                                _textureId;
-  GLuint                                _fboId;
-  GLuint                                _rboId;
+  GLuint                                		_textureId;
+  GLuint                                		_fboId;
+  GLuint                                		_rboId;
 
   // State
-  bool                                  _status;
-  bool                                  _computeHistogram;
-  bool                                  _computeMaximumRays;
-  bool                                  _computeGoodRays;
+  bool                                  		_status;
+  bool                                  		_computeHistogram;
+  bool                                 			_computeMaximumRays;
+  bool                                  		_computeGoodRays;
 
   // Inputs
-  int                                   _fboWidth;
-  int                                   _fboHeight;
-  Segment                               _from;
-  Segment                               _to;
-  const std::vector<Segment>*           _segments;
-  unsigned                              _threshold;
+  int                                   		_fboWidth;
+  int                                   		_fboHeight;
+  Segment                               		_from;
+  Segment                               		_to;
+  const std::vector<Segment>*           		_segments;
+  unsigned                              		_threshold;
 
   // Outputs
-  unsigned                              _maximum;
-  std::vector<unsigned long long>       _histogram;
-  std::vector<Segment>                  _maximumRays;
-  std::vector< std::vector<Segment> >   _goodRays;
+  unsigned                              		_maximum;
+  std::vector<unsigned long long>       		_histogram;
+  std::set<Segment, classcomp>                  _maximumRays;
+  std::vector< std::set<Segment,classcomp> >   	_goodRays;
 };
 
 #endif // DC_2D2_H

@@ -2,6 +2,7 @@
 #define UTIL_H_
 
 #include <vector>
+#include <algorithm>
 
 #include "vector.hpp"
 
@@ -16,6 +17,16 @@ typedef vec3d Point;
 struct Segment {
   Segment(const Point &a_, const Point &b_):a(a_), b(b_), active(true) {}
   Segment() : active(true){}
+  void sortPoints()
+  {
+	   double sega[3]={this->a.x, this->a.y, this->a.z};
+       double segb[3]={this->b.x, this->b.y, this->b.z};
+       if (!std::lexicographical_compare(sega,sega+3,segb,segb+3)){
+		   vec3d aux = this->a;
+		   this->a = this->b;
+		   this->b = aux;
+	   }
+  }
   vec3d a, b;
   bool active;
 };
@@ -67,6 +78,19 @@ struct BoundingBox {
 struct TriMesh {
     std::vector<Triangle> faces;
     BoundingBox aabb;
+};
+
+struct classcomp {
+	bool operator() (const Segment& lhs, const Segment& rhs) const
+	{
+		float seg1[6] = { lhs.a.x, lhs.a.y, lhs.a.z, 
+						  lhs.b.x, lhs.b.y, lhs.b.z};
+						  
+		float seg2[6] = { rhs.a.x, rhs.a.y, rhs.a.z, 
+						  rhs.b.x, rhs.b.y, rhs.b.z}; 
+		
+		return std::lexicographical_compare(seg1,seg1+6,seg2,seg2+6);	
+	}
 };
 
 TriMesh loadOFFMesh(std::istream& in);

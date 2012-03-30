@@ -5,6 +5,7 @@
 
 #include <map>
 #include <vector>
+#include <set>
 
 class DepthComplexity2D;
 
@@ -31,15 +32,15 @@ public:
   void setThreshold(unsigned threshold);
 
   unsigned maximum() const { return _maximum; }
-  const std::vector<Segment> &maximumRays() const { return _maximumRays; }
-  const std::vector<Segment> &goodRays(int intersect) const { return _goodRays[intersect]; }
+  const std::set<Segment, classcomp> &maximumRays() const { return _maximumRays; }
+  const std::set<Segment, classcomp> &goodRays(int intersect) const { return _goodRays[intersect]; }
   const std::vector<Segment> &usedPlanes() const { return _usedPlanes; }
   const std::vector<Point> &intersectionPoints() const { return _intersectionPoints; }
   unsigned getThreshold() { return _threshold; }
 
   void writeHistogram(std::ostream& out);
   void writeRays(std::ostream& out);
-  void writeRays(std::ostream& out, const std::vector<Segment> & _rays);
+  void writeRays(std::ostream& out, const std::set<Segment,classcomp> & _rays);
 
 private:
   enum PlaneAlign{
@@ -69,8 +70,8 @@ private:
   bool _computeGoodRays;
 
   // Output
-  std::vector<Segment> _maximumRays;
-  std::vector< std::vector<Segment> > _goodRays;
+  std::set<Segment,classcomp> _maximumRays;
+  std::vector< std::set<Segment, classcomp> > _goodRays;
   std::vector<Segment> _usedPlanes;
   std::vector<unsigned long long> _histogram;
   std::vector<Point> _intersectionPoints;
