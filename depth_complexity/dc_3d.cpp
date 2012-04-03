@@ -104,13 +104,13 @@ void DepthComplexity3D::process(const TriMesh &mesh) {
   //std::cout << _fboWidth << " " << _fboHeight << " " << _discretSteps << " " << _maximum << " " << _threshold << std::endl;
   
   processMeshAlign(AlignZ, AlignX);
-  processMeshAlign(AlignZ, AlignY);
+  //processMeshAlign(AlignZ, AlignY);
 
-  processMeshAlign(AlignY, AlignX);
-  processMeshAlign(AlignY, AlignZ);
+  //processMeshAlign(AlignY, AlignX);
+  //processMeshAlign(AlignY, AlignZ);
 
-  processMeshAlign(AlignX, AlignY);
-  processMeshAlign(AlignX, AlignZ);
+  //processMeshAlign(AlignX, AlignY);
+  //processMeshAlign(AlignX, AlignZ);
   
   //std::set< Segment, classcomp > test;
   

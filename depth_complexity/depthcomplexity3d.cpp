@@ -438,7 +438,7 @@ int doInteractive(const TriMesh& mesh)
     #ifdef USE_RANDOM_DC3D
     dc3d = new RDepthComplexity3D(512, 512, 10);
     #else
-    dc3d = new DepthComplexity3D(512, 512, 10);
+    dc3d = new DepthComplexity3D(2048, 2048, 10);
     #endif
     dc3d->setComputeMaximumRays(true);
     dc3d->setThreshold(10);

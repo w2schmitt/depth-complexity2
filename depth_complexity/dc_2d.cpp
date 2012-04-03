@@ -159,18 +159,18 @@ void DepthComplexity2D::findDepthComplexity2D() {
           Segment s1(Tv0.a + dir*step, Tv0.b + dir*step);
           dir = vec3d(-v.y, v.x);
           Segment s2(Tv1.a + dir*step, Tv1.b + dir*step);
-		
-		
+
           if (s1.a.y > s2.a.y) {
             double t1, t2;
             if (lineIntersection2D(s1, s2, &t1, &t2) ) {
               vec3d inter = s1.a*(1.f-t1) + s1.b*t1;
               drawTriangle(s1.a, inter, s2.a);
-              printf("glVertex2f(%f,%f); glVertex2f(%f,%f); glVertex2f(%f,%f);\n", s1.a.x, s1.a.y, inter.x, inter.y, s2.a.x, s2.a.y);
-            
+              //printf("glVertex2f(%f,%f); glVertex2f(%f,%f); glVertex2f(%f,%f);\n", s1.a.x, s1.a.y, inter.x, inter.y, s2.a.x, s2.a.y);
+				printf("1\n");
+				printf("%f %f %f %f %f %f\n",s1.a.x, s1.a.y, inter.x, inter.y, s2.a.x, s2.a.y);
             }
           }
-
+		  //printf(" --------------- \n\n\n\n\n" );
           dir = vec3d(-u.y, u.x);
           Segment s3(Tv0.a + dir*step, Tv0.b + dir*step);
           dir = vec3d(v.y, -v.x);
@@ -180,7 +180,9 @@ void DepthComplexity2D::findDepthComplexity2D() {
             if (lineIntersection2D(s3, s4, &t1, &t2) ) {
               vec3d inter = s3.a*(1.f-t1) + s3.b*t1;
               drawTriangle(s3.b, inter, s4.b);
-              printf("glVertex2f(%f,%f); glVertext2f(%f,%f); glVertex2f(%f,%f);\n", s3.b.x, s3.b.y, inter.x, inter.y, s4.b.x, s4.b.y);
+              printf("2\n");
+              printf("%f %f %f %f %f %f\n", s3.b.x, s3.b.y, inter.x, inter.y, s4.b.x, s4.b.y);
+              //printf("glVertex2f(%f,%f); glVertex2f(%f,%f); glVertex2f(%f,%f);\n", s3.b.x, s3.b.y, inter.x, inter.y, s4.b.x, s4.b.y);
             }
           }
         } else {
@@ -189,12 +191,15 @@ void DepthComplexity2D::findDepthComplexity2D() {
           dir = vec3d(-v.y, v.x);
           Segment s2(Tv1.a + dir*step, Tv1.b + dir*step);
           if (s1.a.y > s2.a.y and s1.b.y > s2.b.y) {
-			//printf("glvertex2f(%f,%f); glvertex(%f,%f);\n", s1.a.x, s1.a.y, s1.b.x, s1.b.y);
-			//printf("glvertex2f(%f,%f); glvertex(%f,%f);\n\n", s2.a.x, s2.a.y, s2.b.x, s2.b.y);
-            drawQuad(s1.a, s1.b, s2.b, s2.a);
+			  printf("p=3\n");
+			  printf("%f %f %f %f %f %f %f %f\n", s1.a.x, s1.a.y, s1.b.x, s1.b.y, s2.b.x, s2.b.y, s2.a.x, s2.a.y);
+			//printf("glVertex2f(%f,%f); glVertex2f(%f,%f);\n", s2.a.x, s2.a.y, s1.a.x, s1.a.y);
+			//printf("glVertex2f(%f,%f); glVertex2f(%f,%f);\n\n", s2.b.x, s2.b.y, s2.a.x, s2.a.y);
+			  drawQuad(s1.a, s1.b, s2.b, s2.a);
           }
         }
       }
+      printf("p=4\n");
       _maximum = findMaxValueInStencil();
       //std::cout << "maximum: " << _maximum << "\n";
 
@@ -229,11 +234,10 @@ Segment DepthComplexity2D::computeDualSegmentFromPoint(const Point &p) {
 
 void drawQuad(const Point &p1, const Point &p2, const Point &p3, const Point &p4) {
   glBegin(GL_QUADS);
-    glVertex2f(p4.x, p4.y);
     glVertex2f(p1.x, p1.y);
     glVertex2f(p2.x, p2.y);
     glVertex2f(p3.x, p3.y);
-    
+    glVertex2f(p4.x, p4.y);
   glEnd();
 }
 
