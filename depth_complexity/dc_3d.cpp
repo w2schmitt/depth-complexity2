@@ -104,13 +104,13 @@ void DepthComplexity3D::process(const TriMesh &mesh) {
   //std::cout << _fboWidth << " " << _fboHeight << " " << _discretSteps << " " << _maximum << " " << _threshold << std::endl;
   
   processMeshAlign(AlignZ, AlignX);
-  //processMeshAlign(AlignZ, AlignY);
+  processMeshAlign(AlignZ, AlignY);
 
-  //processMeshAlign(AlignY, AlignX);
-  //processMeshAlign(AlignY, AlignZ);
+  processMeshAlign(AlignY, AlignX);
+  processMeshAlign(AlignY, AlignZ);
 
-  //processMeshAlign(AlignX, AlignY);
-  //processMeshAlign(AlignX, AlignZ);
+  processMeshAlign(AlignX, AlignY);
+  processMeshAlign(AlignX, AlignZ);
   
   //std::set< Segment, classcomp > test;
   
@@ -135,8 +135,9 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
 
 
   // generate all planes varying on z
-  const unsigned steps = _discretSteps;
-
+  //const unsigned steps = _discretSteps;
+  
+  const unsigned steps = 10;
   for (unsigned az = 0; az<steps; ++az) {
     // double t = 3*az / (steps - 1.0) - 1; // [-1, 2]
     double t = az / (steps - 1.0);
@@ -150,7 +151,7 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
         Point b = mix(c7, c3, u); // along Z
         sa.a = sa.b = a;
         sb.a = sb.b = b;
-
+		
         if (salign == AlignX) {
           // extend along X
           sa.b.x = aabb.max.x;
@@ -264,6 +265,8 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
   }
 }
 
+//INPUT: plane -> The normal vector of the plane which we will check overlaps;
+//OUTPUT: segments -> A vector containing the segments of the mesh that intersect the plane.
 void DepthComplexity3D::processMeshPlane(const vec4d& plane, std::vector<Segment> *segments) {
   assert(segments);
 
@@ -313,7 +316,7 @@ bool DepthComplexity3D::intersectPlaneSegment(const vec4d& plane, const vec3d& p
       return true;
   return false;
 }
-
+// GIVEN 3 POINTS --> RETURN A 4D VECTOR: 
 vec4d DepthComplexity3D::makePlane(const vec3d& a, const vec3d& b, const vec3d& c) {
     vec3d normal = cross(b-a, c-a);
     normal.normalize();

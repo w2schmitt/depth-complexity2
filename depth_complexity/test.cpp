@@ -29,8 +29,9 @@ void readInput(){
 	Trapezoid trap;
 	
 	while (terminate){
+		//std::cout << "entrou\n";
 		cin >> t;
-		cout << t << "\n";
+		//cout << t << "\n";
 		switch (t){
 			case 1:
 				cin >> tri.a.x >> tri.a.y >> tri.b.x >> tri.b.y >> tri.c.x >> tri.c.y;
@@ -76,7 +77,7 @@ void display(){
 	
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
-	
+	glColor3f(1,0,0);
 	glBegin(GL_TRIANGLES);
 		for (unsigned int i=0; i < vecTri1.size(); ++i){
 			glVertex2f(vecTri1[i].a.x,vecTri1[i].a.y);
@@ -85,6 +86,7 @@ void display(){
 		}
 	glEnd();
 	
+	glColor3f(0,1,0);
 	glBegin(GL_TRIANGLES);
 		for (unsigned int i=0; i < vecTri2.size(); ++i){
 			glVertex2f(vecTri2[i].a.x,vecTri2[i].a.y);
@@ -93,6 +95,7 @@ void display(){
 		}
 	glEnd();
 	
+	glColor3f(0,0,1);
 	glBegin(GL_QUADS);
 		for (unsigned int i=0; i < vecTrap.size(); ++i){
 			glVertex2f(vecTrap[i].a.x,vecTrap[i].a.y);
@@ -121,7 +124,9 @@ int main (int argc, char **argv) {
 	glutInitWindowPosition(300,300);
 	glutCreateWindow("Dual Ray Implementation");
 	glutDisplayFunc(display);	
-
+	//int t=0;
+	//cin >> t;
+	//cout << t << "\n";
 	readInput();
 	setupRC();
 	glutReshapeFunc(reshape);
