@@ -19,6 +19,8 @@ DepthComplexity2D::DepthComplexity2D(const int fboWidth, const int fboHeight){
   _computeGoodRays = false;
   _maximum = 0;
   _threshold = 0;
+  
+  
 
   assert(initFBO());
 }
@@ -53,6 +55,7 @@ bool DepthComplexity2D::initFBO() {
   _status = checkFramebufferStatus();
 
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+  
   return _status;
 }
 
@@ -103,13 +106,14 @@ void DepthComplexity2D::process(
   _from = from;
   _to = to;
   _segments = &segments;
-  std::cout << segments.size();
+  //std::cout << segments.size();
   
   /*std::cout << _textureId << " " << _fboId << " " << _rboId << " " << _status << " "
             << _computeHistogram << " " << _computeMaximumRays << " " << _computeGoodRays << " "
             << _fboWidth << " " << _fboHeight << " " << _segments->size() << " " << _threshold << std::endl;// " " << _from << " " << _to << " " */
 
   findDepthComplexity2D();
+  //glPixelTransferf(GL_MAP_STENCIL,GL_TRUE);
   if (_computeHistogram or _computeMaximumRays or _computeGoodRays)
     findMaximumRaysAndHistogram();
     
@@ -121,29 +125,34 @@ void DepthComplexity2D::findDepthComplexity2D() {
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _fboId);
 
   glPushAttrib(GL_VIEWPORT_BIT);
-    glViewport(0.0, 0.0, _fboWidth, _fboHeight);
+    glViewport(0, 0, _fboWidth, _fboHeight);
 
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
 
+		
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
       glLoadIdentity();
-      glOrtho(0.0, 1.0, 0.0, 1.0, 0.0, 1.0);
-		
+      gluOrtho2D(0.0, 1.0, 0.0, 1.0);
+      
+      		glMatrixMode(GL_MODELVIEW);
+		glPushMatrix();
+		glLoadIdentity();
+      
       // render polygons in stencil buffer
       glEnable(GL_STENCIL_TEST);
-      glStencilFunc(GL_ALWAYS, 0, 0xFF);
+     
+      glStencilFunc(GL_ALWAYS, 0, ~0);
       glStencilOp(GL_INCR, GL_INCR, GL_INCR);
       glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
       glDepthMask(GL_FALSE);
       glDisable(GL_LINE_SMOOTH);
-      glClear(GL_STENCIL_BUFFER_BIT);
+	  glClearStencil(0);
+	  glStencilMask(~0);
+      glClear(GL_STENCIL_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
       
       //glMatrixMode(GL_MODELVIEW);
 	  //std::cout << "Seg Size: "<< _segments->size() << "\n";
-      double pixelSize = 1.0/(double)_fboWidth; //512.0;
+      double pixelSize = 1.0/(double)512.0; //512.0;
       double step = 0.5*pixelSize*1.41421356;
       
       for (unsigned i=0; i<_segments->size(); ++i) {
@@ -151,17 +160,13 @@ void DepthComplexity2D::findDepthComplexity2D() {
         Segment Tv0 = computeDualSegmentFromPoint(_segments->at(i).a);
         Segment Tv1 = computeDualSegmentFromPoint(_segments->at(i).b);
 		
-		printf("Tv0: a=(%f,%f) , b=(%f,%f)\n", Tv0.a.x, Tv0.a.y, Tv0.b.x, Tv0.b.y);
-		printf("Tv1: a=(%f,%f) , b=(%f,%f)\n", Tv1.a.x, Tv1.a.y, Tv1.b.x, Tv1.b.y);
+		//printf("Tv0: a=(%f,%f) , b=(%f,%f)\n", Tv0.a.x, Tv0.a.y, Tv0.b.x, Tv0.b.y);
+		//printf("Tv1: a=(%f,%f) , b=(%f,%f)\n", Tv1.a.x, Tv1.a.y, Tv1.b.x, Tv1.b.y);
 		//std::cin.get();
 		
         if (Tv0.a.y < Tv1.a.y) std::swap(Tv0, Tv1);
         vec3d u = Tv0.b - Tv0.a; u.normalize();
         vec3d v = Tv1.b - Tv1.a; v.normalize();
-        
-        printf("u: %f %f\n", u.x, u.y);
-        printf("v: %f %f\n", v.x, v.y);
-       // std::cin.get();
         
         vec3d dir;
 
@@ -169,69 +174,58 @@ void DepthComplexity2D::findDepthComplexity2D() {
         if (segmentIntersection2D(Tv0, Tv1, &t1, &t2) ) {
           // Shrink triangles
           dir = vec3d(u.y, -u.x);
-          vec3d ttt = dir*step;
           Segment s1(Tv0.a + dir*step, Tv0.b + dir*step);
-          //Segment s1(Tv0.a, Tv0.b);
-		  printf("dir1: %f %f \n", dir.x, dir.y);
-		  printf("dir*step: %f %f\n", ttt.x, ttt.y);
-		  
-		  //std::cin.get();
-          
           dir = vec3d(-v.y, v.x);
           Segment s2(Tv1.a + dir*step, Tv1.b + dir*step);
-          //Segment s2(Tv1.a, Tv1.b);
-          
-          //printf("dir2: %f %f \n", dir.x, dir.y);
-          //printf("u: %f %f -- v: %f %f\n", u.x, u.y, v.x, v.y);
-		  //std::cin.get();
           if (s1.a.y > s2.a.y) {
             double t1, t2;
             if (lineIntersection2D(s1, s2, &t1, &t2) ) {
-              vec3d inter = s1.a*(1.f-t1) + s1.b*t1;
+		      vec3d inter = s1.a*(1.f-t1) + s1.b*t1;
+			  printf("1\n");
+			  printf("%f %f %f %f %f %f\n",s1.a.x, s1.a.y, inter.x, inter.y, s2.a.x, s2.a.y);          
               drawTriangle(s1.a, inter, s2.a);
-              //printf("glVertex2f(%f,%f); glVertex2f(%f,%f); glVertex2f(%f,%f);\n", s1.a.x, s1.a.y, inter.x, inter.y, s2.a.x, s2.a.y);
-				//printf("1\n");
-				//printf("%f %f %f %f %f %f\n",s1.a.x, s1.a.y, inter.x, inter.y, s2.a.x, s2.a.y);
             }
           }
-		  //printf(" --------------- \n\n\n\n\n" );
+          // Shrink triangles
           dir = vec3d(-u.y, u.x);
           Segment s3(Tv0.a + dir*step, Tv0.b + dir*step);
-          //Segment s3(Tv0.a,Tv0.b);
           dir = vec3d(v.y, -v.x);
           Segment s4(Tv1.a + dir*step, Tv1.b + dir*step);
-          //Segment s4(Tv1.a,Tv1.b);
           if (s3.b.y < s4.b.y) {
             double t1, t2;
             if (lineIntersection2D(s3, s4, &t1, &t2) ) {
-              vec3d inter = s3.a*(1.f-t1) + s3.b*t1;
+			  vec3d inter = s3.a*(1.f-t1) + s3.b*t1;
+              printf("2\n");
+              printf("%f %f %f %f %f %f\n", s3.b.x, s3.b.y, inter.x, inter.y, s4.b.x, s4.b.y);
               drawTriangle(s3.b, inter, s4.b);
-              //printf("2\n");
-              //printf("%f %f %f %f %f %f\n", s3.b.x, s3.b.y, inter.x, inter.y, s4.b.x, s4.b.y);
-              //printf("glVertex2f(%f,%f); glVertex2f(%f,%f); glVertex2f(%f,%f);\n", s3.b.x, s3.b.y, inter.x, inter.y, s4.b.x, s4.b.y);
             }
           }
         } else {
           dir = vec3d(u.y, -u.x);
-          //Segment s1(Tv0.a + dir*step, Tv0.b + dir*step);
-          Segment s1(Tv0.a,Tv0.b);
+          Segment s1(Tv0.a + dir*step, Tv0.b + dir*step);
           dir = vec3d(-v.y, v.x);
-          //Segment s2(Tv1.a + dir*step, Tv1.b + dir*step);
-          Segment s2(Tv1.a, Tv1.b);
+          Segment s2(Tv1.a + dir*step, Tv1.b + dir*step);
           if (s1.a.y > s2.a.y and s1.b.y > s2.b.y) {
-			 //printf("3\n");
-			 //printf("%f %f %f %f %f %f %f %f\n", s1.a.x, s1.a.y, s1.b.x, s1.b.y, s2.b.x, s2.b.y, s2.a.x, s2.a.y);
-			 //printf("glVertex2f(%f,%f); glVertex2f(%f,%f);\n", s2.a.x, s2.a.y, s1.a.x, s1.a.y);
-			 //printf("glVertex2f(%f,%f); glVertex2f(%f,%f);\n\n", s2.b.x, s2.b.y, s2.a.x, s2.a.y);
+			 printf("3\n");
+			 printf("%f %f %f %f %f %f %f %f\n", s1.a.x, s1.a.y, s1.b.x, s1.b.y, s2.b.x, s2.b.y, s2.a.x, s2.a.y);
 			 drawQuad(s1.a, s1.b, s2.b, s2.a);
           }
         }
       }
-      //printf("4\n");
+      printf("4\n");
+
       _maximum = findMaxValueInStencil();
-      //std::cout << "maximum: " << _maximum << "\n";
-
-
+	 
+	  
+	  const int pixelNumber = _fboWidth * _fboHeight;
+	  float stencilBuffer[pixelNumber];
+	  glReadPixels(0, 0, _fboWidth, _fboHeight, GL_STENCIL_INDEX, GL_FLOAT, stencilBuffer);
+  
+	  
+	  for (int i=0; i< pixelNumber; ++i){
+		  std::cout << (int)stencilBuffer[i] << "\n";
+	  }
+	  
       glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
       glDepthMask(GL_TRUE);
       glDisable(GL_STENCIL_TEST);
@@ -279,10 +273,12 @@ void drawTriangle(const Point &p1, const Point &p2, const Point &p3) {
 
 int DepthComplexity2D::findMaxValueInStencil() {
   const int pixelNumber = _fboWidth * _fboHeight;
-  GLubyte stencilBuffer[pixelNumber];
-  glReadPixels(0, 0, _fboWidth, _fboHeight, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, stencilBuffer);
-
-  return *(std::max_element(stencilBuffer, stencilBuffer + pixelNumber));
+  float stencilBuffer[pixelNumber];
+  glReadPixels(0, 0, _fboWidth, _fboHeight, GL_STENCIL_INDEX, GL_FLOAT, stencilBuffer);
+  float max = *(std::max_element(stencilBuffer, stencilBuffer + pixelNumber));
+  std::cout << "-MAX:"<< max << "\n";
+  
+  return (int)(max);
 }
 
 void DepthComplexity2D::findMaximumRaysAndHistogram() {
@@ -291,6 +287,8 @@ void DepthComplexity2D::findMaximumRaysAndHistogram() {
   _goodRays.resize(_maximum + 1);
   _histogram.clear();
   _histogram.resize(_maximum + 1);
+  
+  //glPixelTransferi(GL_MAP_STENCIL, GL_TRUE);
 
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _fboId);
   glPushAttrib(GL_VIEWPORT_BIT);
@@ -299,14 +297,15 @@ void DepthComplexity2D::findMaximumRaysAndHistogram() {
 	
     GLubyte stencilSave[_fboWidth*_fboHeight];
     glReadPixels(0, 0, _fboWidth, _fboHeight, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, stencilSave);
-    
+    //printf("stencil: \n");
     //unsigned value = *(std::max_element(stencilSave, stencilSave + _fboWidth*_fboHeight));
     //std::cout << "maxxx: " << value << "\n";
 	//std::cout << "height: " << _fboHeight << "\n";
     for(int r=0; r<_fboHeight; ++r) {
       for(int c=0; c<_fboWidth; ++c) {
         //GLubyte val = stencilSave[r*_fboWidth+c];
-        unsigned val = stencilSave[r*_fboWidth+c];
+        unsigned int val = (int)stencilSave[r*_fboWidth+c];
+        //printf("val: %d",val);
 		//if (val==7)
 		//	std::cout << "eh isso aí\n";
         if (_computeHistogram) _histogram[val]++;
@@ -319,11 +318,11 @@ void DepthComplexity2D::findMaximumRaysAndHistogram() {
           seg.b = _to.a*(1.f-t2) + _to.b*t2;
 		  seg.sortPoints();          
           if (val == _maximum){
-			 if (_maximumRays.size() < 10)
+			 //if (_maximumRays.size() < 10)
 				_maximumRays.insert(seg);
             }
           else if (val >= _threshold){
-           if (_goodRays[val].size() < 200)
+           //if (_goodRays[val].size() < 200)
             _goodRays[val].insert(seg);
 		  }
         }
