@@ -221,6 +221,7 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
       vec3d dsa = sa.b - sa.a; sa.a -= dsa; sa.b += dsa;
       vec3d dsb = sb.b - sb.a; sb.a -= dsb; sb.b += dsb;
 
+	  
       _dc2d->process(sa, sb, segments);
 
       unsigned tempMaximum = _dc2d->maximum();
