@@ -20,8 +20,8 @@ DepthComplexity2D::DepthComplexity2D(const int fboWidth, const int fboHeight){
   _maximum = 0;
   _threshold = 0;
   
-  fbo = new float[fboWidth*fboHeight];
-  tmpfbo = new float[fboWidth*fboHeight];
+  //fbo = new float[fboWidth*fboHeight];
+  //tmpfbo = new float[fboWidth*fboHeight];
 
 
   assert(initFBO());
@@ -29,34 +29,34 @@ DepthComplexity2D::DepthComplexity2D(const int fboWidth, const int fboHeight){
 
 bool DepthComplexity2D::initFBO() {
   // Use texture as COLOR buffer
-  //glGenTextures(1, &_textureId);
-  //glBindTexture(GL_TEXTURE_2D, _textureId);
-  //glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  //glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  //glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  //glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, _fboWidth, _fboHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-  //glBindTexture(GL_TEXTURE_2D, 0);
+  glGenTextures(1, &_textureId);
+  glBindTexture(GL_TEXTURE_2D, _textureId);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, _fboWidth, _fboHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+  glBindTexture(GL_TEXTURE_2D, 0);
 
   // User renderbuffer as DEPTH and STENCIL buffer.
-  //glGenRenderbuffersEXT(1, &_rboId);
-  //glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, _rboId);
-  //glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_STENCIL_EXT, _fboWidth, _fboHeight);
-  //glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, 0);
+  glGenRenderbuffersEXT(1, &_rboId);
+  glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, _rboId);
+  glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT, _fboWidth, _fboHeight);
+  glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, 0);
 
   // Create framebuffer object
-  //glGenFramebuffersEXT(1, &_fboId);
-  //glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _fboId);
+  glGenFramebuffersEXT(1, &_fboId);
+  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _fboId);
 
   // Assign COLOR, DEPTH and STENCIL buffers to the render buffer.
-  //glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, _textureId, 0);
-  //glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, _rboId);
+  glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, _textureId, 0);
+  glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, _rboId);
   //glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, _rboId);
 
   // Check if everything was ok.
-  //_status = checkFramebufferStatus();
+  _status = checkFramebufferStatus();
 
-  //glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
   
   return true;
 }
@@ -109,14 +109,14 @@ void DepthComplexity2D::process(
   _to = to;
   _segments = &segments;
   
-    glClearColor(0, 0, 0, 1.0);
-    glEnable(GL_COLOR_MATERIAL);
-	glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
+    //glClearColor(0, 0, 0, 1.0);
+    //glEnable(GL_COLOR_MATERIAL);
+	//glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
 	
-	glDisable(GL_LINE_SMOOTH);
+	//glDisable(GL_LINE_SMOOTH);
 	
-	glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	//glEnable(GL_BLEND);
+    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   
   //std::cout << segments.size();
   
@@ -132,7 +132,7 @@ void DepthComplexity2D::process(
   
   //copyStencilToColor();
 }
-
+/*
 void DepthComplexity2D::clearBuffer(float* buff, int w, int h, int ch){
 	for (int i=0; i< w*h*ch; ++i){ buff[i] = 0.;}
 }
@@ -145,12 +145,15 @@ void DepthComplexity2D::sumBuffer(float* buff1, float* buff2, int w, int h, int 
 void DepthComplexity2D::copyBuffer(float* buff1, float* buff2, int w, int h, int ch){
 	for (int i=0; i< w*h*ch; ++i){ buff1[i] = buff2[i];}
 }
-
+*/
 
 void DepthComplexity2D::findDepthComplexity2D() {
-  //glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _fboId);
-  clearBuffer(fbo, _fboWidth, _fboHeight, 1);
+  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _fboId);
+  
+  //clearBuffer(fbo, _fboWidth, _fboHeight, 1);
   //clearBuffer(tmpfbo, _fboWidth, _fboHeight, 1);
+  
+  //std::cout << "teste: " << glGet(GL_READ_BUFFER);
   
   glPushAttrib(GL_VIEWPORT_BIT);
     glViewport(0, 0, _fboWidth, _fboHeight);
@@ -162,13 +165,13 @@ void DepthComplexity2D::findDepthComplexity2D() {
       glLoadIdentity();
       gluOrtho2D(0.0, 1.0, 0.0, 1.0);
       
-      		glMatrixMode(GL_MODELVIEW);
+      	glMatrixMode(GL_MODELVIEW);
 		glPushMatrix();
 		glLoadIdentity();
       
       // render polygons in stencil buffer
       //glEnable(GL_STENCIL_TEST);
-     
+     glColor4f(1.,1.,1.,1.);
       //glStencilFunc(GL_ALWAYS, 0, ~0);
       //glStencilOp(GL_INCR, GL_INCR, GL_INCR);
      // glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
@@ -177,7 +180,7 @@ void DepthComplexity2D::findDepthComplexity2D() {
       glDisable(GL_DEPTH_TEST);
 	  //glClearStencil(0);
 	  //glStencilMask(~0);
-      //glClear(GL_DEPTH_BUFFER_BIT  | GL_COLOR_BUFFER_BIT);
+      glClear(GL_DEPTH_BUFFER_BIT  | GL_COLOR_BUFFER_BIT);
       
       //glMatrixMode(GL_MODELVIEW);
 	  //std::cout << "Seg Size: "<< _segments->size() << "\n";
@@ -212,12 +215,12 @@ void DepthComplexity2D::findDepthComplexity2D() {
 		      vec3d inter = s1.a*(1.f-t1) + s1.b*t1;
 			  //printf("1\n");
 			  //printf("%f %f %f %f %f %f\n",s1.a.x, s1.a.y, inter.x, inter.y, s2.a.x, s2.a.y);  
-			  glColor3f(1,0,0);        
+			  //glColor3f(1,1,1);        
               drawTriangle(s1.a, inter, s2.a);
               
-			  glReadPixels(0, 0, _fboWidth, _fboHeight, GL_RED, GL_FLOAT, tmpfbo);
-			  sumBuffer(fbo, tmpfbo, _fboWidth, _fboHeight, 1);
-			  glClear(GL_DEPTH_BUFFER_BIT  | GL_COLOR_BUFFER_BIT);
+			  //glReadPixels(0, 0, _fboWidth, _fboHeight, GL_RED, GL_FLOAT, tmpfbo);
+			  //sumBuffer(fbo, tmpfbo, _fboWidth, _fboHeight, 1);
+			  //glClear(GL_DEPTH_BUFFER_BIT  | GL_COLOR_BUFFER_BIT);
             }
           }
           
@@ -234,12 +237,12 @@ void DepthComplexity2D::findDepthComplexity2D() {
 			  vec3d inter = s3.a*(1.f-t1) + s3.b*t1;
               //printf("2\n");
               //printf("%f %f %f %f %f %f\n", s3.b.x, s3.b.y, inter.x, inter.y, s4.b.x, s4.b.y);
-              glColor3f(1,1,1);
+              //glColor3f(1,1,1);
               drawTriangle(s3.b, inter, s4.b);
               
-              glReadPixels(0, 0, _fboWidth, _fboHeight, GL_RED, GL_FLOAT, tmpfbo);
-			  sumBuffer(fbo, tmpfbo, _fboWidth, _fboHeight, 1);
-			  glClear(GL_DEPTH_BUFFER_BIT  | GL_COLOR_BUFFER_BIT);
+              //glReadPixels(0, 0, _fboWidth, _fboHeight, GL_RED, GL_FLOAT, tmpfbo);
+			  //sumBuffer(fbo, tmpfbo, _fboWidth, _fboHeight, 1);
+			  //glClear(GL_DEPTH_BUFFER_BIT  | GL_COLOR_BUFFER_BIT);
             }
           }
         } else {
@@ -250,11 +253,11 @@ void DepthComplexity2D::findDepthComplexity2D() {
           if (s1.a.y > s2.a.y and s1.b.y > s2.b.y) {
 			 //printf("3\n");
 			 //printf("%f %f %f %f %f %f %f %f\n", s1.a.x, s1.a.y, s1.b.x, s1.b.y, s2.b.x, s2.b.y, s2.a.x, s2.a.y);
-			 glColor3f(1,1,1);
+			 //glColor3f(1,1,1);
 			 drawQuad(s1.a, s1.b, s2.b, s2.a);
-			 glReadPixels(0, 0, _fboWidth, _fboHeight, GL_RED, GL_FLOAT, tmpfbo);
-			 sumBuffer(fbo, tmpfbo, _fboWidth, _fboHeight, 1);
-			 glClear(GL_DEPTH_BUFFER_BIT  | GL_COLOR_BUFFER_BIT);
+			 //glReadPixels(0, 0, _fboWidth, _fboHeight, GL_RED, GL_FLOAT, tmpfbo);
+			 //sumBuffer(fbo, tmpfbo, _fboWidth, _fboHeight, 1);
+			 //glClear(GL_DEPTH_BUFFER_BIT  | GL_COLOR_BUFFER_BIT);
           }
         }
       }
@@ -262,8 +265,8 @@ void DepthComplexity2D::findDepthComplexity2D() {
 
 	  //printf("max:%f\n", findMaxValueInStencil());
       _maximum = findMaxValueInStencil();
-	 
-	  
+	  //std::cout << _maximum << "\n";
+	  //_maximum = 100;
 	  //const int pixelNumber = _fboWidth * _fboHeight;
 	  //float stencilBuffer[pixelNumber];
 	  //glReadPixels(0, 0, _fboWidth, _fboHeight, GL_STENCIL_INDEX, GL_FLOAT, stencilBuffer);
@@ -276,7 +279,7 @@ void DepthComplexity2D::findDepthComplexity2D() {
       //glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
       //glDepthMask(GL_TRUE);
       //glDisable(GL_STENCIL_TEST);
-      //glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+      glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
   glMatrixMode(GL_MODELVIEW);
@@ -318,11 +321,11 @@ void drawTriangle(const Point &p1, const Point &p2, const Point &p3) {
   glEnd();
 }
 
-float DepthComplexity2D::findMaxValueInStencil() {
+int DepthComplexity2D::findMaxValueInStencil() {
   const int pixelNumber = _fboWidth * _fboHeight;
-  //float stencilBuffer[pixelNumber];
-  //glReadPixels(0, 0, _fboWidth, _fboHeight, GL_STENCIL_INDEX, GL_FLOAT, stencilBuffer);
-  return *(std::max_element(fbo, fbo + pixelNumber));
+  unsigned colorBuffer[pixelNumber];
+  glReadPixels(0, 0, _fboWidth, _fboHeight, GL_RED, GL_UNSIGNED_BYTE, colorBuffer);
+  return *(std::max_element(colorBuffer, colorBuffer + pixelNumber));
   //std::cout << "-MAX:"<< max << "\n";
   
   
@@ -337,13 +340,14 @@ void DepthComplexity2D::findMaximumRaysAndHistogram() {
   
   //glPixelTransferi(GL_MAP_STENCIL, GL_TRUE);
 
-  //glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _fboId);
+  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _fboId);
   glPushAttrib(GL_VIEWPORT_BIT);
     glViewport(0.0, 0.0, _fboWidth, _fboHeight);
     
 	
-    //GLubyte stencilSave[_fboWidth*_fboHeight];
-    //glReadPixels(0, 0, _fboWidth, _fboHeight, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, stencilSave);
+    GLubyte colorBuffer[_fboWidth*_fboHeight];
+    glReadPixels(0, 0, _fboWidth, _fboHeight, GL_RED, GL_UNSIGNED_BYTE, colorBuffer);
+    
     //printf("stencil: \n");
     //unsigned value = *(std::max_element(stencilSave, stencilSave + _fboWidth*_fboHeight));
     //std::cout << "maxxx: " << value << "\n";
@@ -352,32 +356,40 @@ void DepthComplexity2D::findMaximumRaysAndHistogram() {
       for(int c=0; c<_fboWidth; ++c) {
         //GLubyte val = stencilSave[r*_fboWidth+c];
        
-        //printf("val:%f\n", fbo[r*_fboWidth+c]);
-        unsigned int val = fbo[r*_fboWidth+c];
-        
+        //printf("val:%u\n", colorBuffer[r*_fboWidth+c]);
+        unsigned val = colorBuffer[r*_fboWidth+c];
+        //std::cout << val << "\n";
         //printf("val: %d",val);
 		//if (val==7)
 		//	std::cout << "eh isso aí\n";
         if (_computeHistogram) _histogram[val]++;
 
         if ((_computeMaximumRays && val == _maximum) || (_computeGoodRays && val >= _threshold)) {
+		  
           Segment seg;
           double t1 = c/(double)_fboWidth;
           double t2 = r/(double)_fboHeight;
           seg.a = _from.a*(1.f-t1) + _from.b*t1;
-          seg.b = _to.a*(1.f-t2) + _to.b*t2;
-		  seg.sortPoints();          
+          seg.b = _to.a*(1.f-t2) + _to.b*t2;          
+		  seg.sortPoints(); 
+		  
+		           
           if (val == _maximum){
+		     
 			 if (_maximumRays.size() < 10)
 				_maximumRays.insert(seg);
             }
           else if (val >= _threshold){
+			  
            //if (_goodRays[val].size() < 200)
             _goodRays[val].insert(seg);
+            std::cout << val <<" <-fuck1\n";
 		  }
+		  std::cout << "fuck2\n";
         }
       }
     }
+  
   glPopAttrib();
   //glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 }

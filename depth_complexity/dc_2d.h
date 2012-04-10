@@ -59,7 +59,7 @@ private:
   Segment computeDualSegmentFromPoint(const Point &p);
 
   // Go through the framebuffer to find the maximum value.
-  float findMaxValueInStencil();
+  int findMaxValueInStencil();
 
   // Compute depth complexity using rays from one segment to the other.
   void findDepthComplexity2D();
@@ -93,13 +93,13 @@ private:
   std::vector< std::set<Segment,classcomp> >   	_goodRays;
   
   // fbo
-  float 										*fbo;
-  float											*tmpfbo;
+  //float 										*fbo;
+  //float											*tmpfbo;
   
   // aux func
-  void clearBuffer(float* buff, int w, int h, int ch);
-  void sumBuffer(float* buff1, float* buff2, int w, int h, int ch);
-  void copyBuffer(float* buff1, float* buff2, int w, int h, int ch);
+  //void clearBuffer(float* buff, int w, int h, int ch);
+  //void sumBuffer(float* buff1, float* buff2, int w, int h, int ch);
+  //void copyBuffer(float* buff1, float* buff2, int w, int h, int ch);
   
 };
 
