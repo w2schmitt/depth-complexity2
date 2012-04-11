@@ -406,6 +406,14 @@ int doInteractive(const TriMesh& mesh)
     }
     
     glewInit();
+    
+    cout << glGetString(GL_VERSION) << "\n";
+    if (GLEW_EXT_texture_integer){
+		cout << "TEXTURE INTEGER SUPORTED\n";	
+	}
+	else {
+		cout << "TEXTURE INTEGER IS NOT SUPORTED\n";
+	}
 
     glfwEnable(GLFW_MOUSE_CURSOR);
     glfwEnable(GLFW_KEY_REPEAT);
@@ -530,6 +538,11 @@ int main(int argc, char **argv)
     }
     
     glutInit(&argc,argv);
+    
+    
+
+	
+	
 
     try {
         std::ifstream file(argv[1]);

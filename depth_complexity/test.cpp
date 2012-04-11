@@ -1,5 +1,7 @@
 
+#include <GL/glew.h>
 #include <GL/glut.h>
+
 
 #include <iostream>
 #include <algorithm>
@@ -9,6 +11,9 @@
 #include <vector>
 #include <string.h>
 
+using namespace std;
+
+/*
 #define ERR 1.E-2
 
 struct Point { float x,y; };
@@ -37,7 +42,7 @@ bool displayTrap = true;
 bool readFbo = false;
 
 
-using namespace std;
+
 
 void readInput(){
 	
@@ -316,4 +321,158 @@ int main (int argc, char **argv) {
 	
 	return 0;
 }
+* 
+*/
+
+  GLuint                                		_textureId;
+  GLuint                                		_fboId;
+  GLuint                                		_rboId;
+
+int _fboWidth = 512;
+int _fboHeight = 512;
+
+bool initFBO() {
+  // Use texture as COLOR buffer
+  glGenTextures(1, &_textureId);
+  glBindTexture(GL_TEXTURE_2D, _textureId);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  //glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE16, _fboWidth, _fboHeight, 0, GL_LUMINANCE, GL_UNSIGNED_SHORT, NULL); 
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16, _fboWidth, _fboHeight, 0, GL_RGBA, GL_FLOAT, NULL);
+	
+	GLint actual_format;
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT, &actual_format);
+	if (actual_format == GL_RGBA16){
+	  std::cout << "format OK\n";
+	}
+	else {
+	  std::cout << "teste: "<< actual_format << "  -  " << GL_RGBA16 << "\n";
+	}
+  
+  glBindTexture(GL_TEXTURE_2D, 0);
+
+  // User renderbuffer as DEPTH and STENCIL buffer.
+  glGenRenderbuffersEXT(1, &_rboId);
+  glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, _rboId);
+  glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT, _fboWidth, _fboHeight);
+  glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, 0);
+
+  // Create framebuffer object
+  glGenFramebuffersEXT(1, &_fboId);
+  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _fboId);
+
+  // Assign COLOR, DEPTH and STENCIL buffers to the render buffer.
+  glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, _textureId, 0);
+  glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, _rboId);
+  //glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, _rboId);
+
+  // Check if everything was ok.
+  //bool _status = true; //checkFramebufferStatus();
+
+  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+  
+  return true;
+}
+
+
+
+void setupRC(){
+	//glEnable(GL_COLOR_MATERIAL);
+	//glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
+	glClearColor(0, 0, 0, 1.0);
+	
+	glDisable(GL_LINE_SMOOTH);
+	glDisable(GL_LIGHTING);
+	glDisable(GL_BLEND);
+	initFBO();
+}
+
+
+void display(){
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _fboId);
+	
+	glPushAttrib(GL_VIEWPORT_BIT);
+    glViewport(0, 0, _fboWidth, _fboHeight);
+
+	    glMatrixMode(GL_MODELVIEW);
+		glPushMatrix();
+		glLoadIdentity();
+		
+		glDrawBuffer(GL_COLOR_ATTACHMENT0_EXT);
+		glClearColor(0.0f, 0.0f, 0.0f, 0.00000f);
+		glClear(GL_DEPTH_BUFFER_BIT  | GL_COLOR_BUFFER_BIT);
+		
+		glColor4f( 0.1f, 0.1f, 0.1f, 0.005f);
+		glBegin(GL_QUADS);
+			//glColor3f(0.f, 0.f, 0.5f);
+			glVertex2f(0.f, 0.f);
+			//glColor3f(0.5f, 0.f, 0.f);
+			glVertex2f(1.f, 0.f);
+			//glColor3f(0.f, 0.5f, 0.f); 
+			glVertex2f(1.f, 1.f);
+			glVertex2f(0.f, 1.f);
+		glEnd();
+		
+		const int pixelNumber = _fboWidth * _fboHeight;
+		float colorBuffer[pixelNumber];		  
+
+		//GAGA
+		glReadPixels(0, 0, _fboWidth, _fboHeight, GL_ALPHA, GL_FLOAT, colorBuffer);
+
+		for (int i=0; i<pixelNumber; i++){
+		  //printf("val: %hd\n", colorBuffer[i]);
+		  std::cout << colorBuffer[i] << std::endl;
+		}
+		std::cout << "-MAX:"<< *(std::max_element(colorBuffer, colorBuffer + pixelNumber)) << "\n";
+		
+		
+	glutSwapBuffers();
+	glFinish();	
+}
+
+
+
+void reshape(int w, int h) {
+  //	float aspect = w/h;	
+  if(h==0) h = 1;
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();	
+  glViewport(0, 0, w, h);
+  gluOrtho2D(0, 1, 0, 1);
+  glMatrixMode(GL_MODELVIEW);
+}
+
+
+void keyboard(unsigned char key, int x, int y){
+	
+}
+
+int main (int argc, char **argv) {
+	//std::cout << argv[1] << "\n";
+
+	glutInit(&argc, argv);
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
+	glutInitWindowSize(512, 512);
+	glutInitWindowPosition(300,300);
+	glutCreateWindow("Dual Ray Implementation");
+	glutDisplayFunc(display);	
+	glutReshapeFunc(reshape);
+	glutKeyboardFunc( keyboard );
+
+	glewInit();
+	  
+	setupRC();
+	
+
+	//glutSpecialFunc( special );
+
+	glutMainLoop();
+	
+	return 0;
+}
+
+
+
 
