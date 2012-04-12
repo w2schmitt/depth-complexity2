@@ -14,6 +14,7 @@ void drawQuad(const Point &p1, const Point &p2, const Point &p3, const Point &p4
 void drawTriangle(const Point &p1, const Point &p2, const Point &p3);
 
 
+
 DepthComplexity2D::DepthComplexity2D(const int fboWidth, const int fboHeight){
   _fboWidth = fboWidth;
   _fboHeight = fboHeight;
@@ -49,6 +50,23 @@ void DepthComplexity2D::createShader(){
 	
 	glCompileShader(_vShaderId);
 	glCompileShader(_pShaderId);
+	
+	//Check compilation status
+	GLint ok;
+	
+	glGetShaderiv(_vShaderId, GL_COMPILE_STATUS, &ok);
+	if (!ok){
+		int ilength; char stringBuffer[2048];
+		glGetShaderInfoLog(_vShaderId, 2048, &ilength, stringBuffer);
+		std::cout<<"Compilation error ("<<V_PATH<<") : "<<stringBuffer<< std::endl; 
+	}
+	
+	glGetShaderiv(_pShaderId, GL_COMPILE_STATUS, &ok);
+	if (!ok){
+		int ilength; char stringBuffer[2048];
+		glGetShaderInfoLog(_pShaderId, 2048, &ilength, stringBuffer);
+		std::cout<<"Compilation error ("<<P_PATH<<") : "<<stringBuffer << std::endl; 
+	}
 
 	free(vShaderData);
 	free(pShaderData);
@@ -93,17 +111,31 @@ char* DepthComplexity2D::readShaderFile(const char *filename){
 }
 
 bool DepthComplexity2D::initFBO() {
-  // Use texture 1 as COLOR buffer
+  // Use texture 1 as COLOR buffer for FBO
   glGenTextures(1, &_textureId);
   glBindTexture(GL_TEXTURE_2D, _textureId);
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, _fboWidth, _fboHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
   glBindTexture(GL_TEXTURE_2D, 0);
     
-  // Use texture 2 for act like a COUNTER
+  //Use texture2 as a Buffer per-pixel counter//
+  glGenTextures(1, &_textureId2);
+  glBindTexture(GL_TEXTURE_2D, _textureId2);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+  //Uses GL_R32F instead of GL_R32I that is not working in R257.15
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, _fboWidth, _fboHeight, 0,  GL_RED, GL_FLOAT, 0);
+  glBindImageTextureEXT(1, _textureId2, 0, false, 0,  GL_READ_WRITE, GL_R32UI);
+  glBindTexture(GL_TEXTURE_2D, 0);
+
+  /*
   glGenTextures(1, &_textureId2);
   glBindTexture(GL_TEXTURE_2D, _textureId2);
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -112,7 +144,7 @@ bool DepthComplexity2D::initFBO() {
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16, _fboWidth, _fboHeight, 0, GL_RGBA, GL_UNSIGNED_SHORT, NULL);
   glBindTexture(GL_TEXTURE_2D, 0);
-
+	*/
   // User renderbuffer as DEPTH buffer
   glGenRenderbuffersEXT(1, &_rboId);
   glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, _rboId);
@@ -185,8 +217,10 @@ void DepthComplexity2D::process(
   _to = to;
   _segments = &segments;
   
+  std::cout << "--------------------------------------------------------< VERSION >\n";
   std::cout << "OGL VERSION: " << glGetString(GL_VERSION) << std::endl;
   std::cout << "SHADER VERSION: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
+  std::cout << "--------------------------------------------------------- \n";
   
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);  
   findDepthComplexity2D();
@@ -201,11 +235,12 @@ void DepthComplexity2D::process(
 void DepthComplexity2D::findDepthComplexity2D() {
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _fboId);
   
+  
   // Disable LIGHT, BLENDING and TEXTURE
   glDisable(GL_LIGHT0);
   glDisable(GL_LIGHTING);
   glDisable(GL_BLEND);
-  glDisable(GL_TEXTURE_2D);
+  //glDisable(GL_TEXTURE_2D);
   glDisable(GL_LINE_SMOOTH);
   glDisable(GL_DEPTH_TEST);
     
@@ -220,24 +255,30 @@ void DepthComplexity2D::findDepthComplexity2D() {
       glMatrixMode(GL_MODELVIEW);
 	  glPushMatrix();
 		glLoadIdentity();
-
+		
+		
+		  //Pass MODELVIEW and PROJECTION matrices to Shader
+		  GLfloat model[16],projection[16];
+		  glGetFloatv(GL_MODELVIEW_MATRIX, model);
+		  glGetFloatv(GL_PROJECTION_MATRIX, projection);
+		  glProgramUniformMatrix4fvEXT(_shaderProgram, glGetUniformLocation(_shaderProgram, "modelViewMat"), 1, GL_FALSE, model);
+		  glProgramUniformMatrix4fvEXT(_shaderProgram, glGetUniformLocation(_shaderProgram, "projectionMat"), 1, GL_FALSE, projection);
+		  
+		  
+		  //Pass texture2
+		  glProgramUniform1iEXT(_shaderProgram, glGetUniformLocation(_shaderProgram, "abufferCounterImg"), _textureId2);
+		  //Use Shader
+		  glUseProgram(_shaderProgram);
 		  // Select both color buffer to clear
 		  //GLenum buffers[] = {GL_COLOR_ATTACHMENT0_EXT, GL_COLOR_ATTACHMENT1_EXT};
 		  //glDrawBuffers(2, buffers);
 		  
-		  glClearColor(0.f, 0.f, 0.f, 0.f);    
-		  glClear(GL_DEPTH_BUFFER_BIT  | GL_COLOR_BUFFER_BIT); 
+		   glClearColor(0.f, 0.f, 0.f, 0.f);    
+		   glClear(GL_DEPTH_BUFFER_BIT  | GL_COLOR_BUFFER_BIT); 
 
-		  glDrawBuffer(GL_COLOR_ATTACHMENT0_EXT);
-		  //glDrawBuffer(GL_COLOR_ATTACHMENT1_EXT);
-		  // setup shader
-		  //glActiveTexture(GL_TEXTURE0);
-		  //glBindTexture(GL_TEXTURE_2D, _textureId);
-		  //glEnable(GL_TEXTURE_2D);
-		  //glBindTexture(GL_TEXTURE_2D, _textureId);
-		  //glUniform1i( glGetUniformLocation(_shaderProgram, "fbo"), 0);
-
-		   glUseProgram(_shaderProgram);
+		   glDrawBuffer(GL_COLOR_ATTACHMENT0_EXT);
+	
+		   
 
 		   glColor4f(0.5f, 0.2f, 0.1f, 0.15f);
 		   //
@@ -261,21 +302,21 @@ void DepthComplexity2D::findDepthComplexity2D() {
 		    //
 					
 	
-			glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
+			//glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 			
-		    const int pixelNumber = _fboWidth * _fboHeight;
+		    //const int pixelNumber = _fboWidth * _fboHeight;
 		    //unsigned short int colorBuffer[pixelNumber];	
-		    GLubyte colorBuffer[pixelNumber];	  
+		    //GLubyte colorBuffer[pixelNumber];	  
 	
   
 			//glReadPixels(0, 0, _fboWidth, _fboHeight, GL_RED, GL_UNSIGNED_SHORT, colorBuffer);
-			glReadPixels(0, 0, _fboWidth, _fboHeight, GL_RED, GL_UNSIGNED_BYTE, colorBuffer);
+			//glReadPixels(0, 0, _fboWidth, _fboHeight, GL_RED, GL_UNSIGNED_BYTE, colorBuffer);
   
   //for (int i=0; i<pixelNumber; ++i){
 	  //printf("val: %hd\n", colorBuffer[i]);
 	//  std::cout << colorBuffer[i] << std::endl;
   //}
-  std::cout << "-MAX:"<< (int)*(std::max_element(colorBuffer, colorBuffer + pixelNumber)) << "\n";
+  //std::cout << "-MAX:"<< (int)*(std::max_element(colorBuffer, colorBuffer + pixelNumber)) << "\n";
   //return *(std::max_element(colorBuffer, colorBuffer + pixelNumber));
 		  
 	  

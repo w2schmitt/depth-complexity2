@@ -1,9 +1,12 @@
-//FRAGMENT SHADER
-//#version 130
-//#extension GL_EXT_gpu_shader4 : enable 
-#version 140
+#version 400
 
-void main(){
-    gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
-    //gl_FragData[1] = uvec4(10u,10u,10u,10u);
+//-- enable opengl extentions
+#extension GL_NV_gpu_shader5 : enable
+#extension GL_EXT_shader_image_load_store : enable
+#extension GL_EXT_bindable_uniform : enable
+#extension GL_NV_shader_buffer_load : enable
+#extension GL_NV_shader_buffer_store : enable
+
+void main(void){
+   discard;
 }
