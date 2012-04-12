@@ -1,11 +1,9 @@
 //FRAGMENT SHADER
 //#version 130
-
-//Include support for this extension, which defines usampler2D
-//#extension GL_EXT_gpu_shader4 : enable
+//#extension GL_EXT_gpu_shader4 : enable 
+#version 140
 
 void main(){
-	
-	//vec4(0.15f, 0.0f, 0.0f, 0.0f);
-	gl_FragData[0] = gl_Color;
+    gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
+    //gl_FragData[1] = uvec4(10u,10u,10u,10u);
 }

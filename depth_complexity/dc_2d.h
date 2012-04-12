@@ -79,6 +79,7 @@ private:
   static const char* 							P_PATH;
 
   GLuint                                		_textureId;
+  GLuint										_textureId2;
   GLuint                                		_fboId;
   GLuint                                		_rboId;
   

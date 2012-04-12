@@ -93,28 +93,27 @@ char* DepthComplexity2D::readShaderFile(const char *filename){
 }
 
 bool DepthComplexity2D::initFBO() {
-  // Use texture as COLOR buffer
+  // Use texture 1 as COLOR buffer
   glGenTextures(1, &_textureId);
   glBindTexture(GL_TEXTURE_2D, _textureId);
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  //glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE16, _fboWidth, _fboHeight, 0, GL_LUMINANCE, GL_UNSIGNED_SHORT, NULL); 
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, _fboWidth, _fboHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+  glBindTexture(GL_TEXTURE_2D, 0);
+    
+  // Use texture 2 for act like a COUNTER
+  glGenTextures(1, &_textureId2);
+  glBindTexture(GL_TEXTURE_2D, _textureId2);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16, _fboWidth, _fboHeight, 0, GL_RGBA, GL_UNSIGNED_SHORT, NULL);
-	
-	GLint actual_format;
-	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT, &actual_format);
-	if (actual_format == GL_RGBA16){
-	  std::cout << "format OK\n";
-	}
-	else {
-	  std::cout << "teste: "<< actual_format << "  -  " << GL_RGBA16 << "\n";
-	}
-  
   glBindTexture(GL_TEXTURE_2D, 0);
 
-  // User renderbuffer as DEPTH and STENCIL buffer.
+  // User renderbuffer as DEPTH buffer
   glGenRenderbuffersEXT(1, &_rboId);
   glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, _rboId);
   glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT, _fboWidth, _fboHeight);
@@ -124,8 +123,9 @@ bool DepthComplexity2D::initFBO() {
   glGenFramebuffersEXT(1, &_fboId);
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _fboId);
 
-  // Assign COLOR, DEPTH and STENCIL buffers to the render buffer.
+  // Assign COLOR1, COLOR2 and DEPTH buffers to the render buffer.
   glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, _textureId, 0);
+  //glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT1_EXT, GL_TEXTURE_2D, _textureId2, 0);
   glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, _rboId);
   //glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, _rboId);
 
@@ -185,115 +185,97 @@ void DepthComplexity2D::process(
   _to = to;
   _segments = &segments;
   
-  std::cout << glGetString(GL_VERSION) << " version \n";
+  std::cout << "OGL VERSION: " << glGetString(GL_VERSION) << std::endl;
+  std::cout << "SHADER VERSION: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
   
-  //glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-  
-  glEnable(GL_COLOR_MATERIAL);
-  glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
-	
-	//glEnable(GL_BLEND);
-    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  
-  //std::cout << segments.size();
-  
-  /*std::cout << _textureId << " " << _fboId << " " << _rboId << " " << _status << " "
-            << _computeHistogram << " " << _computeMaximumRays << " " << _computeGoodRays << " "
-            << _fboWidth << " " << _fboHeight << " " << _segments->size() << " " << _threshold << std::endl;// " " << _from << " " << _to << " " */
-
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);  
   findDepthComplexity2D();
   
-  //glPixelTransferf(GL_MAP_STENCIL,GL_TRUE);
-  //if (_computeHistogram or _computeMaximumRays or _computeGoodRays)
+  if (_computeHistogram or _computeMaximumRays or _computeGoodRays)
     findMaximumRaysAndHistogram();
-    //std::cout << "cu" << "\n";
   
   //copyStencilToColor();
 }
-/*
-void DepthComplexity2D::clearBuffer(float* buff, int w, int h, int ch){
-	for (int i=0; i< w*h*ch; ++i){ buff[i] = 0.;}
-}
 
-// increment buff1 with values from buff2
-void DepthComplexity2D::sumBuffer(float* buff1, float* buff2, int w, int h, int ch){
-	for (int i=0; i< w*h*ch; ++i){ buff1[i] += buff2[i];}
-}
-
-void DepthComplexity2D::copyBuffer(float* buff1, float* buff2, int w, int h, int ch){
-	for (int i=0; i< w*h*ch; ++i){ buff1[i] = buff2[i];}
-}
-*/
 
 void DepthComplexity2D::findDepthComplexity2D() {
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _fboId);
   
-  //clearBuffer(fbo, _fboWidth, _fboHeight, 1);
-  //clearBuffer(tmpfbo, _fboWidth, _fboHeight, 1);
-  
-  //std::cout << "teste: " << glGet(GL_READ_BUFFER);
+  // Disable LIGHT, BLENDING and TEXTURE
   glDisable(GL_LIGHT0);
   glDisable(GL_LIGHTING);
   glDisable(GL_BLEND);
   glDisable(GL_TEXTURE_2D);
+  glDisable(GL_LINE_SMOOTH);
+  glDisable(GL_DEPTH_TEST);
     
   glPushAttrib(GL_VIEWPORT_BIT);
     glViewport(0, 0, _fboWidth, _fboHeight);
-
-	    glMatrixMode(GL_MODELVIEW);
-		glPushMatrix();
-		glLoadIdentity();
 		
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
       glLoadIdentity();
       gluOrtho2D(0., 1.0, 0., 1.0);
       
-	//float inc = 1.0f/65535.0f;
+      glMatrixMode(GL_MODELVIEW);
+	  glPushMatrix();
+		glLoadIdentity();
 
+		  // Select both color buffer to clear
+		  //GLenum buffers[] = {GL_COLOR_ATTACHMENT0_EXT, GL_COLOR_ATTACHMENT1_EXT};
+		  //glDrawBuffers(2, buffers);
+		  
+		  glClearColor(0.f, 0.f, 0.f, 0.f);    
+		  glClear(GL_DEPTH_BUFFER_BIT  | GL_COLOR_BUFFER_BIT); 
 
-     glDrawBuffer(GL_COLOR_ATTACHMENT0_EXT);
-     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-      
-     
-     // glDisable(GL_LINE_SMOOTH);
-      //glDisable(GL_DEPTH_TEST);
-      glClear(GL_DEPTH_BUFFER_BIT  | GL_COLOR_BUFFER_BIT);
-      
-      // setup shader
-	  //glActiveTexture(GL_TEXTURE0);
-	  //glBindTexture(GL_TEXTURE_2D, _textureId);
-	  //glEnable(GL_TEXTURE_2D);
-	  //glBindTexture(GL_TEXTURE_2D, _textureId);
-	  //glUniform1i( glGetUniformLocation(_shaderProgram, "fbo"), 0);
+		  glDrawBuffer(GL_COLOR_ATTACHMENT0_EXT);
+		  //glDrawBuffer(GL_COLOR_ATTACHMENT1_EXT);
+		  // setup shader
+		  //glActiveTexture(GL_TEXTURE0);
+		  //glBindTexture(GL_TEXTURE_2D, _textureId);
+		  //glEnable(GL_TEXTURE_2D);
+		  //glBindTexture(GL_TEXTURE_2D, _textureId);
+		  //glUniform1i( glGetUniformLocation(_shaderProgram, "fbo"), 0);
 
-	  //glUseProgram(_shaderProgram);
-	  //glUseProgram(0);
-	//glEnable ( GL_COLOR_MATERIAL ) ;  
-	//glColor4f(1./65535.f,1./65535.f, 1./65535.f, 1./65535.f);
-	glColor4us(100,100,100,0);
-	glBegin(GL_QUADS);
-	//glColor3f(0.f, 0.f, 0.5f);
-	glVertex2f(0.f, 0.f);
-	//glColor3f(0.5f, 0.f, 0.f);
-	glVertex2f(1.f, 0.f);
-	//glColor3f(0.f, 0.5f, 0.f); 
-	glVertex2f(1.f, 1.f);
-	glVertex2f(0.f, 1.f);
-  glEnd();
-  
-  
-  const int pixelNumber = _fboWidth * _fboHeight*4;
-  unsigned short int colorBuffer[pixelNumber];		  
+		   glUseProgram(_shaderProgram);
+
+		   glColor4f(0.5f, 0.2f, 0.1f, 0.15f);
+		   //
+		   glBegin(GL_QUADS);
+			 glVertex2f(0.0f, 0.0f);
+			 glVertex2f(1.0f, 0.0f);
+			 glVertex2f(1.0f, 1.0f);
+			 glVertex2f(0.0f, 1.0f);
+		   glEnd();
+		   
+		   //glFinish();
+		   		  
+		   
+		   //glDrawBuffer(GL_COLOR_ATTACHMENT1_EXT);
+		  
+		   //glActiveTexture(GL_TEXTURE0);		   
+		   //glBindTexture(GL_TEXTURE_2D, _textureId2);
+		   //glEnable(GL_TEXTURE_2D);
+		   //glUniform1i(glGetUniformLocation(shaderProgram, "dcCounter"), 0);
+		    
+		    //
+					
+	
+			glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
+			
+		    const int pixelNumber = _fboWidth * _fboHeight;
+		    //unsigned short int colorBuffer[pixelNumber];	
+		    GLubyte colorBuffer[pixelNumber];	  
 	
   
-  glReadPixels(0, 0, _fboWidth, _fboHeight, GL_RGBA, GL_UNSIGNED_SHORT, colorBuffer);
+			//glReadPixels(0, 0, _fboWidth, _fboHeight, GL_RED, GL_UNSIGNED_SHORT, colorBuffer);
+			glReadPixels(0, 0, _fboWidth, _fboHeight, GL_RED, GL_UNSIGNED_BYTE, colorBuffer);
   
-  for (int i=0; i<pixelNumber; i+=4){
+  //for (int i=0; i<pixelNumber; ++i){
 	  //printf("val: %hd\n", colorBuffer[i]);
-	  std::cout << colorBuffer[i] << std::endl;
-  }
-  std::cout << "-MAX:"<< *(std::max_element(colorBuffer, colorBuffer + pixelNumber)) << "\n";
+	//  std::cout << colorBuffer[i] << std::endl;
+  //}
+  std::cout << "-MAX:"<< (int)*(std::max_element(colorBuffer, colorBuffer + pixelNumber)) << "\n";
   //return *(std::max_element(colorBuffer, colorBuffer + pixelNumber));
 		  
 	  
