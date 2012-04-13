@@ -2,6 +2,7 @@
 #define DC_2D2_H
 
 #define GL_GLEXT_PROTOTYPES
+#define STRING_BUFFER 2048
 
 #include <GL/glew.h>
 #ifdef __APPLE__
@@ -30,6 +31,9 @@
 //
 class DepthComplexity2D {
 public:
+  static const char* 							V_PATH;
+  static const char* 							P_PATH;
+  
   DepthComplexity2D(const int fboWidth, const int fboHeight);
 
   void setComputeHistogram(bool computeHistogram) { this->_computeHistogram = computeHistogram; }
@@ -76,8 +80,7 @@ private:
 
 
 private:
-  static const char* 							V_PATH;
-  static const char* 							P_PATH;
+
 
   GLuint                                		_textureId;
   GLuint										_textureId2;

@@ -8,6 +8,8 @@ const char *DepthComplexity2D::P_PATH = "shader/dc.frag";
 
 // Internal function to check if the framebuffer was created correctly.
 bool checkFramebufferStatus();
+// Internal function to check if shader was compiled correctly.
+bool checkShadersStatus(GLuint vShaderID, GLuint pShaderID);
 
 // Draw polygons in framebuffer.
 void drawQuad(const Point &p1, const Point &p2, const Point &p3, const Point &p4);
@@ -26,6 +28,7 @@ DepthComplexity2D::DepthComplexity2D(const int fboWidth, const int fboHeight){
   _vShaderId = -1;
   _pShaderId = -1;
   _shaderProgram = -1;
+  _status = true;
 
   assert(initFBO());
   createShader();
@@ -52,21 +55,7 @@ void DepthComplexity2D::createShader(){
 	glCompileShader(_pShaderId);
 	
 	//Check compilation status
-	GLint ok;
-	
-	glGetShaderiv(_vShaderId, GL_COMPILE_STATUS, &ok);
-	if (!ok){
-		int ilength; char stringBuffer[2048];
-		glGetShaderInfoLog(_vShaderId, 2048, &ilength, stringBuffer);
-		std::cout<<"Compilation error ("<<V_PATH<<") : "<<stringBuffer<< std::endl; 
-	}
-	
-	glGetShaderiv(_pShaderId, GL_COMPILE_STATUS, &ok);
-	if (!ok){
-		int ilength; char stringBuffer[2048];
-		glGetShaderInfoLog(_pShaderId, 2048, &ilength, stringBuffer);
-		std::cout<<"Compilation error ("<<P_PATH<<") : "<<stringBuffer << std::endl; 
-	}
+	_status = checkShadersStatus(_vShaderId, _pShaderId);
 
 	free(vShaderData);
 	free(pShaderData);
@@ -81,6 +70,7 @@ void DepthComplexity2D::attachShader(){
 	
 	glLinkProgram(_shaderProgram);
 }
+
 
 char* DepthComplexity2D::readShaderFile(const char *filename){
 	
@@ -110,6 +100,29 @@ char* DepthComplexity2D::readShaderFile(const char *filename){
 	return content;
 }
 
+bool checkShadersStatus(GLuint vShaderID, GLuint pShaderID){
+	
+	GLint ok;
+	glGetShaderiv(vShaderID, GL_COMPILE_STATUS, &ok);
+	if (!ok){
+		int ilength; char stringBuffer[STRING_BUFFER];
+		glGetShaderInfoLog(vShaderID, STRING_BUFFER, &ilength, stringBuffer);
+		std::cerr<<"[ERROR] Compilation error ("<<DepthComplexity2D::V_PATH<<") : "<<stringBuffer<< std::endl; 
+		return false;
+	}
+	
+	glGetShaderiv(pShaderID, GL_COMPILE_STATUS, &ok);
+	if (!ok){
+		int ilength; char stringBuffer[STRING_BUFFER];
+		glGetShaderInfoLog(pShaderID, STRING_BUFFER, &ilength, stringBuffer);
+		std::cerr << "[ERROR] Compilation error ("<<DepthComplexity2D::P_PATH<<") : "<<stringBuffer << std::endl; 
+		return false;
+	}
+	
+	std::cerr << "[OK] Shaders OK." << std::endl;
+	return true;
+}
+
 bool DepthComplexity2D::initFBO() {
   // Use texture 1 as COLOR buffer for FBO
   glGenTextures(1, &_textureId);
@@ -122,7 +135,7 @@ bool DepthComplexity2D::initFBO() {
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, _fboWidth, _fboHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
   glBindTexture(GL_TEXTURE_2D, 0);
     
-  //Use texture2 as a Buffer per-pixel counter//
+  //Use texture2 as a counter per-pixel Buffer//
   glGenTextures(1, &_textureId2);
   glBindTexture(GL_TEXTURE_2D, _textureId2);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -134,6 +147,7 @@ bool DepthComplexity2D::initFBO() {
   glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, _fboWidth, _fboHeight, 0,  GL_RED, GL_FLOAT, 0);
   glBindImageTextureEXT(1, _textureId2, 0, false, 0,  GL_READ_WRITE, GL_R32UI);
   glBindTexture(GL_TEXTURE_2D, 0);
+  
 
   /*
   glGenTextures(1, &_textureId2);
@@ -161,7 +175,7 @@ bool DepthComplexity2D::initFBO() {
   glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, _rboId);
   //glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, _rboId);
 
-  // Check if everything was ok.
+  // Check if everything is ok.
   _status = checkFramebufferStatus();
 
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
@@ -174,7 +188,7 @@ bool checkFramebufferStatus() {
   GLenum status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
   switch(status) {
   case GL_FRAMEBUFFER_COMPLETE_EXT:
-    std::cerr << "Framebuffer complete." << std::endl;
+    std::cerr << "[OK] Framebuffer complete." << std::endl;
     return true;
 
   case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT:
@@ -222,6 +236,11 @@ void DepthComplexity2D::process(
   std::cout << "SHADER VERSION: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
   std::cout << "--------------------------------------------------------- \n";
   
+  if (!_status){
+	  std::cerr << "[ERROR] Check FBO or SHADERS." << std::endl;
+	  return;
+  }
+  
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);  
   findDepthComplexity2D();
   
@@ -266,7 +285,7 @@ void DepthComplexity2D::findDepthComplexity2D() {
 		  
 		  
 		  //Pass texture2
-		  glProgramUniform1iEXT(_shaderProgram, glGetUniformLocation(_shaderProgram, "abufferCounterImg"), _textureId2);
+		  glProgramUniform1iEXT(_shaderProgram, glGetUniformLocation(_shaderProgram, "counterBuff"), 0);
 		  //Use Shader
 		  glUseProgram(_shaderProgram);
 		  // Select both color buffer to clear
@@ -290,8 +309,7 @@ void DepthComplexity2D::findDepthComplexity2D() {
 		   glEnd();
 		   
 		   //glFinish();
-		   		  
-		   
+		   		   
 		   //glDrawBuffer(GL_COLOR_ATTACHMENT1_EXT);
 		  
 		   //glActiveTexture(GL_TEXTURE0);		   
@@ -300,24 +318,19 @@ void DepthComplexity2D::findDepthComplexity2D() {
 		   //glUniform1i(glGetUniformLocation(shaderProgram, "dcCounter"), 0);
 		    
 		    //
-					
+			glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, _textureId2, 0);		
 	
-			//glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
+			glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 			
-		    //const int pixelNumber = _fboWidth * _fboHeight;
+		    const int pixelNumber = _fboWidth * _fboHeight;
 		    //unsigned short int colorBuffer[pixelNumber];	
-		    //GLubyte colorBuffer[pixelNumber];	  
+		    GLushort colorBuffer[pixelNumber];	  
 	
   
-			//glReadPixels(0, 0, _fboWidth, _fboHeight, GL_RED, GL_UNSIGNED_SHORT, colorBuffer);
-			//glReadPixels(0, 0, _fboWidth, _fboHeight, GL_RED, GL_UNSIGNED_BYTE, colorBuffer);
-  
-  //for (int i=0; i<pixelNumber; ++i){
-	  //printf("val: %hd\n", colorBuffer[i]);
-	//  std::cout << colorBuffer[i] << std::endl;
-  //}
-  //std::cout << "-MAX:"<< (int)*(std::max_element(colorBuffer, colorBuffer + pixelNumber)) << "\n";
-  //return *(std::max_element(colorBuffer, colorBuffer + pixelNumber));
+			glReadPixels(0, 0, _fboWidth, _fboHeight, GL_RED, GL_UNSIGNED_SHORT, colorBuffer);
+
+			std::cout << "-MAX:"<< (int)*(std::max_element(colorBuffer, colorBuffer + pixelNumber)) << "\n";
+
 		  
 	  
       
