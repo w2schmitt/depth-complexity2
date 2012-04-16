@@ -405,15 +405,19 @@ int doInteractive(const TriMesh& mesh)
         return -1;
     }
     
-    glewInit();
+    // initialize GLEW
+    GLenum glewStatus = glewInit();
+    if (glewStatus != GLEW_OK){
+      std::cerr << "[ERROR] "<< glewGetErrorString(glewStatus)<<std::endl;
+    }
     
-    cout << glGetString(GL_VERSION) << "\n";
-    if (GLEW_EXT_texture_integer){
-		cout << "TEXTURE INTEGER SUPORTED\n";	
-	}
-	else {
-		cout << "TEXTURE INTEGER IS NOT SUPORTED\n";
-	}
+    // Print OPENGL, SHADER and GLEW versions
+    std::cout << "----- << VERSION >>\n";
+    std::cout << "OPENGL VERSION: " << glGetString(GL_VERSION) << std::endl;
+    std::cout << "SHADER VERSION: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
+    std::cerr << "GLEW VERSION: "<<glewGetString(GLEW_VERSION)<<std::endl;
+    std::cout << "---------------- \n";
+ 
 
     glfwEnable(GLFW_MOUSE_CURSOR);
     glfwEnable(GLFW_KEY_REPEAT);
@@ -533,17 +537,12 @@ std::string getExtension(const std::string& filename)
 int main(int argc, char **argv)
 {
     if (argc == 1) {
-        std::cerr << "missing input file!" << std::endl;
+        std::cerr << "[ERROR] Missing Input File!" << std::endl;
         return 1;
     }
     
     glutInit(&argc,argv);
     
-    
-
-	
-	
-
     try {
         std::ifstream file(argv[1]);
         std::string ext = getExtension(argv[1]);

@@ -29,6 +29,9 @@
 //   vector<Segment> segments = ...;
 //   dc2d.process(from, to, segments);
 //
+
+typedef unsigned int cBufferType;
+
 class DepthComplexity2D {
 public:
   static const char* 							V_PATH;
@@ -80,10 +83,9 @@ private:
 
 
 private:
-
-
+  //buffers
   GLuint                                		_textureId;
-  GLuint										_textureId2;
+  GLuint										                _textureId2;
   GLuint                                		_fboId;
   GLuint                                		_rboId;
   
@@ -107,10 +109,11 @@ private:
   unsigned                              		_threshold;
 
   // Outputs
-  unsigned                              		_maximum;
-  std::vector<unsigned long long>       		_histogram;
+  unsigned                              		    _maximum;
+  std::vector<unsigned long long>       		    _histogram;
   std::set<Segment, classcomp>                  _maximumRays;
   std::vector< std::set<Segment,classcomp> >   	_goodRays;
+  cBufferType*                                 _bufferCounter;
   
   
   // fbo
