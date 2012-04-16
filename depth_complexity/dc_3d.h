@@ -31,12 +31,12 @@ public:
   void setComputeGoodRays(bool computeGoodRays);
   void setThreshold(unsigned threshold);
 
-  unsigned maximum() const { return _maximum; }
+  unsigned int maximum() const { return _maximum; }
   const std::set<Segment, classcomp> &maximumRays() const { return _maximumRays; }
   const std::set<Segment, classcomp> &goodRays(int intersect) const { return _goodRays[intersect]; }
   const std::vector<Segment> &usedPlanes() const { return _usedPlanes; }
   const std::vector<Point> &intersectionPoints() const { return _intersectionPoints; }
-  unsigned getThreshold() { return _threshold; }
+  unsigned int getThreshold() { return _threshold; }
 
   void writeHistogram(std::ostream& out);
   void writeRays(std::ostream& out);
@@ -61,8 +61,8 @@ private:
   int _fboWidth;
   int _fboHeight;
   int _discretSteps;
-  unsigned _maximum;
-  unsigned _threshold;
+  unsigned int _maximum;
+  unsigned int _threshold;
 
   // State
   bool _computeHistogram;

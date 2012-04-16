@@ -23,7 +23,7 @@ DepthComplexity3D::DepthComplexity3D(int fboWidth, int fboHeight, int discretSte
   _computeHistogram(false),
   _computeMaximumRays(false),
   _computeGoodRays(false) {
-  
+
   _goodRays.resize(1);
   _dc2d = new DepthComplexity2D(_fboWidth, _fboHeight);
 }
@@ -133,19 +133,13 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
   vec3d c6 = vec3d(aabb.min.x, aabb.max.y, aabb.max.z);
   vec3d c7 = vec3d(aabb.max.x, aabb.max.y, aabb.max.z);
 
-
-  // generate all planes varying on z
-  //const unsigned steps = _discretSteps;
-  
+  // generate all planes varying on z  
   const unsigned steps = _discretSteps;
   
-  unsigned az = 1;
-  unsigned bz = 1;
-  
-  //for (unsigned az = 0; az<steps; ++az) {
-    // double t = 3*az / (steps - 1.0) - 1; // [-1, 2]
+  for (unsigned az = 0; az<steps; ++az) {
+    //double t = 3*az / (steps - 1.0) - 1; // [-1, 2]
     double t = az / (steps - 1.0);
-    //for (unsigned bz = 0; bz<steps; ++bz) {
+    for (unsigned bz = 0; bz<steps; ++bz) {
       // double u = 3*bz / (steps - 1.0) - 1; // [-1, 2]
       double u = bz / (steps - 1.0);
       Segment sa, sb;
@@ -224,7 +218,8 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
 	  
       _dc2d->process(sa, sb, segments);
 
-      unsigned tempMaximum = _dc2d->maximum();
+      unsigned int tempMaximum = _dc2d->maximum();
+
       if (tempMaximum >= _maximum) {
         if (tempMaximum > _maximum) {
           _maximumRays.clear();
@@ -260,15 +255,15 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
       
       if(_computeGoodRays) {
         //std::cout << "size of goodRays: " << _goodRays.size() << " and _threshold = " << _threshold << std::endl;
-        for(unsigned i = _threshold ; i <= tempMaximum ; ++i) {
+        for(unsigned int i = _threshold ; i <= tempMaximum ; ++i) {
           //std::cout << "i = " << i << " and size(i) = " << _dc2d->goodRays(i).size() << std::endl;
           std::set<Segment,classcomp> tempRays = _dc2d->goodRays(i);
           _goodRays[i].insert(tempRays.begin(), tempRays.end());
         }
       }
-    //}
-  //}
-  printf("5\n");
+    }
+  }
+  //printf("5\n");
 }
 
 //INPUT: plane -> The normal vector of the plane which we will check overlaps;

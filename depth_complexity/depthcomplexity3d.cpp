@@ -423,6 +423,7 @@ int doInteractive(const TriMesh& mesh)
     glfwEnable(GLFW_KEY_REPEAT);
     glfwSetWindowTitle("Plane-Triangle intersection test");
 
+	
     // Initialize AntTweakBar
     if( !TwInit(TW_OPENGL, NULL) )
     {
@@ -440,7 +441,7 @@ int doInteractive(const TriMesh& mesh)
 
     TwBar *bar = TwNewBar("Controls");
     TwDefine(" GLOBAL ");
-
+	
     vec3f top(0.25, 0.25, .5), mid(0.75, 0.75, .85), bot(1, 1, 1);
 
     vec4f objdiff(0.55, 0.5, 0, 0.5), objspec(.75, .75, .75, .2);

@@ -17,6 +17,7 @@ void drawTriangle(const Point &p1, const Point &p2, const Point &p3);
 
 
 
+
 DepthComplexity2D::DepthComplexity2D(const int fboWidth, const int fboHeight){
   _fboWidth = fboWidth;
   _fboHeight = fboHeight;
@@ -29,12 +30,16 @@ DepthComplexity2D::DepthComplexity2D(const int fboWidth, const int fboHeight){
   _pShaderId = -1;
   _shaderProgram = -1;
   _status = true;   
-  _bufferCounter = new cBufferType[_fboHeight*_fboWidth];
-  for (int i=0; i<_fboHeight*_fboWidth; ++i) { _bufferCounter[i] = (cBufferType)10;}
+  _bufferCounter = new unsigned int[_fboHeight*_fboWidth];
+  
 
   assert(initFBO());  
   createShader();
   attachShader();  
+}
+
+DepthComplexity2D::~DepthComplexity2D(){
+	delete [] _bufferCounter;
 }
 
 void DepthComplexity2D::createShader(){
@@ -144,63 +149,44 @@ bool checkShadersStatus(GLuint vShaderID, GLuint pShaderID){
 
 bool DepthComplexity2D::initFBO() {
   
-  // Use texture 1 as COLOR buffer for FBO
-  glGenTextures(1, &_textureId);
-  glBindTexture(GL_TEXTURE_2D, _textureId);
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  //glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  //glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, _fboWidth, _fboHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-  glBindTexture(GL_TEXTURE_2D, 0);
-    
-     
-  //Use texture2 as a counter per-pixel Buffer//
-  glGenTextures(1, &_textureId2);
-  glBindTexture(GL_TEXTURE_2D, _textureId2);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  //glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  //glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-  //glTextureImage2DEXT(_textureId2, GL_TEXTURE_2D, 0, GL_RGBA8, 
-  //                  w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixmap);
-  //Uses GL_R32F instead of GL_R32I that is not working in R257.15
-  //glTextureImage2DEXT()
-  //glTexImage2D(GL_TEXTURE_2D, 0, GL_R16UI, _fboWidth, _fboHeight, 0,  GL_RED, GL_UNSIGNED_SHORT, _bufferCounter);
-	//glBindImageTextureEXT(1, _textureId2, 0, false, 0,  GL_READ_WRITE, GL_R16UI);
-    
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_R32UI, _fboWidth, _fboHeight, 0,  GL_RED, GL_UNSIGNED_INT, _bufferCounter);
-  glBindImageTextureEXT(0, _textureId2, 0, GL_FALSE, 0,  GL_READ_WRITE, GL_R32UI);
-  glBindTexture(GL_TEXTURE_2D, 0);
-  
-
-  /*
-  glGenTextures(1, &_textureId2);
-  glBindTexture(GL_TEXTURE_2D, _textureId2);
+  // Use a texture as COLOR buffer for FBO -----------------------------
+  glGenTextures(1, &_cboTexId);
+  glBindTexture(GL_TEXTURE_2D, _cboTexId);
+  // Set texture filters
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16, _fboWidth, _fboHeight, 0, GL_RGBA, GL_UNSIGNED_SHORT, NULL);
+  
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, _fboWidth, _fboHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE , NULL);
   glBindTexture(GL_TEXTURE_2D, 0);
-	*/
-  // User renderbuffer as DEPTH buffer
+
+  //Use a texture as a COUNTER per-pixel Buffer ------------------------
+  glGenTextures(1, &_counterBuffId);
+  glBindTexture(GL_TEXTURE_2D, _counterBuffId);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  
+  //bind texture to a image unit  
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_R32UI, _fboWidth, _fboHeight, 0,  GL_RED_INTEGER, GL_UNSIGNED_INT, _bufferCounter);
+  glBindImageTextureEXT(0, _counterBuffId, 0, GL_FALSE, 0,  GL_READ_WRITE, GL_R32UI);
+  glBindTexture(GL_TEXTURE_2D, 0);
+
+  // User renderbuffer as DEPTH buffer ---------------------------------
   glGenRenderbuffersEXT(1, &_rboId);
   glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, _rboId);
   glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT, _fboWidth, _fboHeight);
   glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, 0);
 
-  // Create framebuffer object
+  // Create framebuffer object -----------------------------------------
   glGenFramebuffersEXT(1, &_fboId);
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _fboId);
 
   // Assign COLOR1, COLOR2 and DEPTH buffers to the render buffer.
-  glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, _textureId, 0);
-  //glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT1_EXT, GL_TEXTURE_2D, _textureId2, 0);
+  glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, _cboTexId, 0);
   glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, _rboId);
-  //glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, _rboId);
 
   // Check if everything is ok.
   _status = checkFramebufferStatus();
@@ -262,8 +248,9 @@ void DepthComplexity2D::process(
 	  std::cerr << "[ERROR] Check FBO or SHADERS." << std::endl;
 	  return;
   }
+  for (int i=0; i<_fboHeight*_fboWidth; ++i) { _bufferCounter[i] = 0;}
+  //glPixelStorei(GL_UNPACK_ALIGNMENT, 1);  
   
-  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);  
   findDepthComplexity2D();
   
   if (_computeHistogram or _computeMaximumRays or _computeGoodRays)
@@ -276,129 +263,144 @@ void DepthComplexity2D::process(
 void DepthComplexity2D::findDepthComplexity2D() {
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _fboId);  
   
-  // Disable LIGHT, BLENDING and TEXTURE
-  glDisable(GL_LIGHT0);
-  glDisable(GL_LIGHTING);
-  glDisable(GL_BLEND);
-  //glDisable(GL_TEXTURE_2D);
-  glDisable(GL_LINE_SMOOTH);
-  glDisable(GL_DEPTH_TEST);
-    
-  glPushAttrib(GL_VIEWPORT_BIT);
+  glPushAttrib(GL_VIEWPORT_BIT | GL_ENABLE_BIT);
     glViewport(0, 0, _fboWidth, _fboHeight);
+	
+	// Disable LIGHT, BLENDING and TEXTURE
+	//glDisable(GL_LIGHT0);   // dont need, fixed pipeline funcionality
+	//glDisable(GL_LIGHTING); // dont need, fixed pipeline funcionality
+	//glDisable(GL_BLEND);;   // dont need, fixed pipeline funcionality
+	glDisable(GL_LINE_SMOOTH);
+	glDisable(GL_DEPTH_TEST);
 		
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
       glLoadIdentity();
-      gluOrtho2D(0., 1.0, 0., 1.0);
+      gluOrtho2D(0.0, 1.0, 0.0, 1.0);
       
       glMatrixMode(GL_MODELVIEW);
-      glPushMatrix();
-      glLoadIdentity();
+		glPushMatrix();
+		glLoadIdentity();
 
-      glActiveTexture(GL_TEXTURE0);
-      glEnable(GL_TEXTURE_2D);
-      glBindTexture(GL_TEXTURE_2D, _textureId2);   
+		glActiveTexture(GL_TEXTURE0);
+		glEnable(GL_TEXTURE_2D);
+		glBindTexture(GL_TEXTURE_2D, _counterBuffId);   
 		
-		  //Pass MODELVIEW and PROJECTION matrices to Shader
-		  GLfloat model[16],projection[16];
-		  glGetFloatv(GL_MODELVIEW_MATRIX, model);
-		  glGetFloatv(GL_PROJECTION_MATRIX, projection);
-		  glProgramUniformMatrix4fvEXT(_shaderProgram, glGetUniformLocation(_shaderProgram, "modelViewMat"), 1, GL_FALSE, model);
-		  glProgramUniformMatrix4fvEXT(_shaderProgram, glGetUniformLocation(_shaderProgram, "projectionMat"), 1, GL_FALSE, projection);
+		//Use Shader
+		glUseProgram(_shaderProgram);
+		
+		//Pass MODELVIEW and PROJECTION matrices to Shader
+		GLfloat model[16],projection[16];
+		glGetFloatv(GL_MODELVIEW_MATRIX, model);
+		glGetFloatv(GL_PROJECTION_MATRIX, projection);
+		glProgramUniformMatrix4fv(_shaderProgram, glGetUniformLocation(_shaderProgram, "modelViewMat"), 1, GL_FALSE, model);
+		glProgramUniformMatrix4fv(_shaderProgram, glGetUniformLocation(_shaderProgram, "projectionMat"), 1, GL_FALSE, projection);
       
-      //Pass counter buff texture
-		  glProgramUniform1iEXT(_shaderProgram, glGetUniformLocation(_shaderProgram, "counterBuff"), 0);
+        //Pass counter buff texture
+		glProgramUniform1iEXT(_shaderProgram, glGetUniformLocation(_shaderProgram, "counterBuff"), 0);
 
-		  //Use Shader
-		  glUseProgram(_shaderProgram);
+
 		  
-		   glClearColor(0.f, 0.f, 0.f, 0.f);    
-		   glClear(GL_DEPTH_BUFFER_BIT  | GL_COLOR_BUFFER_BIT); 
+		glClearColor(0.f, 0.f, 0.f, 0.f);    
+		glClear(GL_COLOR_BUFFER_BIT);    //GL_DEPTH_BUFFER_BIT  | 
 
-		   glDrawBuffer(GL_COLOR_ATTACHMENT0_EXT);		   
-
-		   //glColor4f(0.5f, 0.5f, 0.5f, 1.0f);
-       glColor4us(100,100,100,100);
+        //glColor4f(1.0f,1.0f,1.0f,1.0f);
        
-		   glBegin(GL_QUADS);
-         glTexCoord2f(0.0f,0.0f);
-         glVertex2f(0.0f, 0.0f);
-         
-         glTexCoord2f(1.0f,0.0f);
-         glVertex2f(1.0f, 0.0f);
-         
-         glTexCoord2f(1.0f,1.0f);
-         glVertex2f(1.0f, 1.0f);
-         
-         glTexCoord2f(0.0f,1.0f);
-         glVertex2f(0.0f, 1.0f);
-		   glEnd();
+		double pixelSize = 1.0/512;
+		double step = 0.5*pixelSize*1.41421356;
+		for (unsigned i=0; i<_segments->size(); ++i) {
+		  if (!_segments->at(i).active) continue;
+		
+		  Segment Tv0 = computeDualSegmentFromPoint(_segments->at(i).a);
+		  Segment Tv1 = computeDualSegmentFromPoint(_segments->at(i).b);
+
+		  if (Tv0.a.y < Tv1.a.y) std::swap(Tv0, Tv1);
+		  vec3d u = Tv0.b - Tv0.a; u.normalize();
+		  vec3d v = Tv1.b - Tv1.a; v.normalize();
+		  vec3d dir;
+
+		  double t1, t2;
+		  if (segmentIntersection2D(Tv0, Tv1, &t1, &t2) ) {
+			// Shrink triangles
+			dir = vec3d(u.y, -u.x);
+			Segment s1(Tv0.a + dir*step, Tv0.b + dir*step);
+			dir = vec3d(-v.y, v.x);
+			Segment s2(Tv1.a + dir*step, Tv1.b + dir*step);
+
+		    if (s1.a.y > s2.a.y) {
+			  double t1, t2;
+			  if (lineIntersection2D(s1, s2, &t1, &t2) ) {
+			    vec3d inter = s1.a*(1.0-t1) + s1.b*t1;
+			    float myVertexArray[6] = {s1.a.x, s1.a.y,
+										  inter.x, inter.y,
+										  s2.a.x, s2.a.y};
+			    // first get the attribute-location
+				GLint vertexLocation = glGetAttribLocation(_shaderProgram, "vertexPos");
+				// enable an array for the attribute
+				glEnableVertexAttribArray(vertexLocation);
+				// set attribute pointer
+				glVertexAttribPointer(vertexLocation, 2, GL_FLOAT,GL_FALSE, 0, myVertexArray);
+				// Draw ("render") the triangle
+				glDrawArrays(GL_TRIANGLES, 0, 3);
+				// Done with rendering. Disable vertex attribute array
+				glDisableVertexAttribArray(vertexLocation);
+
+			    //drawTriangle(s1.a, inter, s2.a);
+			  }
+			}
+
+			dir = vec3d(-u.y, u.x);
+			Segment s3(Tv0.a + dir*step, Tv0.b + dir*step);
+			dir = vec3d(v.y, -v.x);
+			Segment s4(Tv1.a + dir*step, Tv1.b + dir*step);
+
+			if (s3.b.y < s4.b.y) {
+			  double t1, t2;
+			  if (lineIntersection2D(s3, s4, &t1, &t2) ) {
+				vec3d inter = s3.a*(1.f-t1) + s3.b*t1;
+			    float myVertexArray[6] = {s3.b.x, s3.b.y,
+										  inter.x, inter.y,
+										  s4.b.x, s4.b.y};
+			    // first get the attribute-location
+				GLint vertexLocation = glGetAttribLocation(_shaderProgram, "vertexPos");
+				// enable an array for the attribute
+				glEnableVertexAttribArray(vertexLocation);
+				// set attribute pointer
+				glVertexAttribPointer(vertexLocation, 2, GL_FLOAT,GL_FALSE, 0, myVertexArray);
+				// Draw ("render") the triangle
+				glDrawArrays(GL_TRIANGLES, 0, 3);
+				// Done with rendering. Disable vertex attribute array
+				glDisableVertexAttribArray(vertexLocation);
+				//drawTriangle(s3.b, inter, s4.b);
+			  }
+			}
+          } else {
+            dir = vec3d(u.y, -u.x);
+            Segment s1(Tv0.a + dir*step, Tv0.b + dir*step);
+            dir = vec3d(-v.y, v.x);
+            Segment s2(Tv1.a + dir*step, Tv1.b + dir*step);
+            if (s1.a.y > s2.a.y and s1.b.y > s2.b.y) {
+              //drawQuad(s1.a, s1.b, s2.b, s2.a);
+            }
+          }
+        }
 		   
-       glFlush();
-       glFinish();
-       //Ensure that all global memory write are done before starting to render
-       glMemoryBarrierEXT(GL_SHADER_GLOBAL_ACCESS_BARRIER_BIT_NV);
-  
-       //glMemoryBarrierEXT(GL_ALL_BARRIER_BITS);
-       
-       //glBindImageTextureEXT(0, 0, 0, GL_FALSE, 0,  GL_READ_WRITE, GL_R32UI);
-       //glBindTexture(GL_TEXTURE_2D, 0);
-       //glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, _textureId2, 0);
-       
-       
-       //glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);		 
-       //std::cout << "teste\n";
-       //glFlush();
-       
-       //Ensure that all global memory write are done before resolving
-       //glMemoryBarrierEXT(GL_ALL_BARRIER_BITS);
-       	//Ensure that all global memory write are done before starting to render
-        //glMemoryBarrierEXT(GL_SHADER_GLOBAL_ACCESS_BARRIER_BIT_NV);
-       
-       //glBindImageTextureEXT(0, 0, 0, GL_FALSE, 0,  GL_READ_WRITE, GL_R32UI);
-       //glBindTexture(GL_TEXTURE_2D, 0);
-       //glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, _textureId2, 0);
-       //glBindImageTextureEXT(1, 0, 0, false, 0,  GL_READ_WRITE, GL_R32UI);
-       
-       //std::cout << "erro absurdo \n";
-       const int pixelNumber = _fboWidth * _fboHeight;
-			// std::cout << "-MAX:"<< (float)*(std::max_element(_bufferCounter, _bufferCounter + pixelNumber)) << "\n";
-      /*
-          void glReadPixels(	GLint  	x,
-          GLint  	y,
-          GLsizei  	width,
-          GLsizei  	height,
-          GLenum  	format,
-          GLenum  	type,
-          GLvoid *  	data);
-      */
-      GLubyte cbo[pixelNumber];
+        //Ensure that all texture writing is done
+        glMemoryBarrierEXT(GL_TEXTURE_UPDATE_BARRIER_BIT_EXT);
+ 
+	
+		_maximum = findMaxValueInCounterBuffer();
+        glBindTexture(GL_TEXTURE_2D, 0);   
 
-      for (int i=0; i< pixelNumber; ++i){ 
-         std::cout << "val: "<<_bufferCounter[i] << std::endl;
-      }
-      
-      
-      glBindTexture(GL_TEXTURE_2D, 0); 
-
-      glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
-      glReadPixels(0,0,_fboWidth,_fboHeight, GL_RED, GL_FLOAT, cbo );
-      
-      
-      printf("---> Max Depth Complexity: %d\n",(int)*(std::max_element(_bufferCounter, _bufferCounter + pixelNumber)));
-		   //std::cout << "teste";
-	  
-      
-
-	  glMatrixMode(GL_MODELVIEW);
-	  glPopMatrix();
+	    glMatrixMode(GL_MODELVIEW);
+	    glPopMatrix();
      
 	  glMatrixMode(GL_PROJECTION);
-	  glPopMatrix();
+	glPopMatrix();
 	  
-      glPopAttrib();
-      glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+	  glEnable(GL_DEPTH_TEST);
+    glPopAttrib();
+  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 }
 
 Segment DepthComplexity2D::computeDualSegmentFromPoint(const Point &p) {
@@ -435,54 +437,38 @@ void drawTriangle(const Point &p1, const Point &p2, const Point &p3) {
   glEnd();
 }
 
-unsigned short int DepthComplexity2D::findMaxValueInStencil() {
+unsigned int DepthComplexity2D::findMaxValueInCounterBuffer() {
   const int pixelNumber = _fboWidth * _fboHeight;
-  GLushort colorBuffer[pixelNumber];
+  unsigned int colorBuffer[pixelNumber];
   
-
-  //glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE32UI_EXT, _fboWidth, _fboHeight, 0, GL_LUMINANCE_INTEGER_EXT, GL_UNSIGNED_INT, NULL);
-  glReadPixels(0, 0, _fboWidth, _fboHeight, GL_LUMINANCE, GL_UNSIGNED_SHORT, colorBuffer);
-  unsigned short int val;
-  val = *(std::max_element(colorBuffer, colorBuffer + pixelNumber));
-  std::cout << "-MAX:"<< val << "\n";
-  return val;
- 
+  glBindTexture(GL_TEXTURE_2D, _counterBuffId);
+  glGetTexImage( GL_TEXTURE_2D, 0 , GL_RED_INTEGER, GL_UNSIGNED_INT, colorBuffer ); 
+  glBindTexture(GL_TEXTURE_2D, 0);
   
-  
+  return *(std::max_element(colorBuffer, colorBuffer + pixelNumber));
 }
 
 void DepthComplexity2D::findMaximumRaysAndHistogram() {
-	
   _maximumRays.clear();
   _goodRays.clear();
   _goodRays.resize(_maximum + 1);
   _histogram.clear();
   _histogram.resize(_maximum + 1);
-  
-  //glPixelTransferi(GL_MAP_STENCIL, GL_TRUE);
 
-  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _fboId);
-  glPushAttrib(GL_VIEWPORT_BIT);
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _fboId);
+    glPushAttrib(GL_VIEWPORT_BIT);
     glViewport(0.0, 0.0, _fboWidth, _fboHeight);
     
-	
-    GLushort colorBuffer[_fboWidth*_fboHeight];
-    glReadPixels(0, 0, _fboWidth, _fboHeight, GL_RED, GL_UNSIGNED_SHORT, colorBuffer);
+    unsigned int colorBuffer[_fboWidth*_fboHeight];
     
-    //printf("stencil: \n");
-    //unsigned value = *(std::max_element(stencilSave, stencilSave + _fboWidth*_fboHeight));
-    //std::cout << "maxxx: " << value << "\n";
-	//std::cout << "height: " << _fboHeight << "\n";
+    glBindTexture(GL_TEXTURE_2D, _counterBuffId);
+    glGetTexImage( GL_TEXTURE_2D, 0 , GL_RED_INTEGER, GL_UNSIGNED_INT, colorBuffer ); 
+    glBindTexture(GL_TEXTURE_2D, 0);
+    
     for(int r=0; r<_fboHeight; ++r) {
       for(int c=0; c<_fboWidth; ++c) {
-        //GLubyte val = stencilSave[r*_fboWidth+c];
-       
-        //printf("val:%u\n", colorBuffer[r*_fboWidth+c]);
-        unsigned val = colorBuffer[r*_fboWidth+c];
-        //std::cout << "cr: "<< r*_fboWidth+c << "\n";
-        //printf("val: %d",val);
-		//if (val==7)
-		//	std::cout << "eh isso aí\n";
+        unsigned int val = colorBuffer[r*_fboWidth+c];
+
         if (_computeHistogram) _histogram[val]++;
 
         if ((_computeMaximumRays && val == _maximum) || (_computeGoodRays && val >= _threshold)) {
@@ -492,8 +478,7 @@ void DepthComplexity2D::findMaximumRaysAndHistogram() {
           double t2 = r/(double)_fboHeight;
           seg.a = _from.a*(1.f-t1) + _from.b*t1;
           seg.b = _to.a*(1.f-t2) + _to.b*t2;          
-		  seg.sortPoints(); 
-		  
+		  seg.sortPoints(); 		  
 		         
           if (val == _maximum){
 		    
@@ -502,15 +487,13 @@ void DepthComplexity2D::findMaximumRaysAndHistogram() {
             }
           else if (val >= _threshold){
 			   
-           //if (_goodRays[val].size() < 200)
+          if (_goodRays[val].size() < 200)
             _goodRays[val].insert(seg);
             
 		  }
-		  //std::cout << "fuck2\n";
         }
       }
     }
-  std::cout << "fuck yeah\n";
   glPopAttrib();
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 }

@@ -29,8 +29,7 @@
 //   vector<Segment> segments = ...;
 //   dc2d.process(from, to, segments);
 //
-
-typedef unsigned int cBufferType;
+typedef float TCounterBuffer;
 
 class DepthComplexity2D {
 public:
@@ -38,6 +37,7 @@ public:
   static const char* 							P_PATH;
   
   DepthComplexity2D(const int fboWidth, const int fboHeight);
+  ~DepthComplexity2D();
 
   void setComputeHistogram(bool computeHistogram) { this->_computeHistogram = computeHistogram; }
   void setComputeMaximumRays(bool computeMaximumRays) {this->_computeMaximumRays = computeMaximumRays; }
@@ -53,11 +53,11 @@ public:
   void copyStencilToColor();
 
   // Methods to obtain outputs
-  unsigned                         maximum() const           { return _maximum; }
+  unsigned int                     maximum() const           { return _maximum; }
   std::vector<unsigned long long>  histogram()               { return _histogram; }
   std::set<Segment,classcomp>      maximumRays()             { return _maximumRays; }
   std::set<Segment,classcomp>      goodRays(unsigned i)      { return _goodRays[i]; }
-  GLuint                           textureId() const         { return _textureId; }
+  GLuint                           textureId() const         { return _cboTexId; }
 
 private:
   // Create framebuffer objects
@@ -72,20 +72,20 @@ private:
   Segment computeDualSegmentFromPoint(const Point &p);
 
   // Go through the framebuffer to find the maximum value.
-  unsigned short int findMaxValueInStencil();
+  unsigned int findMaxValueInCounterBuffer();
 
   // Compute depth complexity using rays from one segment to the other.
   void findDepthComplexity2D();
 
-  //
+
   void findMaximumRaysAndHistogram();
   
 
 
 private:
   //buffers
-  GLuint                                		_textureId;
-  GLuint										                _textureId2;
+  GLuint                                		_cboTexId;
+  GLuint										_counterBuffId;
   GLuint                                		_fboId;
   GLuint                                		_rboId;
   
@@ -109,11 +109,11 @@ private:
   unsigned                              		_threshold;
 
   // Outputs
-  unsigned                              		    _maximum;
-  std::vector<unsigned long long>       		    _histogram;
+  unsigned int                              	_maximum;
+  std::vector<unsigned long long>       		_histogram;
   std::set<Segment, classcomp>                  _maximumRays;
   std::vector< std::set<Segment,classcomp> >   	_goodRays;
-  cBufferType*                                 _bufferCounter;
+  unsigned int                                  *_bufferCounter;
   
   
   // fbo
