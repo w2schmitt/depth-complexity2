@@ -412,11 +412,11 @@ int doInteractive(const TriMesh& mesh)
     }
     
     // Print OPENGL, SHADER and GLEW versions
-    std::cout << "----- << VERSION >>\n";
-    std::cout << "OPENGL VERSION: " << glGetString(GL_VERSION) << std::endl;
-    std::cout << "SHADER VERSION: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
+    std::clog << "----- << VERSION >>\n";
+    std::clog << "OPENGL VERSION: " << glGetString(GL_VERSION) << std::endl;
+    std::clog << "SHADER VERSION: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
     std::cerr << "GLEW VERSION: "<<glewGetString(GLEW_VERSION)<<std::endl;
-    std::cout << "---------------- \n";
+    std::clog << "---------------- \n";
  
 
     glfwEnable(GLFW_MOUSE_CURSOR);
@@ -449,9 +449,9 @@ int doInteractive(const TriMesh& mesh)
     bool showObj = true;
     
     #ifdef USE_RANDOM_DC3D
-    dc3d = new RDepthComplexity3D(512, 512, 10);
+    dc3d = new RDepthComplexity3D(512, 512, 2);
     #else
-    dc3d = new DepthComplexity3D(512, 512, 10);
+    dc3d = new DepthComplexity3D(512, 512, 2);
     #endif
     dc3d->setComputeMaximumRays(true);
     dc3d->setThreshold(10);

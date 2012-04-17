@@ -282,12 +282,17 @@ void DepthComplexity2D::findDepthComplexity2D() {
   glPushAttrib(GL_VIEWPORT_BIT | GL_ENABLE_BIT);
     glViewport(0, 0, _fboWidth, _fboHeight);
 	
-	// Disable LIGHT, BLENDING and TEXTURE
-	//glDisable(GL_LIGHT0);   // dont need, fixed pipeline funcionality
-	//glDisable(GL_LIGHTING); // dont need, fixed pipeline funcionality
-	//glDisable(GL_BLEND);   // dont need, fixed pipeline funcionality
-	glDisable(GL_LINE_SMOOTH);
-	glDisable(GL_DEPTH_TEST);
+
+
+				glDisable(GL_POINT_SMOOTH);
+	   glDisable(GL_LINE_SMOOTH);
+				glDisable(GL_POLYGON_SMOOTH);
+				
+				glHint(GL_POLYGON_SMOOTH_HINT,GL_FASTEST);
+				glHint(GL_POINT_SMOOTH, GL_FASTEST);
+				glHint(GL_LINE_SMOOTH, GL_FASTEST);
+				
+	   glDisable(GL_DEPTH_TEST);
 		
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
@@ -303,11 +308,8 @@ void DepthComplexity2D::findDepthComplexity2D() {
 		glBindTexture(GL_TEXTURE_2D, _counterBuffId);   
 		
     
-     // CLEAR ======================================================================================================================
-    //attachShader();
-
+  // CLEAR ======================================================================================================================
 		//Use Shader
-		//glUseProgram(_shaderClearProgramId);
 		glUseProgram(_shaderProgram2);
     
 		//Pass MODELVIEW and PROJECTION matrices to Shader
@@ -316,8 +318,6 @@ void DepthComplexity2D::findDepthComplexity2D() {
 		glGetFloatv(GL_PROJECTION_MATRIX, projection);
 		glProgramUniformMatrix4fv(_shaderProgram2, glGetUniformLocation(_shaderProgram2, "modelViewMat"), 1, GL_FALSE, model);
 		glProgramUniformMatrix4fv(_shaderProgram2, glGetUniformLocation(_shaderProgram2, "projectionMat"), 1, GL_FALSE, projection);
-      
-    //std::cout << "glProjection:\n" << projection[0] << " - " << projection[5] << " - " << projection[10] << std::endl;
     
     //Pass counter buff texture
 		glProgramUniform1iEXT(_shaderProgram2, glGetUniformLocation(_shaderProgram2, "counterBuff"), 0);
@@ -390,8 +390,8 @@ void DepthComplexity2D::findDepthComplexity2D() {
     glEnd();
     */
     
-		double pixelSize = 1.0/512;
-		double step = 0.5*pixelSize*1.41421356;
+		double pixelSize = 1.0/512.0;
+		double step = 0.5*pixelSize*sqrt(2); //1.41421356;
 		for (unsigned i=0; i<_segments->size(); ++i) {
 		  if (!_segments->at(i).active) continue;
 		
@@ -399,93 +399,72 @@ void DepthComplexity2D::findDepthComplexity2D() {
 		  Segment Tv1 = computeDualSegmentFromPoint(_segments->at(i).b);
 
 		  if (Tv0.a.y < Tv1.a.y) std::swap(Tv0, Tv1);
-		  vec3d u = Tv0.b - Tv0.a; u.normalize();
-		  vec3d v = Tv1.b - Tv1.a; v.normalize();
-		  vec3d dir;
 
 		  double t1, t2;
-		  if (segmentIntersection2D(Tv0, Tv1, &t1, &t2) ) {
-			// Shrink triangles
-			dir = vec3d(u.y, -u.x);
-			Segment s1(Tv0.a + dir*step, Tv0.b + dir*step);
-			dir = vec3d(-v.y, v.x);
-			Segment s2(Tv1.a + dir*step, Tv1.b + dir*step);
+		  if (segmentIntersection2D(Tv0, Tv1, &t1, &t2) ) {			
+						double t1, t2;
+						
+						// Triangle 1
+						if (lineIntersection2D(Tv0.a, Tv1.a, &t1, &t2)) {
+								// find intersection point
+								vec3d inter = Tv0.a*(1.0-t1) + Tv0.b*t1;
 
-		    if (s1.a.y > s2.a.y) {
-			  double t1, t2;
-			  if (lineIntersection2D(s1, s2, &t1, &t2) ) {
-			    vec3d inter = s1.a*(1.0-t1) + s1.b*t1;
-          /*
-			    float myVertexArray[6] = {s1.a.x, s1.a.y,
-										  inter.x, inter.y,
-										  s2.a.x, s2.a.y};
-			    // first get the attribute-location
-				GLint vertexLocation = glGetAttribLocation(_shaderProgram, "vertexPos");
-				// enable an array for the attribute
-				glEnableVertexAttribArray(vertexLocation);
-				// set attribute pointer
-				glVertexAttribPointer(vertexLocation, 2, GL_FLOAT,GL_FALSE, 0, myVertexArray);
-				// Draw ("render") the triangle
-				glDrawArrays(GL_TRIANGLES, 0, 3);
-				// Done with rendering. Disable vertex attribute array
-				glDisableVertexAttribArray(vertexLocation);
-        */
-          drawTriangle(s1.a, inter, s2.a);
-			  }
-			}
+								// find median points of the triangle sides
+								vec3d pm1 = (Tv0.a + inter)*0.5; // for Tv1
+								vec3d pm2 = (inter + Tv1.a)*0.5; // for Tv0
+								vec3d pm3 = (Tv1.a + Tv0.a)*0.5; // for inter
+								
+								// find inward directions for each vertex, to shrink triangle;
+								vec3d u = pm1 - Tv1.a; u.normalize();
+								vec3d v = pm2 - Tv0.a; v.normalize();
+								vec3d t = pm3 - inter; t.normalize();
+	
+								// Triangle 1
+								Triangle tri;
+								tri.a = Tv0.a + v*step;
+								tri.b = Tv1.a + u*step;
+								tri.c = inter + t*step;
 
-			dir = vec3d(-u.y, u.x);
-			Segment s3(Tv0.a + dir*step, Tv0.b + dir*step);
-			dir = vec3d(v.y, -v.x);
-			Segment s4(Tv1.a + dir*step, Tv1.b + dir*step);
-      
-			if (s3.b.y < s4.b.y) {
-			  double t1, t2;
-			  if (lineIntersection2D(s3, s4, &t1, &t2) ) {
-				vec3d inter = s3.a*(1.f-t1) + s3.b*t1;
-        /*
-			  float myVertexArray[6] = {s3.b.x, s3.b.y,
-										  inter.x, inter.y,
-										  s4.b.x, s4.b.y};
-			    // first get the attribute-location
-				GLint vertexLocation = glGetAttribLocation(_shaderProgram, "vertexPos");
-				// enable an array for the attribute
-				glEnableVertexAttribArray(vertexLocation);
-				// set attribute pointer
-				glVertexAttribPointer(vertexLocation, 2, GL_FLOAT,GL_FALSE, 0, myVertexArray);
-				// Draw ("render") the triangle
-				glDrawArrays(GL_TRIANGLES, 0, 3);
-				// Done with rendering. Disable vertex attribute array
-				glDisableVertexAttribArray(vertexLocation);
-				*/
-        drawTriangle(s3.b, inter, s4.b);
-			  
-        }
-        
-			}
-          } else {
-            dir = vec3d(u.y, -u.x);
-            Segment s1(Tv0.a + dir*step, Tv0.b + dir*step);
-            dir = vec3d(-v.y, v.x);
-            Segment s2(Tv1.a + dir*step, Tv1.b + dir*step);
+								if (tri.a.y > tri.b.y) {
+										drawTriangle(tri.a, tri.c, tri.b);
+								}
+						}
+						
+						// Triangle 2
+						if (lineIntersection2D(Tv0.b, Tv1.b, &t1, &t2) ) {
+								vec3d inter = Tv1.a*(1.f-t1) + Tv1.b*t1;
+						
+								// find median points of the triangle sides
+								vec3d pm1 = (Tv0.b + inter)*0.5; // for Tv1
+								vec3d pm2 = (inter + Tv1.b)*0.5; // for Tv0
+								vec3d pm3 = (Tv1.b + Tv0.b)*0.5; // for inter
+
+							 // find inward directions for each vertex, to shrink triangle;
+								vec3d u = pm1 - Tv1.b; u.normalize();
+								vec3d v = pm2 - Tv0.b; v.normalize();
+								vec3d t = pm3 - inter; t.normalise();
+
+								// Triangle 1
+								Triangle tri;
+								tri.a = Tv0.b + v*step;
+								tri.b = Tv1.b + u*step;
+								tri.c = inter + t*step;
+									
+								if (tri.a.y < tri.b.y) {								
+											drawTriangle(tri.a, tri.c, tri.b);
+						  }   
+						}
+   } else {
+												// u,v inward directions to shrink trapezoid
+												vec3d u = Tv1.b - Tv0.a; u.normalize();
+												vec3d v = Tv1.a - Tv0.b; v.normalize();
+												
+												// increment vertices of trapezoid inward
+            Segment s1(Tv0.a + u*step, Tv0.b + v*step);
+            Segment s2(Tv1.a - v*step, Tv1.b - u*step);
+
             if (s1.a.y > s2.a.y and s1.b.y > s2.b.y) {
               drawQuad(s1.a, s1.b, s2.b, s2.a);
-              /*
-              float myVertexArray[8] = {s1.a.x, s1.a.y,
-										  s1.b.x, s1.b.y,
-										  s2.b.x, s2.b.y,
-                      s2.a.x, s2.a.y};
-                // first get the attribute-location
-              GLint vertexLocation = glGetAttribLocation(_shaderProgram, "vertexPos");
-              // enable an array for the attribute
-              glEnableVertexAttribArray(vertexLocation);
-              // set attribute pointer
-              glVertexAttribPointer(vertexLocation, 2, GL_FLOAT,GL_FALSE, 0, myVertexArray);
-              // Draw ("render") the triangle
-              glDrawArrays(GL_QUADS, 0, 4);
-              // Done with rendering. Disable vertex attribute array
-              glDisableVertexAttribArray(vertexLocation);
-              */
             }
           }
         }
@@ -550,9 +529,9 @@ unsigned int DepthComplexity2D::findMaxValueInCounterBuffer() {
   glGetTexImage( GL_TEXTURE_2D, 0 , GL_RED_INTEGER, GL_UNSIGNED_INT, colorBuffer ); 
   glBindTexture(GL_TEXTURE_2D, 0);
   
-  //for (int i=0; i<pixelNumber; ++i){
-    //std::cout << colorBuffer[i]-1 << std::endl;
-  //}
+  for (int i=0; i<pixelNumber; ++i){
+    std::cout << colorBuffer[i]-1 << std::endl;
+  }
   
   return *(std::max_element(colorBuffer, colorBuffer + pixelNumber));
 }

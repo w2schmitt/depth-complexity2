@@ -118,8 +118,8 @@ void DepthComplexity3D::process(const TriMesh &mesh) {
 
 // Call this varying palign and salign.
 void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAlign &salign) {
-  assert(palign != salign);
 
+  assert(palign != salign);
   BoundingBox aabb = _mesh->aabb;
   aabb.merge(aabb.min - aabb.extents()/10.0);
   aabb.merge(aabb.max + aabb.extents()/10.0);
@@ -264,7 +264,6 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
       }
     }
   }
-  //printf("5\n");
 }
 
 //INPUT: plane -> The normal vector of the plane which we will check overlaps;
