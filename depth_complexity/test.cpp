@@ -13,7 +13,7 @@
 
 using namespace std;
 
-/*
+
 #define ERR 1.E-2
 
 struct Point { float x,y; };
@@ -84,7 +84,7 @@ void readFboInput(){
 	while (cin >> t){
 		fbo[i] = t;		
 		//if (fbo[i]!=0)
-		//	std::cout<<fbo[i]<<std::endl;
+			//std::cout<<fbo[i]<<std::endl;
 		i++;
 	}
 }
@@ -321,9 +321,9 @@ int main (int argc, char **argv) {
 	
 	return 0;
 }
-* 
-*/
 
+
+/*
   GLuint                                		_textureId;
   GLuint                                		_fboId;
   GLuint                                		_rboId;
@@ -472,7 +472,7 @@ int main (int argc, char **argv) {
 	
 	return 0;
 }
-
+*/
 
 
 

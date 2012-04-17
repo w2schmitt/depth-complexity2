@@ -1,0 +1,4 @@
+----- << VERSION >>
+OPENGL VERSION: 4.1.0 NVIDIA 280.13
+SHADER VERSION: 4.10 NVIDIA via Cg compiler
+---------------- 

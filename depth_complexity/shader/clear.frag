@@ -15,7 +15,9 @@ void main(void){
    ivec2 coords = ivec2(gl_FragCoord.xy);
 
    if(coords.x>=0 && coords.y>=0 && coords.x<512 && coords.y<512 ){
-     int abidx = (int)imageAtomicIncWrap( counterBuff, coords, 65535 );
+     //int abidx = (int)imageAtomicIncWrap( counterBuff, coords, 65535 );
+     imageStore(counterBuff, coords, uvec4(1));
+     //imageAtomicAdd(counterBuff, coords, 1);
    }
   
    //-- Discard fragment so nothing is writen to the framebuffer

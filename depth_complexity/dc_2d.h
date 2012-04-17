@@ -33,8 +33,8 @@ typedef float TCounterBuffer;
 
 class DepthComplexity2D {
 public:
-  static const char* 							V_PATH;
-  static const char* 							P_PATH;
+  //static const char* 							V_PATH;
+  //static const char* 							P_PATH;
   
   DepthComplexity2D(const int fboWidth, const int fboHeight);
   ~DepthComplexity2D();
@@ -63,10 +63,7 @@ private:
   // Create framebuffer objects
   bool initFBO();
   
-  // initialize shaders
-  void createShader();
-  void attachShader();
-  char *readShaderFile(const char *filename);
+
 
   // Primal: point -> Dual: Segment
   Segment computeDualSegmentFromPoint(const Point &p);
@@ -85,14 +82,13 @@ private:
 private:
   //buffers
   GLuint                                		_cboTexId;
-  GLuint										_counterBuffId;
+  GLuint										                _counterBuffId;
   GLuint                                		_fboId;
   GLuint                                		_rboId;
   
-  //shader  
-  GLuint										_vShaderId;
-  GLuint										_pShaderId;
-  GLuint 										_shaderProgram;
+  //shader  program
+  GLuint 										                _shaderProgram;
+  GLuint                                    _shaderProgram2;
 
   // State
   bool                                  		_status;
@@ -113,7 +109,7 @@ private:
   std::vector<unsigned long long>       		_histogram;
   std::set<Segment, classcomp>                  _maximumRays;
   std::vector< std::set<Segment,classcomp> >   	_goodRays;
-  unsigned int                                  *_bufferCounter;
+  //unsigned int                                  *_bufferCounter;
   
   
   // fbo
