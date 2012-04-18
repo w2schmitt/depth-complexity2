@@ -160,7 +160,7 @@ void DepthComplexity2D::findDepthComplexity2D() {
 
     // desable all anti-aliasing to avoid precision error
 		glDisable(GL_POINT_SMOOTH);
-	  glDisable(GL_LINE_SMOOTH);
+	 glDisable(GL_LINE_SMOOTH);
 		glDisable(GL_POLYGON_SMOOTH);
 				
 		glHint(GL_POLYGON_SMOOTH_HINT,GL_FASTEST);
@@ -186,7 +186,7 @@ void DepthComplexity2D::findDepthComplexity2D() {
     setShaderClearCounterBuffer();
     
     // Ensure that all texture writing is done
-    glMemoryBarrierEXT(GL_FRAMEBUFFER_BARRIER_BIT);
+    glMemoryBarrierEXT(GL_FRAMEBUFFER_BARRIER_BIT_EXT);
 
     // Set shader to write DC in the counter buffer 
     setShaderCountDC();
@@ -203,11 +203,11 @@ void DepthComplexity2D::findDepthComplexity2D() {
 
 		  double t1, t2;
 		  if (segmentIntersection2D(Tv0, Tv1, &t1, &t2) ) {			
-						double t1, t2;
+						//double t1, t2;
 						
             // directions to shrink V1 and V2
             vec3d u = (Tv1.a - Tv0.a); u.normalize(); // vec Tv0.a ---> Tv1.a            
-            
+            t1=t2=0;
             if (lineIntersection2D(Tv0, Tv1, &t1, &t2)) {
                vec3d inter = Tv0.a*(1.0-t1) + Tv0.b*t1;
                vec3d avgPt = (Tv0.a + Tv1.a)*0.5;
@@ -217,25 +217,29 @@ void DepthComplexity2D::findDepthComplexity2D() {
                tri.a = Tv0.a + u*step;
                tri.b = Tv1.a - u*step;
                tri.c = inter + t*step;
+
+															tri.a = Tv0.a;
+															tri.b = Tv1.a;
+															tri.c = inter;
                
                if (tri.a.y > tri.b.y) {
                  drawTriangle(tri.a, tri.c, tri.b);
                }
             }
-            
+            t1=t2=0;
             // directions to shrink V3 and V4
             vec3d v = (Tv1.b - Tv0.b); v.normalize(); // vec Tv0.b ---> Tv1.b
-            
+
             if (lineIntersection2D(Tv0, Tv1, &t1, &t2)) {
                vec3d inter = Tv0.a*(1.0-t1) + Tv0.b*t1;
                vec3d avgPt = (Tv0.b + Tv1.b)*0.5;
-               vec3d t = (avgPt - inter); t.normalize();   
-               
+               vec3d t = (-avgPt + inter); t.normalize();   
+
                Triangle tri;
                tri.a = Tv0.b + v*step;
                tri.b = Tv1.b - v*step;
                tri.c = inter + t*step; 
-               
+
                if (tri.a.y < tri.b.y) {       
                  drawTriangle(tri.a, tri.c, tri.b);                 
                }
@@ -317,9 +321,9 @@ unsigned int DepthComplexity2D::findMaxValueInCounterBuffer() {
   glGetTexImage( GL_TEXTURE_2D, 0 , GL_RED_INTEGER, GL_UNSIGNED_INT, colorBuffer ); 
   glBindTexture(GL_TEXTURE_2D, 0);
   
-  //for (int i=0; i<pixelNumber; ++i){
-  //  std::cout << colorBuffer[i]-1 << std::endl;
-  //}
+  for (int i=0; i<pixelNumber; ++i){
+    std::cout << colorBuffer[i]-1 << std::endl;
+  }
   
   return *(std::max_element(colorBuffer, colorBuffer + pixelNumber));
 }
@@ -358,13 +362,14 @@ void DepthComplexity2D::findMaximumRaysAndHistogram() {
 		         
           if (val == _maximum){
 		    
-			 //if (_maximumRays.size() < 10)
+									if (_maximumRays.size() < 100)
             _maximumRays.insert(seg);
           }
           else if (val >= _threshold){			   
-          //if (_goodRays[val].size() < 200)
+          if (_goodRays[val].size() < 10)
             _goodRays[val].insert(seg);            
 		  }
+
         }
       }
     }
@@ -447,10 +452,10 @@ void DepthComplexity2D::setShaderClearCounterBuffer(){
 		glProgramUniform1iEXT(_shaderclearBuffer, glGetUniformLocation(_shaderclearBuffer, "counterBuff"), 0);
       
     glBegin(GL_QUADS);
-      glVertex2f(0.0f, 1.0f);
-      glVertex2f(1.0f, 1.0f);
-      glVertex2f(1.0f, 0.0f);
-      glVertex2f(0.0f, 0.0f);
+      glVertex2f(-1.0f, 2.0f);
+      glVertex2f(2.0f, 2.0f);
+      glVertex2f(2.0f, -1.0f);
+      glVertex2f(-1.0f, -1.0f);
     glEnd();
 }
 
