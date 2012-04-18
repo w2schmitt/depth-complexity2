@@ -3,24 +3,12 @@
 #include <iostream>
 #include <cassert>
 
-//const char *DepthComplexity2D::V_PATH = "shader/dc.vert";
-//const char *DepthComplexity2D::P_PATH = "shader/dc.frag";
-
 // Internal function to check if the framebuffer was created correctly.
 bool checkFramebufferStatus();
-
-// Internal function to check if shader was compiled correctly.
-GLuint createShaderProgram(const char* vFilename, const char* pFilename);
-GLuint createShader(const char* filename, GLuint shaderType);
-void linkShaderProgram(GLuint shaderProgramId);
-char *readShaderFile(const char *filename);
-bool checkShadersStatus(GLuint shaderID);
 
 // Draw polygons in framebuffer.
 void drawQuad(const Point &p1, const Point &p2, const Point &p3, const Point &p4);
 void drawTriangle(const Point &p1, const Point &p2, const Point &p3);
-
-
 
 
 DepthComplexity2D::DepthComplexity2D(const int fboWidth, const int fboHeight){
@@ -31,136 +19,26 @@ DepthComplexity2D::DepthComplexity2D(const int fboWidth, const int fboHeight){
   _computeGoodRays = false;
   _maximum = 0;
   _threshold = 0;
-  //_vShaderId = _vShaderClearId = 0;
-  //_pShaderId = _pShaderClearId = 0;
-  _shaderProgram = 0;
-  _shaderProgram2 = 0;
-  _status = true;   
-  //_bufferCounter = new unsigned int[_fboHeight*_fboWidth];
+  _shaderclearBuffer = 0;
+  _shaderCountDC = 0;
+  _status = false;   
   
   assert(initFBO()); 
-
-  //clear shader 
-  _shaderProgram = createShaderProgram("shader/dc.vert", "shader/dc.frag");
-  _shaderProgram2 = createShaderProgram("shader/clear.vert", "shader/clear.frag");
-	
-  linkShaderProgram(_shaderProgram);  
-  linkShaderProgram(_shaderProgram2);
-   
+  
+  //shader manager class
+  ShaderMgr shaderMgr; 
+  _shaderCountDC = shaderMgr.createShaderProgram("shader/dc.vert", "shader/dc.frag");        
+  _shaderclearBuffer = shaderMgr.createShaderProgram("shader/clear.vert", "shader/clear.frag");
+  
+  shaderMgr.linkShaderProgram(_shaderCountDC); 
+  shaderMgr.linkShaderProgram(_shaderclearBuffer);
+    
+  shaderMgr.checkShaderStatus();
 }
 
 
 DepthComplexity2D::~DepthComplexity2D(){
-	//delete [] _bufferCounter;
-}
 
-GLuint createShaderProgram(const char* vFilename, const char* pFilename){
-	
-  GLuint shaderProgram = glCreateProgram();
-  
-  GLuint vShaderId = createShader(vFilename, GL_VERTEX_SHADER);
-  GLuint pShaderId = createShader(pFilename, GL_FRAGMENT_SHADER);
-  
-  glAttachShader(shaderProgram, vShaderId);
-  glAttachShader(shaderProgram, pShaderId);
-  
-  return shaderProgram;
-}
-
-GLuint createShader(const char* filename, GLuint shaderType){
-  
-  GLuint shaderID = glCreateShader(shaderType);
-  
-  // Read shader files
-	char *shaderData = readShaderFile(filename);
-	
-	// Pointer to shader data
-	const char *ptVData = shaderData;
-  
-  glShaderSource(shaderID,  1, &ptVData, NULL);
-  glCompileShader(shaderID);
-  
-  //_status = 
-  checkShadersStatus(shaderID);
-
-	free(shaderData);
-  
-  return shaderID;
-}
-
-void linkShaderProgram(GLuint shaderProgramId){
-  glLinkProgram(shaderProgramId);
-  
-  GLint ok;
-  glGetShaderiv(shaderProgramId, GL_LINK_STATUS, &ok);
-  if (!ok){
-    int ilength; char stringBuffer[STRING_BUFFER];
-    glGetShaderInfoLog(shaderProgramId, STRING_BUFFER, &ilength, stringBuffer);
-    std::cerr << "[ERROR] SHADER LINK ERROR : "<<stringBuffer << std::endl; 
-  } else { std::cerr << "[OK] SHADER LINK OK." << std::endl; }
-  
-  glValidateProgram(shaderProgramId);
-  
-  glGetShaderiv(shaderProgramId, GL_VALIDATE_STATUS, &ok);
-  if (!ok){
-    int ilength; char stringBuffer[STRING_BUFFER];
-    glGetShaderInfoLog(shaderProgramId, STRING_BUFFER, &ilength, stringBuffer);
-    std::cerr << "[ERROR] SHADER VALIDATION ERROR : "<<stringBuffer << std::endl; 
-  } else { std::cerr << "[OK] SHADER VALID OK." << std::endl; }
-}
-
-
-char* readShaderFile(const char *filename){
-	
-	FILE *fp;
-	char *content = NULL;
-
-	int count=0;
-
-	if (filename != NULL) {
-		fp = fopen(filename,"rt");
-		if (fp != NULL) {      
-			  fseek(fp, 0, SEEK_END);
-			  count = ftell(fp);
-			  rewind(fp);
-
-				if (count > 0) {
-					content = (char *)malloc(sizeof(char) * (count+1));
-					count = fread(content,sizeof(char),count,fp);
-					content[count] = '\0';
-			}
-			fclose(fp);
-		} else {
-			std::cerr << "[ERROR] Cannot load Vertex or Fragment Shader File! " << std::endl;
-		}
-	}
-	
-	return content;
-}
-
-bool checkShadersStatus(GLuint shaderID){
-	
-	GLint ok;
-	glGetShaderiv(shaderID, GL_COMPILE_STATUS, &ok);
-	if (!ok){
-		int ilength; char stringBuffer[STRING_BUFFER];
-		glGetShaderInfoLog(shaderID, STRING_BUFFER, &ilength, stringBuffer);
-		std::cerr<<"[ERROR] Shader Compilation Error : "<<stringBuffer<< std::endl; 
-		return false;
-	}
-	
-  /*
-	glGetShaderiv(pShaderID, GL_COMPILE_STATUS, &ok);
-	if (!ok){
-		int ilength; char stringBuffer[STRING_BUFFER];
-		glGetShaderInfoLog(pShaderID, STRING_BUFFER, &ilength, stringBuffer);
-		std::cerr << "[ERROR] Shader Compilation Error ("<<DepthComplexity2D::P_PATH<<") : "<<stringBuffer << std::endl; 
-		return false;
-	}
-	*/
-  
-	std::cerr << "[OK] Shaders OK." << std::endl;
-	return true;
 }
 
 bool DepthComplexity2D::initFBO() {
@@ -264,15 +142,13 @@ void DepthComplexity2D::process(
 	  std::cerr << "[ERROR] Check FBO or SHADERS." << std::endl;
 	  return;
   }
-  //for (int i=0; i<_fboHeight*_fboWidth; ++i) { _bufferCounter[i] = 0;}
+  
   //glPixelStorei(GL_UNPACK_ALIGNMENT, 1);  
   
   findDepthComplexity2D();
   
   if (_computeHistogram or _computeMaximumRays or _computeGoodRays)
     findMaximumRaysAndHistogram();
-  
-  //copyStencilToColor();
 }
 
 
@@ -281,25 +157,24 @@ void DepthComplexity2D::findDepthComplexity2D() {
   
   glPushAttrib(GL_VIEWPORT_BIT | GL_ENABLE_BIT);
     glViewport(0, 0, _fboWidth, _fboHeight);
-	
 
-
-				glDisable(GL_POINT_SMOOTH);
-	   glDisable(GL_LINE_SMOOTH);
-				glDisable(GL_POLYGON_SMOOTH);
+    // desable all anti-aliasing to avoid precision error
+		glDisable(GL_POINT_SMOOTH);
+	  glDisable(GL_LINE_SMOOTH);
+		glDisable(GL_POLYGON_SMOOTH);
 				
-				glHint(GL_POLYGON_SMOOTH_HINT,GL_FASTEST);
-				glHint(GL_POINT_SMOOTH, GL_FASTEST);
-				glHint(GL_LINE_SMOOTH, GL_FASTEST);
+		glHint(GL_POLYGON_SMOOTH_HINT,GL_FASTEST);
+		glHint(GL_POINT_SMOOTH, GL_FASTEST);
+		glHint(GL_LINE_SMOOTH, GL_FASTEST);
 				
-	   glDisable(GL_DEPTH_TEST);
+	  glDisable(GL_DEPTH_TEST);
 		
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
-      glLoadIdentity();
-      gluOrtho2D(0.0, 1.0, 0.0, 1.0);
+    glLoadIdentity();
+    gluOrtho2D(0.0, 1.0, 0.0, 1.0);
       
-      glMatrixMode(GL_MODELVIEW);
+    glMatrixMode(GL_MODELVIEW);
 		glPushMatrix();
 		glLoadIdentity();
 
@@ -307,91 +182,17 @@ void DepthComplexity2D::findDepthComplexity2D() {
 		glEnable(GL_TEXTURE_2D);
 		glBindTexture(GL_TEXTURE_2D, _counterBuffId);   
 		
+    // set shader to clear the counter buffer ---------
+    setShaderClearCounterBuffer();
     
-  // CLEAR ======================================================================================================================
-		//Use Shader
-		glUseProgram(_shaderProgram2);
-    
-		//Pass MODELVIEW and PROJECTION matrices to Shader
-		GLfloat model[16],projection[16];
-		glGetFloatv(GL_MODELVIEW_MATRIX, model);
-		glGetFloatv(GL_PROJECTION_MATRIX, projection);
-		glProgramUniformMatrix4fv(_shaderProgram2, glGetUniformLocation(_shaderProgram2, "modelViewMat"), 1, GL_FALSE, model);
-		glProgramUniformMatrix4fv(_shaderProgram2, glGetUniformLocation(_shaderProgram2, "projectionMat"), 1, GL_FALSE, projection);
-    
-    //Pass counter buff texture
-		glProgramUniform1iEXT(_shaderProgram2, glGetUniformLocation(_shaderProgram2, "counterBuff"), 0);
-		  
-		glClearColor(0.f, 0.f, 0.f, 0.f);    
-		glClear(GL_COLOR_BUFFER_BIT);    //GL_DEPTH_BUFFER_BIT  | 
+    // Ensure that all texture writing is done
+    glMemoryBarrierEXT(GL_FRAMEBUFFER_BARRIER_BIT);
 
-    
-    float myVertexArray[8] = {0.0f, 1.0f, 
-                              1.0f, 1.0f,
-                              1.0f, 0.0f,
-                              0.0f, 0.0f};
-                              
-    // first get the attribute-location
-    GLint vertexLocation = glGetAttribLocation(_shaderProgram2, "vertexPos");
-    // enable an array for the attribute
-    glEnableVertexAttribArray(vertexLocation);
-    // set attribute pointer
-    glVertexAttribPointer(vertexLocation, 2, GL_FLOAT,GL_FALSE, 0, myVertexArray);
-    // Draw ("render") the triangle
-    glDrawArrays(GL_QUADS, 0, 4);
-    // Done with rendering. Disable vertex attribute array
-    glDisableVertexAttribArray(vertexLocation);
-    
-    
-     glMemoryBarrierEXT(GL_TEXTURE_UPDATE_BARRIER_BIT_EXT);
-    // ======================================================================================================================
-    glUseProgram(_shaderProgram);
-   
-	
-		//Pass MODELVIEW and PROJECTION matrices to Shader
-		//GLfloat model[16],projection[16];
-		//glGetFloatv(GL_MODELVIEW_MATRIX, model);
-		//glGetFloatv(GL_PROJECTION_MATRIX, projection);
-		glProgramUniformMatrix4fv(_shaderProgram, glGetUniformLocation(_shaderProgram, "modelViewMat"), 1, GL_FALSE, model);
-		glProgramUniformMatrix4fv(_shaderProgram, glGetUniformLocation(_shaderProgram, "projectionMat"), 1, GL_FALSE, projection);
-      
-    //std::cout << "glProjection:\n" << projection[0] << " - " << projection[5] << " - " << projection[10] << std::endl;
-    
-    //Pass counter buff texture
-		glProgramUniform1iEXT(_shaderProgram, glGetUniformLocation(_shaderProgram, "counterBuff"), 0);
-		   
-		//glClearColor(0.f, 0.f, 0.f, 0.f);    
-		//glClear(GL_COLOR_BUFFER_BIT);    //GL_DEPTH_BUFFER_BIT  | 
-
-    /*
-    float myVertexArray2[2] = {0.5f,0.5f};
-    // first get the attribute-location
-    vertexLocation = glGetAttribLocation(_shaderProgram, "vertexPos");
-    // enable an array for the attribute
-    glEnableVertexAttribArray(vertexLocation);
-    // set attribute pointer
-    glVertexAttribPointer(vertexLocation, 2, GL_FLOAT,GL_FALSE, 0, myVertexArray2);
-    // Draw ("render") the triangle
-    glDrawArrays(GL_POINTS, 0, 1);
-    // Done with rendering. Disable vertex attribute array
-    glDisableVertexAttribArray(vertexLocation);
-    
-    */
-  
-    //glBegin(GL_POINTS);
-    //  glVertex2f(0.5f, 0.5f);
-    //glEnd();
-    /*
-    glBegin(GL_QUADS);
-      glVertex2f(-1.0f, 1.0f);
-      glVertex2f(1.0f, 1.0f);
-      glVertex2f(1.0f, -1.0f);
-      glVertex2f(-1.0f, -1.0f);
-    glEnd();
-    */
+    // Set shader to write DC in the counter buffer 
+    setShaderCountDC();
     
 		double pixelSize = 1.0/512.0;
-		double step = 0.5*pixelSize*sqrt(2); //1.41421356;
+		double step = 0.5*pixelSize*sqrt(2);
 		for (unsigned i=0; i<_segments->size(); ++i) {
 		  if (!_segments->at(i).active) continue;
 		
@@ -404,62 +205,47 @@ void DepthComplexity2D::findDepthComplexity2D() {
 		  if (segmentIntersection2D(Tv0, Tv1, &t1, &t2) ) {			
 						double t1, t2;
 						
-						// Triangle 1
-						if (lineIntersection2D(Tv0.a, Tv1.a, &t1, &t2)) {
-								// find intersection point
-								vec3d inter = Tv0.a*(1.0-t1) + Tv0.b*t1;
-
-								// find median points of the triangle sides
-								vec3d pm1 = (Tv0.a + inter)*0.5; // for Tv1
-								vec3d pm2 = (inter + Tv1.a)*0.5; // for Tv0
-								vec3d pm3 = (Tv1.a + Tv0.a)*0.5; // for inter
-								
-								// find inward directions for each vertex, to shrink triangle;
-								vec3d u = pm1 - Tv1.a; u.normalize();
-								vec3d v = pm2 - Tv0.a; v.normalize();
-								vec3d t = pm3 - inter; t.normalize();
-	
-								// Triangle 1
-								Triangle tri;
-								tri.a = Tv0.a + v*step;
-								tri.b = Tv1.a + u*step;
-								tri.c = inter + t*step;
-
-								if (tri.a.y > tri.b.y) {
-										drawTriangle(tri.a, tri.c, tri.b);
-								}
-						}
-						
-						// Triangle 2
-						if (lineIntersection2D(Tv0.b, Tv1.b, &t1, &t2) ) {
-								vec3d inter = Tv1.a*(1.f-t1) + Tv1.b*t1;
-						
-								// find median points of the triangle sides
-								vec3d pm1 = (Tv0.b + inter)*0.5; // for Tv1
-								vec3d pm2 = (inter + Tv1.b)*0.5; // for Tv0
-								vec3d pm3 = (Tv1.b + Tv0.b)*0.5; // for inter
-
-							 // find inward directions for each vertex, to shrink triangle;
-								vec3d u = pm1 - Tv1.b; u.normalize();
-								vec3d v = pm2 - Tv0.b; v.normalize();
-								vec3d t = pm3 - inter; t.normalise();
-
-								// Triangle 1
-								Triangle tri;
-								tri.a = Tv0.b + v*step;
-								tri.b = Tv1.b + u*step;
-								tri.c = inter + t*step;
-									
-								if (tri.a.y < tri.b.y) {								
-											drawTriangle(tri.a, tri.c, tri.b);
-						  }   
-						}
-   } else {
-												// u,v inward directions to shrink trapezoid
-												vec3d u = Tv1.b - Tv0.a; u.normalize();
-												vec3d v = Tv1.a - Tv0.b; v.normalize();
+            // directions to shrink V1 and V2
+            vec3d u = (Tv1.a - Tv0.a); u.normalize(); // vec Tv0.a ---> Tv1.a            
+            
+            if (lineIntersection2D(Tv0, Tv1, &t1, &t2)) {
+               vec3d inter = Tv0.a*(1.0-t1) + Tv0.b*t1;
+               vec3d avgPt = (Tv0.a + Tv1.a)*0.5;
+               vec3d t = (avgPt - inter); t.normalize();    
+               
+               Triangle tri;
+               tri.a = Tv0.a + u*step;
+               tri.b = Tv1.a - u*step;
+               tri.c = inter + t*step;
+               
+               if (tri.a.y > tri.b.y) {
+                 drawTriangle(tri.a, tri.c, tri.b);
+               }
+            }
+            
+            // directions to shrink V3 and V4
+            vec3d v = (Tv1.b - Tv0.b); v.normalize(); // vec Tv0.b ---> Tv1.b
+            
+            if (lineIntersection2D(Tv0, Tv1, &t1, &t2)) {
+               vec3d inter = Tv0.a*(1.0-t1) + Tv0.b*t1;
+               vec3d avgPt = (Tv0.b + Tv1.b)*0.5;
+               vec3d t = (avgPt - inter); t.normalize();   
+               
+               Triangle tri;
+               tri.a = Tv0.b + v*step;
+               tri.b = Tv1.b - v*step;
+               tri.c = inter + t*step; 
+               
+               if (tri.a.y < tri.b.y) {       
+                 drawTriangle(tri.a, tri.c, tri.b);                 
+               }
+            }
+            						
+          } else {
+            // u,v inward directions to shrink trapezoid
+            vec3d u = Tv1.a - Tv0.a; u.normalize();
+            vec3d v = Tv1.b - Tv0.b; v.normalize();
 												
-												// increment vertices of trapezoid inward
             Segment s1(Tv0.a + u*step, Tv0.b + v*step);
             Segment s2(Tv1.a - v*step, Tv1.b - u*step);
 
@@ -469,8 +255,9 @@ void DepthComplexity2D::findDepthComplexity2D() {
           }
         }
 		    
-        //Ensure that all texture writing is done
+        // Ensure that all texture writing is done
         glMemoryBarrierEXT(GL_TEXTURE_UPDATE_BARRIER_BIT_EXT);
+        // Disable Shaders
         glUseProgram(0);
 	
         _maximum = findMaxValueInCounterBuffer()-1;
@@ -486,6 +273,7 @@ void DepthComplexity2D::findDepthComplexity2D() {
     glPopAttrib();
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 }
+
 
 Segment DepthComplexity2D::computeDualSegmentFromPoint(const Point &p) {
   Segment seg;
@@ -529,9 +317,9 @@ unsigned int DepthComplexity2D::findMaxValueInCounterBuffer() {
   glGetTexImage( GL_TEXTURE_2D, 0 , GL_RED_INTEGER, GL_UNSIGNED_INT, colorBuffer ); 
   glBindTexture(GL_TEXTURE_2D, 0);
   
-  for (int i=0; i<pixelNumber; ++i){
-    std::cout << colorBuffer[i]-1 << std::endl;
-  }
+  //for (int i=0; i<pixelNumber; ++i){
+  //  std::cout << colorBuffer[i]-1 << std::endl;
+  //}
   
   return *(std::max_element(colorBuffer, colorBuffer + pixelNumber));
 }
@@ -566,18 +354,16 @@ void DepthComplexity2D::findMaximumRaysAndHistogram() {
           double t2 = r/(double)_fboHeight;
           seg.a = _from.a*(1.f-t1) + _from.b*t1;
           seg.b = _to.a*(1.f-t2) + _to.b*t2;          
-		  seg.sortPoints(); 		  
+          seg.sortPoints(); 		  
 		         
           if (val == _maximum){
 		    
-			 if (_maximumRays.size() < 10)
-				_maximumRays.insert(seg);
-            }
-          else if (val >= _threshold){
-			   
-          if (_goodRays[val].size() < 200)
-            _goodRays[val].insert(seg);
-            
+			 //if (_maximumRays.size() < 10)
+            _maximumRays.insert(seg);
+          }
+          else if (val >= _threshold){			   
+          //if (_goodRays[val].size() < 200)
+            _goodRays[val].insert(seg);            
 		  }
         }
       }
@@ -643,4 +429,42 @@ void DepthComplexity2D::copyStencilToColor() {
 
   glPopAttrib();
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+}
+
+
+
+void DepthComplexity2D::setShaderClearCounterBuffer(){
+    glUseProgram(_shaderclearBuffer);
+    
+		// Pass MODELVIEW and PROJECTION matrices to Shader
+		GLfloat model[16],projection[16];
+		glGetFloatv(GL_MODELVIEW_MATRIX, model);
+		glGetFloatv(GL_PROJECTION_MATRIX, projection);
+		glProgramUniformMatrix4fv(_shaderclearBuffer, glGetUniformLocation(_shaderclearBuffer, "modelViewMat"), 1, GL_FALSE, model);
+		glProgramUniformMatrix4fv(_shaderclearBuffer, glGetUniformLocation(_shaderclearBuffer, "projectionMat"), 1, GL_FALSE, projection);
+    
+    // Pass Counter Buffer Texture
+		glProgramUniform1iEXT(_shaderclearBuffer, glGetUniformLocation(_shaderclearBuffer, "counterBuff"), 0);
+      
+    glBegin(GL_QUADS);
+      glVertex2f(0.0f, 1.0f);
+      glVertex2f(1.0f, 1.0f);
+      glVertex2f(1.0f, 0.0f);
+      glVertex2f(0.0f, 0.0f);
+    glEnd();
+}
+
+void DepthComplexity2D::setShaderCountDC(){
+    // Set shader to count DC
+    glUseProgram(_shaderCountDC);   
+	
+		// Pass MODELVIEW and PROJECTION matrices to Shader
+		GLfloat model[16],projection[16];
+		glGetFloatv(GL_MODELVIEW_MATRIX, model);
+		glGetFloatv(GL_PROJECTION_MATRIX, projection);
+		glProgramUniformMatrix4fv(_shaderCountDC, glGetUniformLocation(_shaderCountDC, "modelViewMat"), 1, GL_FALSE, model);
+		glProgramUniformMatrix4fv(_shaderCountDC, glGetUniformLocation(_shaderCountDC, "projectionMat"), 1, GL_FALSE, projection);
+         
+    // Pass counter buff texture
+		glProgramUniform1iEXT(_shaderCountDC, glGetUniformLocation(_shaderCountDC, "counterBuff"), 0);
 }

@@ -2,7 +2,7 @@
 #define DC_2D2_H
 
 #define GL_GLEXT_PROTOTYPES
-#define STRING_BUFFER 2048
+
 
 #include <GL/glew.h>
 #ifdef __APPLE__
@@ -13,6 +13,7 @@
 #endif
 
 #include "util.h"
+#include "ShaderMgr.h"
 #include <map>
 #include <set>
 #include <cstdlib>
@@ -29,13 +30,8 @@
 //   vector<Segment> segments = ...;
 //   dc2d.process(from, to, segments);
 //
-typedef float TCounterBuffer;
-
 class DepthComplexity2D {
 public:
-  //static const char* 							V_PATH;
-  //static const char* 							P_PATH;
-  
   DepthComplexity2D(const int fboWidth, const int fboHeight);
   ~DepthComplexity2D();
 
@@ -62,33 +58,30 @@ public:
 private:
   // Create framebuffer objects
   bool initFBO();
-  
-
 
   // Primal: point -> Dual: Segment
   Segment computeDualSegmentFromPoint(const Point &p);
 
-  // Go through the framebuffer to find the maximum value.
+  // Go through the counter buffer to find the maximum value.
   unsigned int findMaxValueInCounterBuffer();
+  void setShaderClearCounterBuffer();
+  void setShaderCountDC();
 
   // Compute depth complexity using rays from one segment to the other.
   void findDepthComplexity2D();
 
-
   void findMaximumRaysAndHistogram();
   
-
-
 private:
-  //buffers
+  //buffers 
   GLuint                                		_cboTexId;
   GLuint										                _counterBuffId;
   GLuint                                		_fboId;
   GLuint                                		_rboId;
   
-  //shader  program
-  GLuint 										                _shaderProgram;
-  GLuint                                    _shaderProgram2;
+  // Shaders
+  GLuint 										                _shaderclearBuffer;
+  GLuint                                    _shaderCountDC;
 
   // State
   bool                                  		_status;
@@ -105,21 +98,10 @@ private:
   unsigned                              		_threshold;
 
   // Outputs
-  unsigned int                              	_maximum;
+  unsigned int                              _maximum;
   std::vector<unsigned long long>       		_histogram;
-  std::set<Segment, classcomp>                  _maximumRays;
-  std::vector< std::set<Segment,classcomp> >   	_goodRays;
-  //unsigned int                                  *_bufferCounter;
-  
-  
-  // fbo
-  //float 										*fbo;
-  //float											*tmpfbo;
-  
-  // aux func
-  //void clearBuffer(float* buff, int w, int h, int ch);
-  //void sumBuffer(float* buff1, float* buff2, int w, int h, int ch);
-  //void copyBuffer(float* buff1, float* buff2, int w, int h, int ch);
+  std::set<Segment, classcomp>              _maximumRays;
+  std::vector< std::set<Segment,classcomp> >_goodRays;
   
 };
 
