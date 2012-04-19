@@ -88,6 +88,7 @@ loadOBJMesh(std::istream& in) {
         vec3d p;
         if (sscanf(line.c_str()+2, "%lf %lf %lf", &p.x, &p.y, &p.z) != 3)
           throw std::string("Error reading vertex at line " + line);
+								//printf("px = (%f) - py = (%f) - pz = (%f)\n", p.x, p.y, p.z); 
         vertices.push_back(p);
         mesh.aabb.merge(p);
       } else if (line[1] == 'n') {
@@ -130,6 +131,8 @@ loadOBJMesh(std::istream& in) {
           t.a = vertices.at(a-1);
           t.b = vertices.at(b-1);
           t.c = vertices.at(c-1);
+
+										//printf("ta = (%f,%f) - tb = (%f,%f) - tc = (%f,%f)\n", t.a.x, t.a.y, t.b.x, t.b.y, t.c.x, t.c.y); 
 
           // if we don't have a normal, make one
           if (na <= 0) {

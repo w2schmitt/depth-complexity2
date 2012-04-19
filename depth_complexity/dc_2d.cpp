@@ -190,6 +190,7 @@ void DepthComplexity2D::findDepthComplexity2D() {
 
     // Set shader to write DC in the counter buffer 
     setShaderCountDC();
+				float maxValue[4] = {0,0,0,0};
     
 		double pixelSize = 1.0/512.0;
 		double step = 0.5*pixelSize*sqrt(2);
@@ -200,6 +201,28 @@ void DepthComplexity2D::findDepthComplexity2D() {
 		  Segment Tv1 = computeDualSegmentFromPoint(_segments->at(i).b);
 
 		  if (Tv0.a.y < Tv1.a.y) std::swap(Tv0, Tv1);
+
+				if ( maxValue[0] < Tv0.a.y){
+							maxValue[0] = Tv0.a.y;
+				}
+
+			if ( maxValue[1] < Tv0.b.y){
+							maxValue[1] = Tv0.b.y;
+				}
+
+			if ( maxValue[2] < Tv1.a.y){
+							maxValue[2] = Tv1.a.y;
+				}
+
+			if ( maxValue[3] < Tv1.b.y){
+							maxValue[3] = Tv1.b.y;
+				}
+
+				//printf("Tv0a (%f,%f) - Tv0b (%f,%f)\n", Tv0.a.x, Tv0.a.y, Tv0.b.x, Tv0.b.y);
+				//printf("Tv1a (%f,%f) - Tv1b (%f,%f)\n\n", Tv1.a.x, Tv1.a.y, Tv1.b.x, Tv1.b.y);
+				//std::cout << "Tv0ay (" << Tv0.a.y << ") - Tv0by ("<< Tv0.b.y << ")" << std::endl;
+				//std::cout << "Tv1ay (" << Tv1.a.y << ") - Tv1by ("<< Tv1.b.y << ")" << std::endl;
+
 
 		  double t1, t2;
 		  if (segmentIntersection2D(Tv0, Tv1, &t1, &t2) ) {			
@@ -217,10 +240,6 @@ void DepthComplexity2D::findDepthComplexity2D() {
                tri.a = Tv0.a + u*step;
                tri.b = Tv1.a - u*step;
                tri.c = inter + t*step;
-
-															tri.a = Tv0.a;
-															tri.b = Tv1.a;
-															tri.c = inter;
                
                if (tri.a.y > tri.b.y) {
                  drawTriangle(tri.a, tri.c, tri.b);
@@ -233,7 +252,7 @@ void DepthComplexity2D::findDepthComplexity2D() {
             if (lineIntersection2D(Tv0, Tv1, &t1, &t2)) {
                vec3d inter = Tv0.a*(1.0-t1) + Tv0.b*t1;
                vec3d avgPt = (Tv0.b + Tv1.b)*0.5;
-               vec3d t = (-avgPt + inter); t.normalize();   
+               vec3d t = (avgPt - inter); t.normalize();   
 
                Triangle tri;
                tri.a = Tv0.b + v*step;
@@ -258,7 +277,12 @@ void DepthComplexity2D::findDepthComplexity2D() {
             }
           }
         }
-		    
+								//printf("Max Values:\n");
+							 //printf("Tv0.a.y = %f\n", maxValue[0]);
+								//printf("Tv0.b.y = %f\n", maxValue[1]);
+								//printf("Tv1.a.y = %f\n", maxValue[2]);
+								//printf("Tv1.b.y = %f\n", maxValue[3]);
+
         // Ensure that all texture writing is done
         glMemoryBarrierEXT(GL_TEXTURE_UPDATE_BARRIER_BIT_EXT);
         // Disable Shaders
@@ -285,11 +309,13 @@ Segment DepthComplexity2D::computeDualSegmentFromPoint(const Point &p) {
 
   // Finding left point
   bool r1 = lineIntersection3D(_to, Segment(_from.a, p), &t1, &t2);
+		//printf("Point P(%f, %f) - at1 = %f\n",p.x, p.y, t1);
   assert(r1);
   seg.a = Point(0.0, t1);
 
   // Finding right point
   bool r2 = lineIntersection3D(_to, Segment(_from.b, p), &t1, &t2);
+  //printf("Point P(%f, %f) - at1 = %f\n",p.x, p.y, t1);
   assert(r2);
   seg.b = Point(1.0, t1);
 
@@ -321,9 +347,9 @@ unsigned int DepthComplexity2D::findMaxValueInCounterBuffer() {
   glGetTexImage( GL_TEXTURE_2D, 0 , GL_RED_INTEGER, GL_UNSIGNED_INT, colorBuffer ); 
   glBindTexture(GL_TEXTURE_2D, 0);
   
-  for (int i=0; i<pixelNumber; ++i){
-    std::cout << colorBuffer[i]-1 << std::endl;
-  }
+  //for (int i=0; i<pixelNumber; ++i){
+  //  std::cout << colorBuffer[i]-1 << std::endl;
+  //}
   
   return *(std::max_element(colorBuffer, colorBuffer + pixelNumber));
 }

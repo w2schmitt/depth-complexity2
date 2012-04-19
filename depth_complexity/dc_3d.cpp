@@ -305,6 +305,7 @@ bool DepthComplexity3D::intersectPlaneTriangle(const vec4d& plane, const Triangl
     intersectPlaneSegment(plane, tri.c, tri.a, p);
     p = &seg->b;
   }
+		printf("px = %f, py = %f, pz = %f\n", p->x, p->y, p->z);
   return p == &seg->b;
 }
 
