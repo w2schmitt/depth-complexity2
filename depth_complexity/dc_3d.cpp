@@ -8,6 +8,8 @@
 #include <iomanip>
 #include <math.h>
 
+const double EPS = 1.0E-5;
+
 template<class T>
 T mix(const T& a, const T& b, double x) {
   const T& p = (1-x)*a;
@@ -103,17 +105,15 @@ void DepthComplexity3D::process(const TriMesh &mesh) {
   
   //std::cout << _fboWidth << " " << _fboHeight << " " << _discretSteps << " " << _maximum << " " << _threshold << std::endl;
   
-  //processMeshAlign(AlignZ, AlignX);
+  processMeshAlign(AlignZ, AlignX);
   processMeshAlign(AlignZ, AlignY);
 
-  //processMeshAlign(AlignY, AlignX);
-  //processMeshAlign(AlignY, AlignZ);
+  processMeshAlign(AlignY, AlignX);
+  processMeshAlign(AlignY, AlignZ);
 
-  //processMeshAlign(AlignX, AlignY);
-  //processMeshAlign(AlignX, AlignZ);
-  
-  //std::set< Segment, classcomp > test;
-  
+  processMeshAlign(AlignX, AlignY);
+  processMeshAlign(AlignX, AlignZ);
+
 }
 
 // Call this varying palign and salign.
@@ -135,12 +135,12 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
 
   // generate all planes varying on z  
   const unsigned steps = _discretSteps;
-  unsigned az = 0;
-  unsigned bz = 0;
-  //for (unsigned az = 0; az<steps; ++az) {
+  //unsigned az = 0;
+  //unsigned bz = 0;
+  for (unsigned az = 0; az<steps; ++az) {
     //double t = 3*az / (steps - 1.0) - 1; // [-1, 2]
     double t = az / (steps - 1.0);
-    //for (unsigned bz = 0; bz<steps; ++bz) {
+    for (unsigned bz = 0; bz<steps; ++bz) {
       // double u = 3*bz / (steps - 1.0) - 1; // [-1, 2]
       double u = bz / (steps - 1.0);
       Segment sa, sb;
@@ -262,8 +262,8 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
           _goodRays[i].insert(tempRays.begin(), tempRays.end());
         }
       }
-    //}
-  //}
+    }
+  }
 }
 
 //INPUT: plane -> The normal vector of the plane which we will check overlaps;
@@ -286,6 +286,10 @@ bool DepthComplexity3D::intersectPlaneTriangle(const vec4d& plane, const Triangl
   db = dot(plane, vec4d(tri.b, 1));
   dc = dot(plane, vec4d(tri.c, 1));
 
+  if (fabs(da)< EPS) da=0.f;
+  if (fabs(db)< EPS) db=0.f;
+  if (fabs(dc)< EPS) dc=0.f;
+
   if (da == 0 && db == 0 && dc == 0) // if the triangle is inside the plane, there's no intersection
     return false;
 
@@ -305,8 +309,9 @@ bool DepthComplexity3D::intersectPlaneTriangle(const vec4d& plane, const Triangl
     intersectPlaneSegment(plane, tri.c, tri.a, p);
     p = &seg->b;
   }
-		printf("px = %f, py = %f, pz = %f\n", p->x, p->y, p->z);
-  return p == &seg->b;
+  //if (p == &seg->b)
+    //printf("da = %f, db = %f dc= %f\npx = %f, py = %f, pz = %f ------- (%s)\n\n", da,db,dc,p->x, p->y, p->z, (p== &seg->b)? "true":"false");
+  return p == &(seg->b);
 }
 
 bool DepthComplexity3D::intersectPlaneSegment(const vec4d& plane, const vec3d& p0, const vec3d& p1, vec3d *pt) {

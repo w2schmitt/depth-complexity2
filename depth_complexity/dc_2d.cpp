@@ -347,10 +347,6 @@ unsigned int DepthComplexity2D::findMaxValueInCounterBuffer() {
   glGetTexImage( GL_TEXTURE_2D, 0 , GL_RED_INTEGER, GL_UNSIGNED_INT, colorBuffer ); 
   glBindTexture(GL_TEXTURE_2D, 0);
   
-  //for (int i=0; i<pixelNumber; ++i){
-  //  std::cout << colorBuffer[i]-1 << std::endl;
-  //}
-  
   return *(std::max_element(colorBuffer, colorBuffer + pixelNumber));
 }
 
