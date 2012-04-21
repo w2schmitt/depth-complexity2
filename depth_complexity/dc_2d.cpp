@@ -138,6 +138,9 @@ void DepthComplexity2D::process(
   _to = to;
   _segments = &segments;
   
+  std::clog << (_from.b - _from.a).length() << std::endl;
+  std::clog << (_to.b - to.a).length() << std::endl;
+  
   if (!_status){
 	  std::cerr << "[ERROR] Check FBO or SHADERS." << std::endl;
 	  return;
@@ -160,7 +163,7 @@ void DepthComplexity2D::findDepthComplexity2D() {
 
     // desable all anti-aliasing to avoid precision error
 		glDisable(GL_POINT_SMOOTH);
-	 glDisable(GL_LINE_SMOOTH);
+	  glDisable(GL_LINE_SMOOTH);
 		glDisable(GL_POLYGON_SMOOTH);
 				
 		glHint(GL_POLYGON_SMOOTH_HINT,GL_FASTEST);
@@ -190,39 +193,58 @@ void DepthComplexity2D::findDepthComplexity2D() {
 
     // Set shader to write DC in the counter buffer 
     setShaderCountDC();
-				float maxValue[4] = {0,0,0,0};
+				//float maxValue[4] = {0,0,0,0};
     
-		double pixelSize = 1.0/512.0;
-		double step = 0.5*pixelSize*sqrt(2);
+		//double pixelSize = 1.0/512.0;
+		//double step = 0.5*pixelSize*sqrt(2);
 		for (unsigned i=0; i<_segments->size(); ++i) {
 		  if (!_segments->at(i).active) continue;
-		
-		  Segment Tv0 = computeDualSegmentFromPoint(_segments->at(i).a);
-		  Segment Tv1 = computeDualSegmentFromPoint(_segments->at(i).b);
-
+      //std::cout << "aki\n";
+      std::vector<Point> lLine0, rLine0, lLine1, rLine1;
+      computeDualSegmentFromPoint(_segments->at(i), lLine0, lLine1, rLine0, rLine1);
+      
+      //computeDualSegmentFromPoint(_segments->at(i).b, lLine1,rLine1);
+      
+      double t1,t2;
+      if (segmentIntersection2D(Segment(lLine0.back(), rLine0.back()), Segment(lLine1.back(), rLine1.back()), &t1, &t2)){
+        
+        if (lineIntersection2D(Segment(lLine0.back(), rLine0.back()), Segment(lLine1.back(), rLine1.back()), &t1, &t2)){
+          vec3d inter = lLine0.back()*(1.0-t1) + rLine0.back()*t1;
+          
+          std::vector<Point> vertexList;
+          vertexList.assign(lLine0.begin(), lLine0.end());
+          vertexList.push_back(inter);
+          std::reverse(lLine1.begin(), lLine1.end());
+          vertexList.insert(vertexList.end(), lLine1.begin(), lLine1.end());
+          //std::clog << vertexList.size() << std::endl;
+          //vertexList.push_back(lLine1[1]);
+          //vertexList.push_back(lLine1[0]);
+          
+          glBegin(GL_POLYGON);
+            for (unsigned i=0; i< vertexList.size(); ++i){
+              std::clog << "("<<vertexList[i].x << " , " << vertexList[i].y << ")" << std::endl;
+              glVertex2f(vertexList[i].x,vertexList[i].y);
+            }
+          glEnd();
+          std::clog << std::endl;
+          
+          //glBegin(GL_POINT);
+          //  glVertex2f(0.2, 0.2);
+          //glEnd();
+        }
+      }
+      
+      //if ((i+1)%20==0) break;
+      
+      //if (rLine0.size()==1)
+      //  printf("lLine0 (%f , %f)\n", rLine0[0].x, rLine0[0].y); 
+      //else if (rLine0.size()==2)
+      //  printf("lLine0 (%f , %f) (%f , %f)\n", rLine0[0].x, rLine0[0].y, rLine0[1].x, rLine0[1].y ); 
+		  //Segment Tv0 = computeDualSegmentFromPoint(_segments->at(i).a);
+		  //Segment Tv1 = computeDualSegmentFromPoint(_segments->at(i).b);
+      
+      /*
 		  if (Tv0.a.y < Tv1.a.y) std::swap(Tv0, Tv1);
-
-				if ( maxValue[0] < Tv0.a.y){
-							maxValue[0] = Tv0.a.y;
-				}
-
-			if ( maxValue[1] < Tv0.b.y){
-							maxValue[1] = Tv0.b.y;
-				}
-
-			if ( maxValue[2] < Tv1.a.y){
-							maxValue[2] = Tv1.a.y;
-				}
-
-			if ( maxValue[3] < Tv1.b.y){
-							maxValue[3] = Tv1.b.y;
-				}
-
-				//printf("Tv0a (%f,%f) - Tv0b (%f,%f)\n", Tv0.a.x, Tv0.a.y, Tv0.b.x, Tv0.b.y);
-				//printf("Tv1a (%f,%f) - Tv1b (%f,%f)\n\n", Tv1.a.x, Tv1.a.y, Tv1.b.x, Tv1.b.y);
-				//std::cout << "Tv0ay (" << Tv0.a.y << ") - Tv0by ("<< Tv0.b.y << ")" << std::endl;
-				//std::cout << "Tv1ay (" << Tv1.a.y << ") - Tv1by ("<< Tv1.b.y << ")" << std::endl;
-
 
 		  double t1, t2;
 		  if (segmentIntersection2D(Tv0, Tv1, &t1, &t2) ) {			
@@ -275,14 +297,9 @@ void DepthComplexity2D::findDepthComplexity2D() {
             if (s1.a.y > s2.a.y and s1.b.y > s2.b.y) {
               drawQuad(s1.a, s1.b, s2.b, s2.a);
             }
-          }
+          }*/
         }
-								//printf("Max Values:\n");
-							 //printf("Tv0.a.y = %f\n", maxValue[0]);
-								//printf("Tv0.b.y = %f\n", maxValue[1]);
-								//printf("Tv1.a.y = %f\n", maxValue[2]);
-								//printf("Tv1.b.y = %f\n", maxValue[3]);
-
+        //std::cout << "its over\n";
         // Ensure that all texture writing is done
         glMemoryBarrierEXT(GL_TEXTURE_UPDATE_BARRIER_BIT_EXT);
         // Disable Shaders
@@ -302,7 +319,79 @@ void DepthComplexity2D::findDepthComplexity2D() {
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 }
 
+void DepthComplexity2D::computeDualSegmentFromPoint(const Segment &seg,
+                                                    std::vector<Point> &lLine0,
+                                                    std::vector<Point> &lLine1,
+                                                    std::vector<Point> &rLine0,
+                                                    std::vector<Point> &rLine1)
+{
+  //assert(lpolygon);
+  //assert(rpolygon);
+  double t1,t2,t3,t4;
+  
+  // Finding left points
+  lineIntersection3D(_to, Segment(_from.a, seg.a), &t1, &t2);
+  lineIntersection3D(_to, Segment(_from.a, seg.b), &t3, &t4);
+  
+  if (t1 > 1.0f){
+    lineIntersection3D(Segment(_to.b,_from.b), Segment(_from.a, seg.a), &t1, &t2);
+    if (t3 < 1.0f){      
+      lLine0.push_back(Point(0.0,1.0)); // corner point
+      lLine0.push_back(Point(t1, 1.0));
+      lLine1.push_back(Point(0.0,t3));
+    }
+    else {
+      lineIntersection3D(Segment(_to.b,_from.b), Segment(_from.a, seg.b), &t3, &t4);
+      lLine0.push_back(Point(t1, 1.0));
+      lLine1.push_back(Point(t3,1.0));
+    }
+  }
+  else {
+    if (t3 < 1.0f){ 
+       lLine0.push_back(Point(0.0, t1));
+       lLine1.push_back(Point(0.0, t3));
+    }
+    else{
+       lineIntersection3D(Segment(_to.b,_from.b), Segment(_from.a, seg.b), &t3, &t4);
+       lLine1.push_back(Point(0.0, 1.0));  // corner point
+       lLine1.push_back(Point(t3, 1.0));
+       lLine0.push_back(Point(0.0, t1));
+    }    
+  }
+  
+  // Finding right points
+  lineIntersection3D(_to, Segment(_from.b, seg.a), &t1, &t2);
+  lineIntersection3D(_to, Segment(_from.b, seg.b), &t3, &t4);
+  
 
+  if (t1 < 0.0f){
+    lineIntersection3D(Segment(_from.a,_to.a), Segment(_from.b, seg.a), &t1, &t2);
+    if (t3 > 0.0f){
+      rLine0.push_back(Point(1.0, 0.0)); // corner point
+      rLine0.push_back(Point(t1, 0.0));
+      rLine1.push_back(Point(1.0, t3));
+    }
+    else {
+      lineIntersection3D(Segment(_from.a,_to.a), Segment(_from.b, seg.b), &t3, &t4);
+      rLine0.push_back(Point(t1, 0.0));
+      rLine1.push_back(Point(t3,0.0));
+    }
+  }
+  else {
+    if (t3 > 0.0f){
+       rLine0.push_back(Point(1.0, t1));
+       rLine1.push_back(Point(1.0, t3));
+    }
+    else {
+       lineIntersection3D(Segment(_from.a,_to.a), Segment(_from.b, seg.b), &t3, &t4);
+       rLine1.push_back(Point(1.0, 0.0)); // corner point
+       rLine1.push_back(Point(t3, 0.0));
+       rLine0.push_back(Point(1.0, t1));
+    }    
+  }  
+}
+
+/*
 Segment DepthComplexity2D::computeDualSegmentFromPoint(const Point &p) {
   Segment seg;
   double t1, t2;
@@ -321,6 +410,7 @@ Segment DepthComplexity2D::computeDualSegmentFromPoint(const Point &p) {
 
   return seg;
 }
+*/
 
 void drawQuad(const Point &p1, const Point &p2, const Point &p3, const Point &p4) {
   glBegin(GL_QUADS);
@@ -346,6 +436,9 @@ unsigned int DepthComplexity2D::findMaxValueInCounterBuffer() {
   glBindTexture(GL_TEXTURE_2D, _counterBuffId);
   glGetTexImage( GL_TEXTURE_2D, 0 , GL_RED_INTEGER, GL_UNSIGNED_INT, colorBuffer ); 
   glBindTexture(GL_TEXTURE_2D, 0);
+  
+  for (int i=0; i<pixelNumber; i++)
+    std::cout << colorBuffer[i]-1 << std::endl;
   
   return *(std::max_element(colorBuffer, colorBuffer + pixelNumber));
 }

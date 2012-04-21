@@ -105,14 +105,14 @@ void DepthComplexity3D::process(const TriMesh &mesh) {
   
   //std::cout << _fboWidth << " " << _fboHeight << " " << _discretSteps << " " << _maximum << " " << _threshold << std::endl;
   
-  processMeshAlign(AlignZ, AlignX);
+  //processMeshAlign(AlignZ, AlignX);
   processMeshAlign(AlignZ, AlignY);
 
-  processMeshAlign(AlignY, AlignX);
-  processMeshAlign(AlignY, AlignZ);
+  //processMeshAlign(AlignY, AlignX);
+  //processMeshAlign(AlignY, AlignZ);
 
-  processMeshAlign(AlignX, AlignY);
-  processMeshAlign(AlignX, AlignZ);
+  //processMeshAlign(AlignX, AlignY);
+  //processMeshAlign(AlignX, AlignZ);
 
 }
 
@@ -135,12 +135,12 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
 
   // generate all planes varying on z  
   const unsigned steps = _discretSteps;
-  //unsigned az = 0;
-  //unsigned bz = 0;
-  for (unsigned az = 0; az<steps; ++az) {
+  unsigned az = 0;
+  unsigned bz = 0;
+  //for (unsigned az = 0; az<steps; ++az) {
     //double t = 3*az / (steps - 1.0) - 1; // [-1, 2]
     double t = az / (steps - 1.0);
-    for (unsigned bz = 0; bz<steps; ++bz) {
+    //for (unsigned bz = 0; bz<steps; ++bz) {
       // double u = 3*bz / (steps - 1.0) - 1; // [-1, 2]
       double u = bz / (steps - 1.0);
       Segment sa, sb;
@@ -262,8 +262,8 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
           _goodRays[i].insert(tempRays.begin(), tempRays.end());
         }
       }
-    }
-  }
+    //}
+  //}
 }
 
 //INPUT: plane -> The normal vector of the plane which we will check overlaps;
