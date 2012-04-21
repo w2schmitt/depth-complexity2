@@ -138,8 +138,8 @@ void DepthComplexity2D::process(
   _to = to;
   _segments = &segments;
   
-  std::clog << (_from.b - _from.a).length() << std::endl;
-  std::clog << (_to.b - to.a).length() << std::endl;
+  std::clog << (_from.a - _to.a).length() << std::endl;
+  std::clog << (_from.a - _from.b).length() << std::endl;
   
   if (!_status){
 	  std::cerr << "[ERROR] Check FBO or SHADERS." << std::endl;
@@ -328,22 +328,23 @@ void DepthComplexity2D::computeDualSegmentFromPoint(const Segment &seg,
   //assert(lpolygon);
   //assert(rpolygon);
   double t1,t2,t3,t4;
+  double ratio = 2.121324571;
   
   // Finding left points
   lineIntersection3D(_to, Segment(_from.a, seg.a), &t1, &t2);
   lineIntersection3D(_to, Segment(_from.a, seg.b), &t3, &t4);
   
   if (t1 > 1.0f){
-    lineIntersection3D(Segment(_from.b, _to.b), Segment(_from.a, seg.a), &t1, &t2);
+    lineIntersection3D(Segment(_to.b,_from.b), Segment(_from.a, seg.a), &t1, &t2);
     if (t3 < 1.0f){      
       lLine0.push_back(Point(0.0,1.0)); // corner point
-      lLine0.push_back(Point(t1, 1.0));
+      lLine0.push_back(Point(t1*ratio, 1.0));
       lLine1.push_back(Point(0.0,t3));
     }
     else {
-      lineIntersection3D(Segment(_from.b, _to.b), Segment(_from.a, seg.b), &t3, &t4);
-      lLine0.push_back(Point(t1, 1.0));
-      lLine1.push_back(Point(t3,1.0));
+      lineIntersection3D(Segment(_to.b,_from.b), Segment(_from.a, seg.b), &t3, &t4);
+      lLine0.push_back(Point(t1*ratio, 1.0));
+      lLine1.push_back(Point(t3*ratio,1.0));
     }
   }
   else {
@@ -352,9 +353,9 @@ void DepthComplexity2D::computeDualSegmentFromPoint(const Segment &seg,
        lLine1.push_back(Point(0.0, t3));
     }
     else{
-       lineIntersection3D(Segment(_from.b, _to.b), Segment(_from.a, seg.b), &t3, &t4);
+       lineIntersection3D(Segment(_to.b,_from.b), Segment(_from.a, seg.b), &t3, &t4);
        lLine1.push_back(Point(0.0, 1.0));  // corner point
-       lLine1.push_back(Point(t3, 1.0));
+       lLine1.push_back(Point(t3*ratio, 1.0));
        lLine0.push_back(Point(0.0, t1));
     }    
   }
@@ -365,16 +366,16 @@ void DepthComplexity2D::computeDualSegmentFromPoint(const Segment &seg,
   
 
   if (t1 < 0.0f){
-    lineIntersection3D(Segment(_to.a,_from.a), Segment(_from.b, seg.a), &t1, &t2);
+    lineIntersection3D(Segment(_from.a,_to.a), Segment(_from.b, seg.a), &t1, &t2);
     if (t3 > 0.0f){
       rLine0.push_back(Point(1.0, 0.0)); // corner point
-      rLine0.push_back(Point(t1, 0.0));
+      rLine0.push_back(Point(t1*ratio, 0.0));
       rLine1.push_back(Point(1.0, t3));
     }
     else {
-      lineIntersection3D(Segment(_to.a,_from.a), Segment(_from.b, seg.b), &t3, &t4);
-      rLine0.push_back(Point(t1, 0.0));
-      rLine1.push_back(Point(t3,0.0));
+      lineIntersection3D(Segment(_from.a,_to.a), Segment(_from.b, seg.b), &t3, &t4);
+      rLine0.push_back(Point(t1*ratio, 0.0));
+      rLine1.push_back(Point(t3*ratio,0.0));
     }
   }
   else {
@@ -383,9 +384,9 @@ void DepthComplexity2D::computeDualSegmentFromPoint(const Segment &seg,
        rLine1.push_back(Point(1.0, t3));
     }
     else {
-       lineIntersection3D(Segment(_to.a,_from.a), Segment(_from.b, seg.b), &t3, &t4);
+       lineIntersection3D(Segment(_from.a,_to.a), Segment(_from.b, seg.b), &t3, &t4);
        rLine1.push_back(Point(1.0, 0.0)); // corner point
-       rLine1.push_back(Point(t3, 0.0));
+       rLine1.push_back(Point(t3*ratio, 0.0));
        rLine0.push_back(Point(1.0, t1));
     }    
   }  
