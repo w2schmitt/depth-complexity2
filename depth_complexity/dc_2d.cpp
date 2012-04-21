@@ -334,14 +334,14 @@ void DepthComplexity2D::computeDualSegmentFromPoint(const Segment &seg,
   lineIntersection3D(_to, Segment(_from.a, seg.b), &t3, &t4);
   
   if (t1 > 1.0f){
-    lineIntersection3D(Segment(_to.b,_from.b), Segment(_from.a, seg.a), &t1, &t2);
+    lineIntersection3D(Segment(_from.b, _to.b), Segment(_from.a, seg.a), &t1, &t2);
     if (t3 < 1.0f){      
       lLine0.push_back(Point(0.0,1.0)); // corner point
       lLine0.push_back(Point(t1, 1.0));
       lLine1.push_back(Point(0.0,t3));
     }
     else {
-      lineIntersection3D(Segment(_to.b,_from.b), Segment(_from.a, seg.b), &t3, &t4);
+      lineIntersection3D(Segment(_from.b, _to.b), Segment(_from.a, seg.b), &t3, &t4);
       lLine0.push_back(Point(t1, 1.0));
       lLine1.push_back(Point(t3,1.0));
     }
@@ -352,7 +352,7 @@ void DepthComplexity2D::computeDualSegmentFromPoint(const Segment &seg,
        lLine1.push_back(Point(0.0, t3));
     }
     else{
-       lineIntersection3D(Segment(_to.b,_from.b), Segment(_from.a, seg.b), &t3, &t4);
+       lineIntersection3D(Segment(_from.b, _to.b), Segment(_from.a, seg.b), &t3, &t4);
        lLine1.push_back(Point(0.0, 1.0));  // corner point
        lLine1.push_back(Point(t3, 1.0));
        lLine0.push_back(Point(0.0, t1));
@@ -365,14 +365,14 @@ void DepthComplexity2D::computeDualSegmentFromPoint(const Segment &seg,
   
 
   if (t1 < 0.0f){
-    lineIntersection3D(Segment(_from.a,_to.a), Segment(_from.b, seg.a), &t1, &t2);
+    lineIntersection3D(Segment(_to.a,_from.a), Segment(_from.b, seg.a), &t1, &t2);
     if (t3 > 0.0f){
       rLine0.push_back(Point(1.0, 0.0)); // corner point
       rLine0.push_back(Point(t1, 0.0));
       rLine1.push_back(Point(1.0, t3));
     }
     else {
-      lineIntersection3D(Segment(_from.a,_to.a), Segment(_from.b, seg.b), &t3, &t4);
+      lineIntersection3D(Segment(_to.a,_from.a), Segment(_from.b, seg.b), &t3, &t4);
       rLine0.push_back(Point(t1, 0.0));
       rLine1.push_back(Point(t3,0.0));
     }
@@ -383,7 +383,7 @@ void DepthComplexity2D::computeDualSegmentFromPoint(const Segment &seg,
        rLine1.push_back(Point(1.0, t3));
     }
     else {
-       lineIntersection3D(Segment(_from.a,_to.a), Segment(_from.b, seg.b), &t3, &t4);
+       lineIntersection3D(Segment(_to.a,_from.a), Segment(_from.b, seg.b), &t3, &t4);
        rLine1.push_back(Point(1.0, 0.0)); // corner point
        rLine1.push_back(Point(t3, 0.0));
        rLine0.push_back(Point(1.0, t1));
