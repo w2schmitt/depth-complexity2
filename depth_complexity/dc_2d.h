@@ -60,13 +60,15 @@ private:
   bool initFBO();
 
   // Primal: point -> Dual: Segment
-  //Segment computeDualSegmentFromPoint(const Point &p);
-  void computeDualSegmentFromPoint(const Segment &seg,
-                                   std::vector<Point> &lLine0,
-                                   std::vector<Point> &lLine1,
-                                   std::vector<Point> &rLine0,
-                                   std::vector<Point> &rLine1);
-
+  Segment computeDualSegmentFromPoint(const Point &p);
+  //void computeDualSegmentFromPoint(const Segment &seg,
+  //                                 std::vector<Point> &lLine0,
+  //                                 std::vector<Point> &lLine1,
+  //                                 std::vector<Point> &rLine0,
+  //                                 std::vector<Point> &rLine1);
+		
+		void clipPolygon(const Point &p1, const Point &p2, const Point &p3, std::vector<Point> &polygon);
+		
   // Go through the counter buffer to find the maximum value.
   unsigned int findMaxValueInCounterBuffer();
   void setShaderClearCounterBuffer();

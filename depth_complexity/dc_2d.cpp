@@ -200,14 +200,40 @@ void DepthComplexity2D::findDepthComplexity2D() {
 		for (unsigned i=0; i<_segments->size(); ++i) {
 		  if (!_segments->at(i).active) continue;
       //std::cout << "aki\n";
-      std::vector<Point> lLine0, rLine0, lLine1, rLine1;
-      computeDualSegmentFromPoint(_segments->at(i), lLine0, lLine1, rLine0, rLine1);
-      
+      //std::vector<Point> lLine0, rLine0, lLine1, rLine1;
+						Segment Tv0 = computeDualSegmentFromPoint(_segments->at(i).a);
+						Segment Tv1 = computeDualSegmentFromPoint(_segments->at(i).b);
+      //computeDualSegmentFromPoint(_segments->at(i), lLine0, lLine1, rLine0, rLine1);
       //computeDualSegmentFromPoint(_segments->at(i).b, lLine1,rLine1);
-      
+
       double t1,t2;
-      if (segmentIntersection2D(Segment(lLine0.back(), rLine0.back()), Segment(lLine1.back(), rLine1.back()), &t1, &t2)){
-        
+      if (segmentIntersection2D(Tv0,Tv1, &t1, &t2)){
+								std::vector<Point> polygonA;
+								std::vector<Point> polygonB;
+								if (lineIntersection2D(Tv0, Tv1, &t1, &t2)){
+										Point inter = Tv0.a*(1.0f-t1) + t1*Tv0.b;
+										clipPolygon(Tv0.a, inter, Tv1.a, polygonA);
+										clipPolygon(Tv0.b, inter, Tv1.b, polygonB);
+
+										glBegin(GL_POLYGON);
+												for (unsigned i=0; i< polygonA.size(); ++i){
+														//std::clog << "("<<polygonA[i].x << " , " << polygonA[i].y << ")" << std::endl;
+														glVertex2f(polygonA[i].x,polygonA[i].y);
+												}
+										glEnd();
+
+
+										glBegin(GL_POLYGON);
+												for (unsigned i=0; i< polygonB.size(); ++i){
+														//std::clog << "("<<polygonA[i].x << " , " << polygonA[i].y << ")" << std::endl;
+														glVertex2f(polygonB[i].x, polygonB[i].y);
+												}
+										glEnd();
+
+								}
+						}
+
+								/*
         if (lineIntersection2D(Segment(lLine0.back(), rLine0.back()), Segment(lLine1.back(), rLine1.back()), &t1, &t2)){
           vec3d inter = lLine0.back()*(1.0-t1) + rLine0.back()*t1;
           
@@ -233,7 +259,7 @@ void DepthComplexity2D::findDepthComplexity2D() {
           //glEnd();
         }
       }
-      
+      */
       //if ((i+1)%20==0) break;
       
       //if (rLine0.size()==1)
@@ -319,6 +345,7 @@ void DepthComplexity2D::findDepthComplexity2D() {
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 }
 
+/*
 void DepthComplexity2D::computeDualSegmentFromPoint(const Segment &seg,
                                                     std::vector<Point> &lLine0,
                                                     std::vector<Point> &lLine1,
@@ -391,8 +418,69 @@ void DepthComplexity2D::computeDualSegmentFromPoint(const Segment &seg,
     }    
   }  
 }
+*/
 
-/*
+void DepthComplexity2D::clipPolygon(const Point &p1, const Point &p2, const Point &p3, std::vector<Point> &polygon){
+		
+		Segment upSeg(Point(0,1), Point(1,1));
+		Segment lowerSeg(Point(0,0), Point(1,0));
+		double t1,t2,t3,t4;
+
+		// discard polygon
+		if ( (p1.y > 1.0f && p2.y > 1.0f && p3.y > 1.0f) or
+							(p1.y < 0.0f && p2.y < 0.0f && p3.y < 0.0f))
+		{
+				return;
+		}
+
+		if (p1.y > 1.0f){
+				lineIntersection2D(upSeg, Segment(p1, p2), &t1, &t2); 
+				if (p3.y > 1.0f){
+						lineIntersection2D(upSeg, Segment(p3, p2), &t3, &t4); 
+						polygon.push_back(Point(t1, 1.0f));
+						polygon.push_back(Point(t3, 1.0f));
+				}
+				else if (p3.y>0.0f){
+						polygon.push_back(p3);
+						polygon.push_back(Point(0.0f, 1.0f));		// insert corner point
+						polygon.push_back(Point(t1, 1.0f));						
+				}
+		}
+		else if (p1.y > 0.0f){
+				if (p3.y > 1.0f){
+						lineIntersection2D(upSeg, Segment(p3, p2), &t3, &t4);
+						polygon.push_back(p1);
+						polygon.push_back(Point(0.0f, 1.0f));		// insert corner point
+						polygon.push_back(Point(t3, 1.0f));
+				}
+				else if (p3.y > 0.0f){		//good case, no cliping
+						polygon.push_back(p1);
+						polygon.push_back(p3);
+				}
+				else if (p3.y < 0.0f){
+						lineIntersection2D(lowerSeg, Segment(p3, p2), &t3, &t4);
+						polygon.push_back(p1);
+						polygon.push_back(Point(1.0f, 0.0f));		// insert corner point
+						polygon.push_back(Point(t3, 0.0f));
+				}
+		}
+		else {
+				lineIntersection2D(lowerSeg, Segment(p1, p2), &t1, &t2); 
+				if (p3.y > 0.0f){
+						polygon.push_back(p3);
+						polygon.push_back(Point(1.0f, 0.0f));
+						polygon.push_back(Point(t1, 0.0f));
+				}
+				else if (p3.y < 0.0f){
+						lineIntersection2D(lowerSeg, Segment(p3, p2), &t3, &t4);
+						polygon.push_back(Point(t1, 0.0f));
+						polygon.push_back(Point(t3, 0.0f));
+				}
+		}
+
+			polygon.push_back(p2);
+}
+
 Segment DepthComplexity2D::computeDualSegmentFromPoint(const Point &p) {
   Segment seg;
   double t1, t2;
@@ -411,7 +499,7 @@ Segment DepthComplexity2D::computeDualSegmentFromPoint(const Point &p) {
 
   return seg;
 }
-*/
+
 
 void drawQuad(const Point &p1, const Point &p2, const Point &p3, const Point &p4) {
   glBegin(GL_QUADS);
