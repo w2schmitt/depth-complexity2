@@ -9,7 +9,7 @@ bool checkFramebufferStatus();
 // Draw polygons in framebuffer.
 void drawQuad(const Point &p1, const Point &p2, const Point &p3, const Point &p4);
 void drawTriangle(const Point &p1, const Point &p2, const Point &p3);
-
+bool shrinkSegment(Point &p1, Point &p2, vec3d d1, vec3d d2);
 
 DepthComplexity2D::DepthComplexity2D(const int fboWidth, const int fboHeight){
   _fboWidth = fboWidth;
@@ -203,15 +203,19 @@ void DepthComplexity2D::findDepthComplexity2D() {
 						Segment Tv0 = computeDualSegmentFromPoint(_segments->at(i).a);
 						Segment Tv1 = computeDualSegmentFromPoint(_segments->at(i).b);
 
+						if (Tv0.a.y < Tv1.a.y) std::swap(Tv0, Tv1); 
+
       double t1,t2;
       if (segmentIntersection2D(Tv0,Tv1, &t1, &t2)){
 								std::vector<Point> polygonA;
 								std::vector<Point> polygonB;
 								if (lineIntersection2D(Tv0, Tv1, &t1, &t2)){
 										Point inter = Tv0.a*(1.0f-t1) + t1*Tv0.b;
-
+											
 										clipPolygon(Tv0.a, inter, Tv1.a, polygonA);
 										clipPolygon(Tv0.b, inter, Tv1.b, polygonB);
+
+										
 
 										// Triangle 1
 										glBegin(GL_POLYGON);
@@ -231,99 +235,7 @@ void DepthComplexity2D::findDepthComplexity2D() {
 
 								}
 						}
-
-								/*
-        if (lineIntersection2D(Segment(lLine0.back(), rLine0.back()), Segment(lLine1.back(), rLine1.back()), &t1, &t2)){
-          vec3d inter = lLine0.back()*(1.0-t1) + rLine0.back()*t1;
-          
-          std::vector<Point> vertexList;
-          vertexList.assign(lLine0.begin(), lLine0.end());
-          vertexList.push_back(inter);
-          std::reverse(lLine1.begin(), lLine1.end());
-          vertexList.insert(vertexList.end(), lLine1.begin(), lLine1.end());
-          //std::clog << vertexList.size() << std::endl;
-          //vertexList.push_back(lLine1[1]);
-          //vertexList.push_back(lLine1[0]);
-          
-          glBegin(GL_POLYGON);
-            for (unsigned i=0; i< vertexList.size(); ++i){
-              std::clog << "("<<vertexList[i].x << " , " << vertexList[i].y << ")" << std::endl;
-              glVertex2f(vertexList[i].x,vertexList[i].y);
-            }
-          glEnd();
-          std::clog << std::endl;
-          
-          //glBegin(GL_POINT);
-          //  glVertex2f(0.2, 0.2);
-          //glEnd();
-        }
-      }
-      */
-      //if ((i+1)%20==0) break;
-      
-      //if (rLine0.size()==1)
-      //  printf("lLine0 (%f , %f)\n", rLine0[0].x, rLine0[0].y); 
-      //else if (rLine0.size()==2)
-      //  printf("lLine0 (%f , %f) (%f , %f)\n", rLine0[0].x, rLine0[0].y, rLine0[1].x, rLine0[1].y ); 
-		  //Segment Tv0 = computeDualSegmentFromPoint(_segments->at(i).a);
-		  //Segment Tv1 = computeDualSegmentFromPoint(_segments->at(i).b);
-      
-      /*
-		  if (Tv0.a.y < Tv1.a.y) std::swap(Tv0, Tv1);
-
-		  double t1, t2;
-		  if (segmentIntersection2D(Tv0, Tv1, &t1, &t2) ) {			
-						//double t1, t2;
-						
-            // directions to shrink V1 and V2
-            vec3d u = (Tv1.a - Tv0.a); u.normalize(); // vec Tv0.a ---> Tv1.a            
-            t1=t2=0;
-            if (lineIntersection2D(Tv0, Tv1, &t1, &t2)) {
-               vec3d inter = Tv0.a*(1.0-t1) + Tv0.b*t1;
-               vec3d avgPt = (Tv0.a + Tv1.a)*0.5;
-               vec3d t = (avgPt - inter); t.normalize();    
-               
-               Triangle tri;
-               tri.a = Tv0.a + u*step;
-               tri.b = Tv1.a - u*step;
-               tri.c = inter + t*step;
-               
-               if (tri.a.y > tri.b.y) {
-                 drawTriangle(tri.a, tri.c, tri.b);
-               }
-            }
-            t1=t2=0;
-            // directions to shrink V3 and V4
-            vec3d v = (Tv1.b - Tv0.b); v.normalize(); // vec Tv0.b ---> Tv1.b
-
-            if (lineIntersection2D(Tv0, Tv1, &t1, &t2)) {
-               vec3d inter = Tv0.a*(1.0-t1) + Tv0.b*t1;
-               vec3d avgPt = (Tv0.b + Tv1.b)*0.5;
-               vec3d t = (avgPt - inter); t.normalize();   
-
-               Triangle tri;
-               tri.a = Tv0.b + v*step;
-               tri.b = Tv1.b - v*step;
-               tri.c = inter + t*step; 
-
-               if (tri.a.y < tri.b.y) {       
-                 drawTriangle(tri.a, tri.c, tri.b);                 
-               }
-            }
-            						
-          } else {
-            // u,v inward directions to shrink trapezoid
-            vec3d u = Tv1.a - Tv0.a; u.normalize();
-            vec3d v = Tv1.b - Tv0.b; v.normalize();
-												
-            Segment s1(Tv0.a + u*step, Tv0.b + v*step);
-            Segment s2(Tv1.a - v*step, Tv1.b - u*step);
-
-            if (s1.a.y > s2.a.y and s1.b.y > s2.b.y) {
-              drawQuad(s1.a, s1.b, s2.b, s2.a);
-            }
-          }*/
-        }
+  }
         //std::cout << "its over\n";
         // Ensure that all texture writing is done
         glMemoryBarrierEXT(GL_TEXTURE_UPDATE_BARRIER_BIT_EXT);
@@ -344,80 +256,6 @@ void DepthComplexity2D::findDepthComplexity2D() {
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 }
 
-/*
-void DepthComplexity2D::computeDualSegmentFromPoint(const Segment &seg,
-                                                    std::vector<Point> &lLine0,
-                                                    std::vector<Point> &lLine1,
-                                                    std::vector<Point> &rLine0,
-                                                    std::vector<Point> &rLine1)
-{
-  //assert(lpolygon);
-  //assert(rpolygon);
-  double t1,t2,t3,t4;
-  double ratio = 2.121324571;
-  
-  // Finding left points
-  lineIntersection3D(_to, Segment(_from.a, seg.a), &t1, &t2);
-  lineIntersection3D(_to, Segment(_from.a, seg.b), &t3, &t4);
-  
-  if (t1 > 1.0f){
-    lineIntersection3D(Segment(_to.b,_from.b), Segment(_from.a, seg.a), &t1, &t2);
-    if (t3 < 1.0f){      
-      lLine0.push_back(Point(0.0,1.0)); // corner point
-      lLine0.push_back(Point(t1*ratio, 1.0));
-      lLine1.push_back(Point(0.0,t3));
-    }
-    else {
-      lineIntersection3D(Segment(_to.b,_from.b), Segment(_from.a, seg.b), &t3, &t4);
-      lLine0.push_back(Point(t1*ratio, 1.0));
-      lLine1.push_back(Point(t3*ratio,1.0));
-    }
-  }
-  else {
-    if (t3 < 1.0f){ 
-       lLine0.push_back(Point(0.0, t1));
-       lLine1.push_back(Point(0.0, t3));
-    }
-    else{
-       lineIntersection3D(Segment(_to.b,_from.b), Segment(_from.a, seg.b), &t3, &t4);
-       lLine1.push_back(Point(0.0, 1.0));  // corner point
-       lLine1.push_back(Point(t3*ratio, 1.0));
-       lLine0.push_back(Point(0.0, t1));
-    }    
-  }
-  
-  // Finding right points
-  lineIntersection3D(_to, Segment(_from.b, seg.a), &t1, &t2);
-  lineIntersection3D(_to, Segment(_from.b, seg.b), &t3, &t4);
-  
-
-  if (t1 < 0.0f){
-    lineIntersection3D(Segment(_from.a,_to.a), Segment(_from.b, seg.a), &t1, &t2);
-    if (t3 > 0.0f){
-      rLine0.push_back(Point(1.0, 0.0)); // corner point
-      rLine0.push_back(Point(t1*ratio, 0.0));
-      rLine1.push_back(Point(1.0, t3));
-    }
-    else {
-      lineIntersection3D(Segment(_from.a,_to.a), Segment(_from.b, seg.b), &t3, &t4);
-      rLine0.push_back(Point(t1*ratio, 0.0));
-      rLine1.push_back(Point(t3*ratio,0.0));
-    }
-  }
-  else {
-    if (t3 > 0.0f){
-       rLine0.push_back(Point(1.0, t1));
-       rLine1.push_back(Point(1.0, t3));
-    }
-    else {
-       lineIntersection3D(Segment(_from.a,_to.a), Segment(_from.b, seg.b), &t3, &t4);
-       rLine1.push_back(Point(1.0, 0.0)); // corner point
-       rLine1.push_back(Point(t3*ratio, 0.0));
-       rLine0.push_back(Point(1.0, t1));
-    }    
-  }  
-}
-*/
 
 void DepthComplexity2D::clipPolygon(const Point &p1, const Point &p2, const Point &p3, std::vector<Point> &polygon){
 		
@@ -431,53 +269,111 @@ void DepthComplexity2D::clipPolygon(const Point &p1, const Point &p2, const Poin
 		{
 				return;
 		}
+		Point np1, np2, np3;
 
-		if (p1.y > 1.0f){
+		if (p1.y > 1.0f){ // =================================================
+				
 				lineIntersection2D(upSeg, Segment(p1, p2), &t1, &t2); 
-				if (p3.y > 1.0f){
-						lineIntersection2D(upSeg, Segment(p3, p2), &t3, &t4); 
-						polygon.push_back(Point(t1, 1.0f));
-						polygon.push_back(Point(t3, 1.0f));
-				}
-				else if (p3.y>0.0f){
-						polygon.push_back(p3);
-						polygon.push_back(Point(0.0f, 1.0f));		// insert corner point
-						polygon.push_back(Point(t1, 1.0f));						
-				}
-		}
-		else if (p1.y > 0.0f){
+				
 				if (p3.y > 1.0f){
 						lineIntersection2D(upSeg, Segment(p3, p2), &t3, &t4);
-						polygon.push_back(p1);
-						polygon.push_back(Point(0.0f, 1.0f));		// insert corner point
-						polygon.push_back(Point(t3, 1.0f));
+						np1 = Point(t1, 1.0f); 
+						np3 = Point(t3, 1.0f);
+						bool ok = shrinkSegment( np1, np3, vec3d::left(), vec3d::right() );
+
+						polygon.push_back(np1);
+						if (ok)	polygon.push_back(np3);
+
+		} 
+				else if (p3.y > 0.0f){
+						np1 = Point(t1, 1.0f); 
+						np2 = Point(0.0f, 1.0f);
+						np3 = p3;
+	
+						bool ok1 = shrinkSegment( np3, np2, vec3d::up()  , vec3d::zero() ),
+											ok2 = shrinkSegment( np1, np2, vec3d::left(), vec3d::zero() );
+						
+						if (ok1)	polygon.push_back(np3);						
+						polygon.push_back(np2);						
+						if (ok1 && ok2) polygon.push_back(np1);
 				}
-				else if (p3.y > 0.0f){		//good case, no cliping
-						polygon.push_back(p1);
-						polygon.push_back(p3);
+		} // =================================================================
+		else if (p1.y > 0.0f){
+
+				if (p3.y > 0.0f){
+						np1 = p1; 
+						np3 = p3;
+						bool ok;
+
+						if (p1.y > p3.y)
+								ok = shrinkSegment( np1, np3, vec3d::down(), vec3d::up() );
+						else
+								ok = shrinkSegment( np1, np3, vec3d::up(), vec3d::down() );
+
+						polygon.push_back(np1);
+						if (ok) polygon.push_back(np3);
 				}
-				else if (p3.y < 0.0f){
+		} // =================================================================
+		else {
+
+				lineIntersection2D(lowerSeg, Segment(p1, p2), &t1, &t2); 
+
+				if (p3.y > 0.0f){
+						np1 = Point(t1, 0.0f); 
+						np2 = Point(1.0f, 0.0f);
+						np3 = p3;
+
+						bool ok1 = shrinkSegment( np3, np2, vec3d::down()  , vec3d::zero() ),
+											ok2 = shrinkSegment( np1, np2, vec3d::right(), vec3d::zero() );
+						
+						if (ok1) polygon.push_back(np3);						
+						polygon.push_back(np2);
+						if (ok1 && ok2) polygon.push_back(np1);
+				}
+				if (p3.y < 0.0f){
 						lineIntersection2D(lowerSeg, Segment(p3, p2), &t3, &t4);
-						polygon.push_back(p1);
-						polygon.push_back(Point(1.0f, 0.0f));		// insert corner point
-						polygon.push_back(Point(t3, 0.0f));
+						np1 = p1; 
+						np3 = p3;
+						//bool ok = shrinkSegment( np1, np3, vec3d::left(), vec3d::right() );
+	
+						polygon.push_back(np1);
+						if (ok) polygon.push_back(np3);
+						//polygon.push_back(np3);
 				}
 		}
-		else {
-				lineIntersection2D(lowerSeg, Segment(p1, p2), &t1, &t2); 
-				if (p3.y > 0.0f){
-						polygon.push_back(p3);
-						polygon.push_back(Point(1.0f, 0.0f));
-						polygon.push_back(Point(t1, 0.0f));
-				}
-				else if (p3.y < 0.0f){
-						lineIntersection2D(lowerSeg, Segment(p3, p2), &t3, &t4);
-						polygon.push_back(Point(t1, 0.0f));
-						polygon.push_back(Point(t3, 0.0f));
-				}
+		Point middle = (p1+p3)*0.5;
+		vec3d dir = middle - p2; dir.normalize();
+		np2 = p2;
+		shrinkSegment( np2, middle, dir, vec3d::zero() );
+
+		polygon.push_back(np2);
+}
+
+bool shrinkSegment(Point &p1, Point &p2, vec3d d1, vec3d d2){
+			
+		double pixelSize = 1.0/512.0;
+		double step = 0.5*pixelSize*sqrt(2);
+
+		bool compare_x = p1.x < p2.x;
+		bool compare_y = p1.y < p2.y;
+		
+		Point cp1, cp2;
+		
+		// Shrink segment
+		cp1 = p1 + step*d1;
+		cp2 = p2 + step*d2;
+
+		// Check if it is not crossed
+		if ( (compare_x != (p1.x < cp2.x)) || (compare_y != (p1.y < cp2.y)) ){
+				Point middle = (p1 + p2)*0.5;
+				p1 = p2 = middle;
+				return false;
 		}
 
-			polygon.push_back(p2);
+		p1 = cp1;
+		p2 = cp2;
+
+		return true;
 }
 
 Segment DepthComplexity2D::computeDualSegmentFromPoint(const Point &p) {

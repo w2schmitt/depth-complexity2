@@ -38,6 +38,7 @@ bool operator<(const Segment &s1, const Segment &s2);
   int intersect;
 };*/
 
+
 struct BoundingBox {
     vec3d min, max;
     bool empty;
