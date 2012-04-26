@@ -199,12 +199,9 @@ void DepthComplexity2D::findDepthComplexity2D() {
 		//double step = 0.5*pixelSize*sqrt(2);
 		for (unsigned i=0; i<_segments->size(); ++i) {
 		  if (!_segments->at(i).active) continue;
-      //std::cout << "aki\n";
-      //std::vector<Point> lLine0, rLine0, lLine1, rLine1;
+
 						Segment Tv0 = computeDualSegmentFromPoint(_segments->at(i).a);
 						Segment Tv1 = computeDualSegmentFromPoint(_segments->at(i).b);
-      //computeDualSegmentFromPoint(_segments->at(i), lLine0, lLine1, rLine0, rLine1);
-      //computeDualSegmentFromPoint(_segments->at(i).b, lLine1,rLine1);
 
       double t1,t2;
       if (segmentIntersection2D(Tv0,Tv1, &t1, &t2)){
@@ -212,9 +209,11 @@ void DepthComplexity2D::findDepthComplexity2D() {
 								std::vector<Point> polygonB;
 								if (lineIntersection2D(Tv0, Tv1, &t1, &t2)){
 										Point inter = Tv0.a*(1.0f-t1) + t1*Tv0.b;
+
 										clipPolygon(Tv0.a, inter, Tv1.a, polygonA);
 										clipPolygon(Tv0.b, inter, Tv1.b, polygonB);
 
+										// Triangle 1
 										glBegin(GL_POLYGON);
 												for (unsigned i=0; i< polygonA.size(); ++i){
 														//std::clog << "("<<polygonA[i].x << " , " << polygonA[i].y << ")" << std::endl;
@@ -222,7 +221,7 @@ void DepthComplexity2D::findDepthComplexity2D() {
 												}
 										glEnd();
 
-
+										// Triangle 2
 										glBegin(GL_POLYGON);
 												for (unsigned i=0; i< polygonB.size(); ++i){
 														//std::clog << "("<<polygonA[i].x << " , " << polygonA[i].y << ")" << std::endl;
