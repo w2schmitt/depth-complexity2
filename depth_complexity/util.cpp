@@ -4,7 +4,7 @@
 #include <cstdio>
 #include <boost/tokenizer.hpp>
 
-const double EPS = 1.0E-8;
+const double EPS = 1.0E-5;
 
 TriMesh
 loadOFFMesh(std::istream& in){
