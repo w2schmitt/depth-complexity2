@@ -138,8 +138,8 @@ void DepthComplexity2D::process(
   _to = to;
   _segments = &segments;
   
-  std::clog << (_from.a - _to.a).length() << std::endl;
-  std::clog << (_from.a - _from.b).length() << std::endl;
+  //std::clog << (_from.a - _to.a).length() << std::endl;
+  //std::clog << (_from.a - _from.b).length() << std::endl;
   
   if (!_status){
 	  std::cerr << "[ERROR] Check FBO or SHADERS." << std::endl;
@@ -193,67 +193,193 @@ void DepthComplexity2D::findDepthComplexity2D() {
 
     // Set shader to write DC in the counter buffer 
     setShaderCountDC();
-				//float maxValue[4] = {0,0,0,0};
+
     
-		//double pixelSize = 1.0/512.0;
-		//double step = 0.5*pixelSize*sqrt(2);
 		for (unsigned i=0; i<_segments->size(); ++i) {
 		  if (!_segments->at(i).active) continue;
 
-						Segment Tv0 = computeDualSegmentFromPoint(_segments->at(i).a);
-						Segment Tv1 = computeDualSegmentFromPoint(_segments->at(i).b);
+			Segment Tv0 = computeDualSegmentFromPoint(_segments->at(i).a);
+			Segment Tv1 = computeDualSegmentFromPoint(_segments->at(i).b);
 
-						if (Tv0.a.y < Tv1.a.y) std::swap(Tv0, Tv1); 
+			if (Tv0.a.y < Tv1.a.y) std::swap(Tv0, Tv1); 
 
       double t1,t2;
       if (segmentIntersection2D(Tv0,Tv1, &t1, &t2)){
-								std::vector<Point> polygonA;
-								std::vector<Point> polygonB;
-								if (lineIntersection2D(Tv0, Tv1, &t1, &t2)){
-										Point inter = Tv0.a*(1.0f-t1) + t1*Tv0.b;
-											
-										clipPolygon(Tv0.a, inter, Tv1.a, polygonA);
-										clipPolygon(Tv0.b, inter, Tv1.b, polygonB);
+        std::vector<Point> polygonA;
+        std::vector<Point> polygonB;
+        if (lineIntersection2D(Tv0, Tv1, &t1, &t2)){
+          Point inter = Tv0.a*(1.0f-t1) + t1*Tv0.b;
+              
+          clipPolygon(Tv0.a, inter, Tv1.a, polygonA);
+          clipPolygon(Tv0.b, inter, Tv1.b, polygonB);
+          
+          glBegin(GL_POLYGON);
+            for (unsigned i=0; i< polygonA.size(); ++i){
+            glVertex2f(polygonA[i].x,polygonA[i].y);
+          }
+          glEnd();
+          
+          glBegin(GL_POLYGON);
+            for (unsigned i=0; i< polygonB.size(); ++i){
+              glVertex2f(polygonB[i].x, polygonB[i].y);
+            }
+          glEnd();
+          
+        }
+      }
+      else {
+        std::vector<Point> polygonA;
+        clipPolygon(Tv0.a, Tv0.b, Tv1.b, Tv1.a, polygonA);
+        
+        if (polygonA.size() == 0) continue;
+        glBegin(GL_POLYGON);
+          for (unsigned i=0; i< polygonA.size(); ++i){
+            glVertex2f(polygonA[i].x, polygonA[i].y);
+          }
+        glEnd();
+        
+      }
+    }
+    
+    // Ensure that all texture writing is done
+    glMemoryBarrierEXT(GL_TEXTURE_UPDATE_BARRIER_BIT_EXT);
+    // Disable Shaders
+    glUseProgram(0);
 
-										
+    _maximum = findMaxValueInCounterBuffer()-1;
+    glBindTexture(GL_TEXTURE_2D, 0);   
 
-										// Triangle 1
-										glBegin(GL_POLYGON);
-												for (unsigned i=0; i< polygonA.size(); ++i){
-														//std::clog << "("<<polygonA[i].x << " , " << polygonA[i].y << ")" << std::endl;
-														glVertex2f(polygonA[i].x,polygonA[i].y);
-												}
-										glEnd();
-
-										// Triangle 2
-										glBegin(GL_POLYGON);
-												for (unsigned i=0; i< polygonB.size(); ++i){
-														//std::clog << "("<<polygonA[i].x << " , " << polygonA[i].y << ")" << std::endl;
-														glVertex2f(polygonB[i].x, polygonB[i].y);
-												}
-										glEnd();
-
-								}
-						}
-  }
-        //std::cout << "its over\n";
-        // Ensure that all texture writing is done
-        glMemoryBarrierEXT(GL_TEXTURE_UPDATE_BARRIER_BIT_EXT);
-        // Disable Shaders
-        glUseProgram(0);
-	
-        _maximum = findMaxValueInCounterBuffer()-1;
-        glBindTexture(GL_TEXTURE_2D, 0);   
-
-	    glMatrixMode(GL_MODELVIEW);
-	    glPopMatrix();
+	  glMatrixMode(GL_MODELVIEW);
+	  glPopMatrix();
      
 	  glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
+    glPopMatrix();
 	  
 	  glEnable(GL_DEPTH_TEST);
     glPopAttrib();
-  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+}
+
+void DepthComplexity2D::clipPolygon(const Point &p1, const Point &p2, const Point &p3, const Point &p4, std::vector<Point> &polygon){
+		
+    Segment upSeg(Point(0,1), Point(1,1));
+		Segment lowerSeg(Point(0,0), Point(1,0));
+    double t1,t2,t3,t4;
+       
+    if ((p1.y < p4.y) || (p2.y < p3.y)) return;
+    
+    Point np1, np2, np3, np4;
+    
+    if (p1.y > 1.0f){
+      
+      lineIntersection2D(upSeg, Segment(p1, p2), &t1, &t2); 
+      if (p4.y > 1.0f){
+        lineIntersection2D(upSeg, Segment(p4, p3), &t3, &t4);
+        np1 = Point(t1, 1.0f); 
+				np4 = Point(t3, 1.0f);
+
+        bool ok = shrinkSegment( np1, np4, vec3d::left(), vec3d::right() );
+        polygon.push_back(np1);
+        if (ok)	polygon.push_back(np4);       
+      }
+      
+      else {
+        np1 = Point(t1, 1.0f); 
+				np2 = Point(0.0f, 1.0f);
+				np4 = p4;
+        
+        bool ok1 = shrinkSegment( np4, np2, vec3d::up()  , vec3d::zero() ),
+             ok2 = shrinkSegment( np1, np2, vec3d::left(), vec3d::zero() );
+						
+        if (ok2)	polygon.push_back(np1);						
+        polygon.push_back(np2);						
+        if (ok1 && ok2) polygon.push_back(np4);        
+      }
+      
+    }
+    else {      
+      np1 = p1; 
+      np4 = p4;
+      bool ok = shrinkSegment( np1, np4, vec3d::down(), vec3d::up() );
+      
+      //if (ok){
+       /*
+      std::clog << std::setprecision (10) << p1 << std::endl;
+      std::clog << std::setprecision (10) << p4 << std::endl;
+      std::clog << std::setprecision (10) << np1 << std::endl;
+      std::clog << std::setprecision (10) << np4 << std::endl;
+      std::clog << std::endl;
+      */
+      
+      polygon.push_back(np1);
+      if (ok) polygon.push_back(np4); 
+     // }     
+    }
+    
+    
+    if (p3.y < 0.0f){
+      
+      lineIntersection2D(lowerSeg, Segment(p4, p3), &t1, &t2); 
+      if (p2.y < 0.0f){
+        lineIntersection2D(lowerSeg, Segment(p1, p2), &t3, &t4);
+        np3 = Point(t1, 0.0f);
+        np2 = Point(t3, 0.0f);         
+        bool ok = shrinkSegment( np2, np3, vec3d::left(), vec3d::right() );
+
+        polygon.push_back(np3);
+        if (ok) polygon.push_back(np2);		
+      }
+      else{
+        np2 = p2;
+        np4 = Point(1.0f, 0.0f);
+        np3 = Point(t1, 0.0f); ;
+
+        bool ok1 = shrinkSegment( np2, np4, vec3d::down()  , vec3d::zero() ),
+             ok2 = shrinkSegment( np3, np4, vec3d::right(), vec3d::zero() );
+        
+        if (ok2) polygon.push_back(np3);						
+        polygon.push_back(np4);
+        if (ok1 && ok2) polygon.push_back(np2);
+      }
+      
+    }
+    else{      
+      np2 = p2; 
+      np3 = p3;
+      
+      //std::clog << np2 << std::endl;
+      //std::clog << np3 << std::endl;
+      bool ok = shrinkSegment( np2, np3, vec3d::down(), vec3d::up() );
+      
+
+      //std::clog << polygon[2] << std::endl;
+      //std::clog << polygon[3] << std::endl;
+      //std::clog << std::endl;
+      //if (ok){
+        //std::clog << ok << "\n";
+      polygon.push_back(np3);
+      if (ok) polygon.push_back(np2);
+     // }
+    }
+    
+    
+    /*
+    if (polygon.size()==4){
+      if ( (polygon[0].y >= polygon[1].y) && (polygon[2].y <= polygon[3].y)){
+        
+      }
+      else {
+        
+        std::clog << polygon[0] << std::endl;
+        std::clog << polygon[1] << std::endl;
+        std::clog << polygon[2] << std::endl;
+        std::clog << polygon[3] << std::endl;
+        std::clog << std::endl;
+        //polygon.clear();
+      }
+    }*/
+    //std::clog << polygon.size() << std::endl;
+    //if (polygon.size() != 0){ polygon.clear();}
 }
 
 
@@ -262,10 +388,10 @@ void DepthComplexity2D::clipPolygon(const Point &p1, const Point &p2, const Poin
 		Segment upSeg(Point(0,1), Point(1,1));
 		Segment lowerSeg(Point(0,0), Point(1,0));
 		double t1,t2,t3,t4;
-
+    
 		// discard polygon
 		if ( (p1.y > 1.0f && p2.y > 1.0f && p3.y > 1.0f) or
-							(p1.y < 0.0f && p2.y < 0.0f && p3.y < 0.0f))
+				 (p1.y < 0.0f && p2.y < 0.0f && p3.y < 0.0f))
 		{
 				return;
 		}
@@ -284,14 +410,14 @@ void DepthComplexity2D::clipPolygon(const Point &p1, const Point &p2, const Poin
 						polygon.push_back(np1);
 						if (ok)	polygon.push_back(np3);
 
-		} 
-				else if (p3.y > 0.0f){
+        } 
+				else{
 						np1 = Point(t1, 1.0f); 
 						np2 = Point(0.0f, 1.0f);
 						np3 = p3;
 	
 						bool ok1 = shrinkSegment( np3, np2, vec3d::up()  , vec3d::zero() ),
-											ok2 = shrinkSegment( np1, np2, vec3d::left(), vec3d::zero() );
+                 ok2 = shrinkSegment( np1, np2, vec3d::left(), vec3d::zero() );
 						
 						if (ok1)	polygon.push_back(np3);						
 						polygon.push_back(np2);						
@@ -332,14 +458,13 @@ void DepthComplexity2D::clipPolygon(const Point &p1, const Point &p2, const Poin
 				}
 				if (p3.y < 0.0f){
 						lineIntersection2D(lowerSeg, Segment(p3, p2), &t3, &t4);
-						np1 = p1; 
-						np3 = p3;
-						//bool ok = shrinkSegment( np1, np3, vec3d::left(), vec3d::right() );
+						np1 = Point(t3, 0.0f); 
+						np3 = Point(t1, 0.0f);
+						bool ok = shrinkSegment( np1, np3, vec3d::left(), vec3d::right() );
 	
 						polygon.push_back(np1);
-						if (ok) polygon.push_back(np3);
-						//polygon.push_back(np3);
-				}
+						if (ok) polygon.push_back(np3);		
+            }
 		}
 		Point middle = (p1+p3)*0.5;
 		vec3d dir = middle - p2; dir.normalize();
@@ -364,7 +489,7 @@ bool shrinkSegment(Point &p1, Point &p2, vec3d d1, vec3d d2){
 		cp2 = p2 + step*d2;
 
 		// Check if it is not crossed
-		if ( (compare_x != (p1.x < cp2.x)) || (compare_y != (p1.y < cp2.y)) ){
+		if ( (compare_x != (cp1.x < cp2.x)) || (compare_y != (cp1.y < cp2.y)) ){
 				Point middle = (p1 + p2)*0.5;
 				p1 = p2 = middle;
 				return false;
@@ -395,7 +520,7 @@ Segment DepthComplexity2D::computeDualSegmentFromPoint(const Point &p) {
   return seg;
 }
 
-
+/*
 void drawQuad(const Point &p1, const Point &p2, const Point &p3, const Point &p4) {
   glBegin(GL_QUADS);
     glVertex2f(p1.x, p1.y);
@@ -412,6 +537,7 @@ void drawTriangle(const Point &p1, const Point &p2, const Point &p3) {
     glVertex2f(p3.x, p3.y);
   glEnd();
 }
+*/
 
 unsigned int DepthComplexity2D::findMaxValueInCounterBuffer() {
   const int pixelNumber = _fboWidth * _fboHeight;
@@ -421,8 +547,8 @@ unsigned int DepthComplexity2D::findMaxValueInCounterBuffer() {
   glGetTexImage( GL_TEXTURE_2D, 0 , GL_RED_INTEGER, GL_UNSIGNED_INT, colorBuffer ); 
   glBindTexture(GL_TEXTURE_2D, 0);
   
-  for (int i=0; i<pixelNumber; i++)
-    std::cout << colorBuffer[i]-1 << std::endl;
+  //for (int i=0; i<pixelNumber; i++)
+  //  std::cout << colorBuffer[i]-1 << std::endl;
   
   return *(std::max_element(colorBuffer, colorBuffer + pixelNumber));
 }

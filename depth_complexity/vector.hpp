@@ -62,11 +62,11 @@ struct vec3 {
         return (x!=Q.x || y!=Q.y || z!=Q.z);
     }
 
-				static vec3<T> left(){ return vec3<T>(-1,0,0);}
-				static vec3<T> right(){ return vec3<T>(1,0,0);}
-				static vec3<T> up(){ return vec3<T>(0,1,0);}
-				static vec3<T> down(){ return vec3<T>(0,-1,0);}
-				static vec3<T> zero(){ return vec3<T>(0,0,0);}
+				static vec3<T> left(){ return vec3<T>(-1.0, 0.0, 0.0 );}
+				static vec3<T> right(){ return vec3<T>(1.0, 0.0, 0.0);}
+				static vec3<T> up(){ return vec3<T>(0.0, 1.0, 0.0);}
+				static vec3<T> down(){ return vec3<T>(0.0 ,-1.0, 0.0);}
+				static vec3<T> zero(){ return vec3<T>(0.0, 0.0, 0.0);}
 };
 
 template<class T>

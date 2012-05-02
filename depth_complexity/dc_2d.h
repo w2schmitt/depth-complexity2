@@ -14,10 +14,12 @@
 
 #include "util.h"
 #include "ShaderMgr.h"
+//#include "clip_polygon.h"
 #include <map>
 #include <set>
 #include <cstdlib>
 #include <stdio.h>
+#include <iomanip>
 
 // Compute the Depth complexity in 2D
 //
@@ -61,13 +63,9 @@ private:
 
   // Primal: point -> Dual: Segment
   Segment computeDualSegmentFromPoint(const Point &p);
-  //void computeDualSegmentFromPoint(const Segment &seg,
-  //                                 std::vector<Point> &lLine0,
-  //                                 std::vector<Point> &lLine1,
-  //                                 std::vector<Point> &rLine0,
-  //                                 std::vector<Point> &rLine1);
 		
-		void clipPolygon(const Point &p1, const Point &p2, const Point &p3, std::vector<Point> &polygon);
+  void clipPolygon(const Point &p1, const Point &p2, const Point &p3, std::vector<Point> &polygon);
+  void clipPolygon(const Point &p1, const Point &p2, const Point &p3, const Point &p4, std::vector<Point> &polygon);
 		
   // Go through the counter buffer to find the maximum value.
   unsigned int findMaxValueInCounterBuffer();
