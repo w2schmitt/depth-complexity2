@@ -25,7 +25,7 @@ DepthComplexity2D::DepthComplexity2D(const int fboWidth, const int fboHeight){
   
   assert(initFBO()); 
   
-  //shader manager class
+  //set up shaders
   ShaderMgr shaderMgr; 
   _shaderCountDC = shaderMgr.createShaderProgram("shader/dc.vert", "shader/dc.frag");        
   _shaderclearBuffer = shaderMgr.createShaderProgram("shader/clear.vert", "shader/clear.frag");
@@ -587,30 +587,34 @@ void DepthComplexity2D::findMaximumRaysAndHistogram() {
     for(int r=0; r<_fboHeight; ++r) {
       for(int c=0; c<_fboWidth; ++c) {
         unsigned int val = colorBuffer[r*_fboWidth+c]-1;
-
+				//std::clog << val << "\n";
         if (_computeHistogram) _histogram[val]++;
 
-        if ((_computeMaximumRays && val == _maximum) || (_computeGoodRays && val >= _threshold)) {
+        //if ((_computeMaximumRays && val == _maximum) || (_computeGoodRays && val >= _threshold)) {
 		  
           Segment seg;
           double t1 = c/(double)_fboWidth;
           double t2 = r/(double)_fboHeight;
           seg.a = _from.a*(1.f-t1) + _from.b*t1;
           seg.b = _to.a*(1.f-t2) + _to.b*t2;          
-          seg.sortPoints(); 		  
+          seg.sortPoints();
+
+					if (val == 1)
+						printf("%lf %lf %lf %lf %lf %lf\n", seg.a.x, seg.a.y, seg.a.z, seg.b.x, seg.b.y, seg.b.z);
+						//std::cout << seg.a.x << seg.a.y, << seg.a.z << seg.b.x << seg.b.y << seg.b.z << std::endl;
 		         
           if (val == _maximum){
 								
-									if (_maximumRays.size() < 1)
+										if (_maximumRays.size() < 10)
             _maximumRays.insert(seg);
           }
           else if (val >= _threshold){			   
-          if (_goodRays[val].size() < 1)
+          if (_goodRays[val].size() < 10)
             _goodRays[val].insert(seg);            
 							
-									}
+					}
 
-        }
+        //}
       }
     }
   glPopAttrib();

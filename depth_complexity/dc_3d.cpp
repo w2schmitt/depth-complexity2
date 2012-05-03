@@ -135,8 +135,8 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
 
   // generate all planes varying on z  
   const unsigned steps = _discretSteps;
-  //unsigned az = 20;
-  //unsigned bz = 2;
+  //unsigned az = 0;
+  //unsigned bz = 0;
   for (unsigned az = 0; az<steps; ++az) {
     //double t = 3*az / (steps - 1.0) - 1; // [-1, 2]
     double t = az / (steps - 1.0);

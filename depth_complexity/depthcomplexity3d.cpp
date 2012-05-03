@@ -20,6 +20,7 @@
 #include <GL/glut.h>
 #endif
 
+#include "flags.h"
 #include "vector.hpp"
 #include "camera/float3.h"
 //#include "camera.hpp"
@@ -39,6 +40,7 @@ vec4f sphereColor(0.0, 1.0, 0.0, 1.0);
 
 #ifdef USE_RANDOM_DC3D
 RDepthComplexity3D *dc3d;
+const char *filenameRays;
 #else
 DepthComplexity3D *dc3d;
 #endif
@@ -449,7 +451,10 @@ int doInteractive(const TriMesh& mesh)
     bool showObj = true;
     
     #ifdef USE_RANDOM_DC3D
-    dc3d = new RDepthComplexity3D(512, 512, 2);
+		if (strcmp(filenameRays, "")!=0)
+			dc3d = new RDepthComplexity3D(512, 512, 2, filenameRays);
+		else
+			dc3d = new RDepthComplexity3D(512, 512, 2);
     #else
     dc3d = new DepthComplexity3D(512, 512, 2);
     #endif
@@ -541,13 +546,17 @@ int main(int argc, char **argv)
         std::cerr << "[ERROR] Missing Input File!" << std::endl;
         return 1;
     }
-    
+
     glutInit(&argc,argv);
     
     try {
         std::ifstream file(argv[1]);
         std::string ext = getExtension(argv[1]);
- 
+
+#ifdef USE_RANDOM_DC3D
+				filenameRays = cmd_option("-fr", "", "load text file with rays");
+				//std::clog << "[RAYS FILES] : " << filenameRays << std::endl;
+#endif
         TriMesh mesh;
 
        if (ext == "off" || ext == "OFF")

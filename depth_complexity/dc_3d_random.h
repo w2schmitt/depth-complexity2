@@ -6,6 +6,9 @@
 #include <map>
 #include <set>
 #include <vector>
+#include <fstream>
+#include <sstream>
+#include <cstring>
 
 // Usage:
 //   TriMesh mesh = ...;
@@ -20,6 +23,8 @@
 class RDepthComplexity3D {
 public:
   RDepthComplexity3D(int fboWidth, int fboHeight, int discretSteps);
+	RDepthComplexity3D(int fboWidith, int fboHeight, int discretSteps, const char* filenameRays);
+
   virtual ~RDepthComplexity3D();
 
   void process(const TriMesh &mesh);
@@ -50,6 +55,8 @@ private:
   bool intersectPlaneSegment(const vec4d& plane, const vec3d& p0, const vec3d& p1, vec3d *pt);
   vec4d makePlane(const vec3d& a, const vec3d& b, const vec3d& c);
 
+	bool readRaysFromFile(std::istream& in);
+
 private:
   // Input
   const TriMesh *_mesh;
@@ -58,11 +65,13 @@ private:
   int _discretSteps;
   unsigned _maximum;
   unsigned _threshold;
+	std::vector<Segment> _raysFromFile;
 
   // State
   bool _computeHistogram;
   bool _computeMaximumRays;
   bool _computeGoodRays;
+	bool _computeRaysFromFile;
 
   // Output
   std::set<Segment,classcomp> _maximumRays;
