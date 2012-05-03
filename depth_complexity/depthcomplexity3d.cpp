@@ -266,7 +266,7 @@ void setupCamera(Camera& camera)
     glViewport(0, 0, winWidth, winHeight);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    camera.setPerspec(50, (double)winWidth/winHeight, 0.1, 1000);
+    camera.setPerspec(50, (double)winWidth/winHeight, 10, 10000);
    // gluPerspective(50, (double)winWidth/winHeight, 0.1, 1000);
 
     glMatrixMode(GL_MODELVIEW);

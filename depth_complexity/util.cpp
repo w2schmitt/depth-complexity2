@@ -171,7 +171,7 @@ bool lineIntersection2D(const Segment &line1, const Segment &line2, double *t1, 
   vec3d v = line2.b - line2.a;
   vec3d w = line1.a - line2.a;
   // just X and Y values are used
-  float D = perp(u,v);
+  double D = perp(u,v);
 
   // test if they are parallel (includes either being a point)
   if (fabs(D) < EPS) // S1 and S2 are parallel
