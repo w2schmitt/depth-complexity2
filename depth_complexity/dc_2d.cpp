@@ -7,8 +7,10 @@
 bool checkFramebufferStatus();
 
 // Draw polygons in framebuffer.
-void drawQuad(const Point &p1, const Point &p2, const Point &p3, const Point &p4);
-void drawTriangle(const Point &p1, const Point &p2, const Point &p3);
+//void drawQuad(const Point &p1, const Point &p2, const Point &p3, const Point &p4);
+//void drawTriangle(const Point &p1, const Point &p2, const Point &p3);
+void drawPolygon(const std::vector<Point> &polygon);
+
 bool shrinkSegment(Point &p1, Point &p2, vec3d d1, vec3d d2);
 
 DepthComplexity2D::DepthComplexity2D(const int fboWidth, const int fboHeight){
@@ -23,7 +25,7 @@ DepthComplexity2D::DepthComplexity2D(const int fboWidth, const int fboHeight){
   _shaderCountDC = 0;
   _status = false;   
   
-  assert(initFBO()); 
+  assert(initFBO());
   
   //set up shaders
   ShaderMgr shaderMgr; 
@@ -202,9 +204,8 @@ void DepthComplexity2D::findDepthComplexity2D() {
 			Segment Tv1 = computeDualSegmentFromPoint(_segments->at(i).b);
 
 			if (Tv0.a.y < Tv1.a.y) std::swap(Tv0, Tv1); 
-			
-
       double t1,t2;
+      
       if (segmentIntersection2D(Tv0,Tv1, &t1, &t2)){
         std::vector<Point> polygonA;
         std::vector<Point> polygonB;
@@ -282,12 +283,7 @@ void DepthComplexity2D::clipPolygon(const Point &p1, const Point &p2, const Poin
         np1 = Point(t1, 1.0f); 
 				np4 = Point(t3, 1.0f);
 
-								//std::clog << std::setprecision(10) << p1 << p2 << p3 << p4 << std::endl;
-								//std::clog << std::setprecision(10)<< np1 << np4 << std::endl;
-
         bool ok = shrinkSegment( np1, np4, vec3d::left(), vec3d::right() );
-								//std::clog << std::setprecision(10)<< np1 << np4 << std::endl;
-								//std::clog << "is ok: " << ok << std::endl;
         polygon.push_back(np1);
         if (ok)	polygon.push_back(np4);      
       }
@@ -309,20 +305,10 @@ void DepthComplexity2D::clipPolygon(const Point &p1, const Point &p2, const Poin
     else {      
       np1 = p1; 
       np4 = p4;
-      bool ok = shrinkSegment( np1, np4, vec3d::down(), vec3d::up() );
       
-      //if (ok){
-       /*
-      std::clog << std::setprecision (10) << p1 << std::endl;
-      std::clog << std::setprecision (10) << p4 << std::endl;
-      std::clog << std::setprecision (10) << np1 << std::endl;
-      std::clog << std::setprecision (10) << np4 << std::endl;
-      std::clog << std::endl;
-      */
-      
+      bool ok = shrinkSegment( np1, np4, vec3d::down(), vec3d::up() );      
       polygon.push_back(np1);
       if (ok) polygon.push_back(np4); 
-     // }    
     }
     
     
@@ -355,45 +341,11 @@ void DepthComplexity2D::clipPolygon(const Point &p1, const Point &p2, const Poin
     else{      
       np2 = p2; 
       np3 = p3;
-      
-      //std::clog << np2 << std::endl;
-      //std::clog << np3 << std::endl;
-      bool ok = shrinkSegment( np2, np3, vec3d::down(), vec3d::up() );
-      
 
-      //std::clog << polygon[2] << std::endl;
-      //std::clog << polygon[3] << std::endl;
-      //std::clog << std::endl;
-      //if (ok){
-        //std::clog << ok << "\n";
+      bool ok = shrinkSegment( np2, np3, vec3d::down(), vec3d::up() );
       polygon.push_back(np3);
       if (ok) polygon.push_back(np2);
-     // }
     }
-
-				//if (polygon.size()> 2){
-							//std::clog << "polygon accepted!" << std::endl << std::endl;
-							//std::clog << std::setprecision(10) << p1 << p2 << p3 << p4 << std::endl;
-							//std::clog << std::setprecision(10) << polygon[0] << polygon[1] << polygon[2] << polygon[3] << std::endl;
-				//}
-				//std::clog << std::endl;
-    /*
-    if (polygon.size()==4){
-      if ( (polygon[0].y >= polygon[1].y) && (polygon[2].y <= polygon[3].y)){
-        
-      }
-      else {
-        
-        std::clog << polygon[0] << std::endl;
-        std::clog << polygon[1] << std::endl;
-        std::clog << polygon[2] << std::endl;
-        std::clog << polygon[3] << std::endl;
-        std::clog << std::endl;
-        //polygon.clear();
-      }
-    }*/
-    //std::clog << polygon.size() << std::endl;
-    //if (polygon.size() != 0){ polygon.clear();}
 }
 
 
@@ -534,6 +486,15 @@ Segment DepthComplexity2D::computeDualSegmentFromPoint(const Point &p) {
   return seg;
 }
 
+void drawPolygon(const std::vector<Point> &polygon){
+	glBegin(GL_POLYGON);
+		for (unsigned i=0; i< polygon.size(); ++i){
+			glVertex2f(polygon[i].x,polygon[i].y);
+		}
+	glEnd();
+}
+
+
 /*
 void drawQuad(const Point &p1, const Point &p2, const Point &p3, const Point &p4) {
   glBegin(GL_QUADS);
@@ -603,13 +564,15 @@ void DepthComplexity2D::findMaximumRaysAndHistogram() {
 						printf("%lf %lf %lf %lf %lf %lf\n", seg.a.x, seg.a.y, seg.a.z, seg.b.x, seg.b.y, seg.b.z);
 						//std::cout << seg.a.x << seg.a.y, << seg.a.z << seg.b.x << seg.b.y << seg.b.z << std::endl;
 		         
-          if (val == _maximum){
+          //if (val == _maximum){
 								
-										if (_maximumRays.size() < 10)
-            _maximumRays.insert(seg);
+					//if (_maximumRays.size() < 10)
+					if (val==1){
+						if (_maximumRays.size() < 1)
+							_maximumRays.insert(seg);
           }
-          else if (val >= _threshold){			   
-          if (_goodRays[val].size() < 10)
+					else if (val >= _threshold){			   
+						if (_goodRays[val].size() < 10)
             _goodRays[val].insert(seg);            
 							
 					}

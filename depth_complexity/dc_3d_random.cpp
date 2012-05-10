@@ -60,9 +60,11 @@ RDepthComplexity3D::RDepthComplexity3D(int fboWidth, int fboHeight, int discretS
 
 bool RDepthComplexity3D::readRaysFromFile(std::istream& in){
 	std::string line;
-
+	unsigned i=0;
+	unsigned limit=50;
 	while (1){
 		Segment s;
+		if (i>limit) break;
 		if (getline(in, line)){
 			//std::cout << line.c_str() << std::endl;
 			if (sscanf(line.c_str(), "%lf %lf %lf %lf %lf %lf\n", &s.a.x, &s.a.y, &s.a.z, &s.b.x, &s.b.y, &s.b.z)!=6){
@@ -70,6 +72,7 @@ bool RDepthComplexity3D::readRaysFromFile(std::istream& in){
 				return false;
 			} 
 			else {				
+				i++;
 				_raysFromFile.push_back(s);
 			}				
 		} 
@@ -78,6 +81,8 @@ bool RDepthComplexity3D::readRaysFromFile(std::istream& in){
 			return true;
 		}
 	}
+	std::clog << "Loaded " << _raysFromFile.size() << " rays from file!" << std::endl;
+	return true;
 }
 
 RDepthComplexity3D::~RDepthComplexity3D() {}
