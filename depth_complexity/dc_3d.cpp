@@ -7,6 +7,7 @@
 #include <iostream>
 #include <iomanip>
 #include <math.h>
+#include <fstream>
 
 const double EPS = 1.0E-5;
 
@@ -255,6 +256,12 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
       for(unsigned i=0; i< tempHist.size(); ++i)
         _histogram[i] += tempHist[i];
       
+						//std::ofstream f_hist;
+						char filename[100];
+						sprintf(filename,"hist/hist%d%d.txt",az,bz);
+						std::ofstream fhist ( filename );
+						writeHistogram(fhist);
+						fhist.close();
       if(_computeGoodRays) {
         //std::cout << "size of goodRays: " << _goodRays.size() << " and _threshold = " << _threshold << std::endl;
         for(unsigned int i = _threshold ; i <= tempMaximum ; ++i) {

@@ -218,7 +218,7 @@ void DepthComplexity2D::findDepthComplexity2D() {
 
           glBegin(GL_POLYGON);
             for (unsigned i=0; i< polygonA.size(); ++i){
-            glVertex2f(polygonA[i].x,polygonA[i].y);
+														glVertex2f(polygonA[i].x,polygonA[i].y);
           }
           glEnd();
           
@@ -548,10 +548,10 @@ void DepthComplexity2D::findMaximumRaysAndHistogram() {
     for(int r=0; r<_fboHeight; ++r) {
       for(int c=0; c<_fboWidth; ++c) {
         unsigned int val = colorBuffer[r*_fboWidth+c]-1;
-				//std::clog << val << "\n";
+								
         if (_computeHistogram) _histogram[val]++;
-
-        //if ((_computeMaximumRays && val == _maximum) || (_computeGoodRays && val >= _threshold)) {
+								//std::cout << _computeHistogram << std::endl;
+        if ((_computeMaximumRays && val == _maximum) || (_computeGoodRays && val >= _threshold)) {
 		  
           Segment seg;
           double t1 = c/(double)_fboWidth;
@@ -560,26 +560,25 @@ void DepthComplexity2D::findMaximumRaysAndHistogram() {
           seg.b = _to.a*(1.f-t2) + _to.b*t2;          
           seg.sortPoints();
 
-					if (val == 1)
-						printf("%lf %lf %lf %lf %lf %lf\n", seg.a.x, seg.a.y, seg.a.z, seg.b.x, seg.b.y, seg.b.z);
+					//if (val == 1)
+						//printf("%lf %lf %lf %lf %lf %lf\n", seg.a.x, seg.a.y, seg.a.z, seg.b.x, seg.b.y, seg.b.z);
 						//std::cout << seg.a.x << seg.a.y, << seg.a.z << seg.b.x << seg.b.y << seg.b.z << std::endl;
 		         
           //if (val == _maximum){
 								
-					//if (_maximumRays.size() < 10)
-					if (val==1){
-						if (_maximumRays.size() < 1)
-							_maximumRays.insert(seg);
-          }
+					if (val == _maximum){
+							if (val == 1)
+									_maximumRays.insert(seg);
+					}
 					else if (val >= _threshold){			   
-						if (_goodRays[val].size() < 10)
-            _goodRays[val].insert(seg);            
-							
+					if (_goodRays[val].size() < 10)
+							_goodRays[val].insert(seg);            
 					}
 
         //}
       }
     }
+		}
   glPopAttrib();
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 }

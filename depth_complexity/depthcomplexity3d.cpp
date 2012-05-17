@@ -459,6 +459,7 @@ int doInteractive(const TriMesh& mesh)
     dc3d = new DepthComplexity3D(512, 512, 2);
     #endif
     dc3d->setComputeMaximumRays(true);
+				dc3d->setComputeHistogram(true);
     dc3d->setThreshold(10);
     
     TwAddVarRW(bar, "showPlanes", TW_TYPE_BOOLCPP, &showPlanes, " label='show discret. planes' ");
