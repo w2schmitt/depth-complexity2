@@ -2,71 +2,41 @@
 
 DIR=$1
 
-#Limits for NORMAL
-#LOWER_LIMIT[0]=1
-#UPPER_LIMIT[0]=2000
-#Limits for RANDOM
-#LOWER_LIMIT[1]=1
-#UPPER_LIMIT[1]=2000
-
-#TYPE[0]="Normal"
-#TYPE[1]="Random"
-
-#TERM[0]="u"
-#TERM[1]="r"
-
 TMP="temporary_genPlot_toRem.gp"
 COUNT=0
+SUM=0
 
-#<exeFile with full path> "$file" <output_file_path/"$file".out>
-
-for filepath in $DIR/*.txt
+for FILEPATH in $DIR/*.txt
 do
-				file="${filepath##*/}"
-			 echo "Processing $file $2 file..."
-				#You can set the size of the plot in this line (inches):
+		FILE="${FILEPATH##*/}"
+    echo "Processing ${FILE} file..."
+		
+    #You can set the size of the plot in this line (inches):
     echo "set terminal pdf size 10, 6" > ${TMP}
-    echo "set output \"${DIR}/${file}.pdf\"" >> ${TMP}
+    echo "set output \"${DIR}/hist/${FILE}.pdf\"" >> ${TMP}
     if [ $# -eq 2 ]; then
         echo "set key off" >> ${TMP}
     else
     	echo "set key outside" >> ${TMP}
         #echo "set key below samplen 1" >> ${TMP}
     fi
-    echo "set title \"${file} Histogram\"" >> ${TMP}
+    echo "set title \"${FILE} Histogram\"" >> ${TMP}
     echo "set xlabel \"Depth Complexity\" " >> ${TMP}
-    echo "set ylabel \"Frequency (in log_10 scale)\"" >> ${TMP}
-				echo "set logscale y" >> ${TMP}
-				echo "set grid" >> ${TMP}
-				echo "set xtics 1" >> ${TMP}
-    DIV_CAR="plot"
+    echo "set ylabel \"Frequency (in %)\"" >> ${TMP}
+		echo "set logscale y" >> ${TMP}
+		echo "set grid" >> ${TMP}
+		echo "set xtics 2" >> ${TMP}
+    #echo "set ytics 10" >> ${TMP}
+    #echo "set yrange [ 0.001 : 100 ]" >> ${TMP}
+    #echo "set xrange [ 1 : *]" >> ${TMP}
  
-    #MAX=$( ls Tests/${DIR}/${TYPE[t]} | sort -nr | head -n 1 )
-    #MIN=$( ls Tests/${DIR}/${TYPE[t]} | sort -n | head -n 1 )
-    #let MAX=MAX-MIN
-    #for d in $( ls Tests/${DIR}/${TYPE[t]} | sort -n );
-    #do
-    	#You can set the color function here:
-        #VALUE[1]=$(echo "obase=16; scale=0; (${COUNT}*255/${MAX})" | bc -l)
-        #VALUE[2]=$(echo "obase=16; scale=0; (${COUNT}*255/${MAX})" | bc -l)
-        #VALUE[3]="00"
-        
-	    let COUNT=COUNT+1
-      #  if [ $d -lt ${LOWER_LIMIT[t]} ]; then continue; fi
-      #  if [ $d -gt ${UPPER_LIMIT[t]} ]; then break; fi
-       # for ind in 1 2 3
-       # do
-       # 	if [ ${#VALUE[ind]} == 1 ];
-       # 	then
-       # 		VALUE[ind]="0${VALUE[ind]}"
-       # 	fi
-       # done
-       # COR="#${VALUE[1]}${VALUE[2]}${VALUE[3]}"
-        #echo "${COR}"
-								echo -n "${DIV_CAR} \"${filepath}\" using 1:2 every ::1 w lines title 'step=${COUNT}'" >> ${TMP}
-        #echo -n "${DIV_CAR} \"Tests/${DIR}/${TYPE[t]}/$d/hist.txt\" using 1:(log10(\$2+1)+1) every ::1 w lines lt rgb \"${COR}\" title '$d'" >> ${TMP}
-	   #DIV_CAR=","
-    #done
+    let COUNT=COUNT+1
+
+    #PLOT
+    SUM="$(gawk '{y+=$2}; END {print y}' $FILEPATH)"    
+    echo -n "plot \"${FILEPATH}\" using 1:(\$2*100/$SUM) every ::1 w lines title 'step=${COUNT}'" >> ${TMP}
+    #echo -n "plot \"${FILEPATH}\" using 1:(log10(\$2+1)+1) every ::1 w lines title 'step=${COUNT}'" >> ${TMP}
+ 
     echo "" >> ${TMP}
     echo "set output \"trash.pdf\"" >> ${TMP}
     gnuplot ${TMP}

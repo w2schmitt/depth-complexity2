@@ -10,6 +10,9 @@ struct Triangle {
     vec3d a, na,
         b, nb,
         c, nc;
+    
+    //bool intercepted;
+    //Triangle() : intercepted(false){}
 };
 
 typedef vec3d Point;

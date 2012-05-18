@@ -9,6 +9,8 @@
 #include <math.h>
 #include <fstream>
 
+//#define DEBUG_SAVE_HIST_EACH_FRAME
+
 const double EPS = 1.0E-5;
 
 template<class T>
@@ -233,9 +235,10 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
         }
         _maximum = tempMaximum;
         std::set<Segment, classcomp> tempRays = _dc2d->maximumRays();
-        std::set<Segment, classcomp>::iterator it = tempRays.begin();
+       // std::set<Segment, classcomp>::iterator it = tempRays.begin();
 
         // Testing rays and saving intersectin points.
+        /*
         for (; it!=tempRays.end(); ++it) {
           for (unsigned s=0; s<segments.size(); ++s) {
             double t1, t2;
@@ -244,6 +247,8 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
             }
           }
         }
+        */
+        
 
 //        _intersectionSegments.insert(_intersectionSegments.end(), segments.begin(), segments.end());
 //        _intersectionPoints.insert(_intersectionPoints.end(), points.begin(), points.end());
@@ -256,12 +261,12 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
       for(unsigned i=0; i< tempHist.size(); ++i)
         _histogram[i] += tempHist[i];
       
-						//std::ofstream f_hist;
-						char filename[100];
-						sprintf(filename,"hist/hist%d%d.txt",az,bz);
-						std::ofstream fhist ( filename );
-						writeHistogram(fhist);
-						fhist.close();
+#ifdef DEBUG_SAVE_HIST_EACH_FRAME
+      char filename[100]; sprintf(filename,"hist/hist%d%d.txt",az,bz);
+      std::ofstream fhist ( filename );
+      writeHistogram(fhist);
+      fhist.close();
+#endif
       if(_computeGoodRays) {
         //std::cout << "size of goodRays: " << _goodRays.size() << " and _threshold = " << _threshold << std::endl;
         for(unsigned int i = _threshold ; i <= tempMaximum ; ++i) {
@@ -272,6 +277,7 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
       }
     }
   }
+  //processMeshSegment(*_maximumRays.begin());  
 }
 
 //INPUT: plane -> The normal vector of the plane which we will check overlaps;
@@ -285,6 +291,54 @@ void DepthComplexity3D::processMeshPlane(const vec4d& plane, std::vector<Segment
       segments->push_back(s);
   }
 }
+
+void DepthComplexity3D::processMeshSegment(const Segment& segment) {
+	//assert(points);
+  //std::list<int> intersectTriIndexes;
+	for (unsigned i=0; i<_mesh->faces.size(); ++i) {
+		Point p;
+		if (intersectTriangleSegment(segment, _mesh->faces[i], &p)){
+      //intersectTriIndexes.push_back(i)
+      //_mesh->faces[i].intercepted=true;
+			_intersectionTriList.push_back(i);
+      //points->push_back(p);
+    }
+	}
+  //if (list.size()>0){
+  //  _intersectionTriList.push_back(intersectTriIndexes);
+ // }
+}
+
+bool DepthComplexity3D::intersectTriangleSegment(const Segment& segment, const Triangle& tri, Point *pnt) {
+	assert(pnt);
+
+	if(!intersectPlaneSegment(makePlane(tri.a, tri.b, tri.c),segment.a,segment.b,pnt))
+		return false;
+
+	vec3d u = tri.b - tri.a;
+	vec3d v = tri.c - tri.a;
+	vec3d w =	*pnt - tri.a;
+
+	double uu = dot(u,u);
+	double uv = dot(u,v);
+	double vv = dot(v,v);
+	double wu = dot(w,u);
+	double wv = dot(w,v);
+	
+	double den = uv*uv - uu*vv;
+
+	double s = (uv*wv - vv*wu)/den;
+	//std::cout << "s=" << s << std::endl;
+	if(s<0. || s>1.)
+		return false;
+	double t = (uv*wu - uu*wv)/den;
+	//std::cout << "t=" << t << std::endl;
+	if(t<0. || s+t>1.)
+		return false;
+	
+	return true;
+}
+
 
 bool DepthComplexity3D::intersectPlaneTriangle(const vec4d& plane, const Triangle& tri, Segment *seg) {
   assert(seg);

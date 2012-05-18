@@ -9,6 +9,7 @@
 #include <assert.h>
 #include <fstream>
 #include <map>
+#include <list>
 #include <set>
 
 #include <GL/glew.h>
@@ -158,23 +159,64 @@ std::vector<Triangle> sorted_faces;
 
 void drawMesh(const TriMesh& mesh, const vec3f& dir)
 {
+    glDisable(GL_CULL_FACE);
+    float *colorArray = NULL;    
+    unsigned fsize = mesh.faces.size();
+
+    if (fsize > 0){
+      colorArray = new float[fsize*4*3];
+      for (unsigned i=0; i<fsize*4*3; i+=4){
+        colorArray[i] = 0.26f;
+        colorArray[i+1] = 0.4515f;
+        colorArray[i+2] = 0.25f;
+        colorArray[i+3] = 0.65f;
+      }
+        
+        
+    }
+    
+    glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
+    glEnable(GL_COLOR_MATERIAL);
+    
+    
+    //const std::list<unsigned int>& ilist = dc3d->intersectionTris();
+    //std::list<unsigned int>::const_iterator it = ilist.begin();
+    //for (;it!=ilist.end(); ++it){
+    //    mesh->faces[*it].intercepted = true;
+    //}
+    
     //std::clog << "sorting...";
     if (sorted_faces.empty()) {
         sorted_faces = mesh.faces;
     }
+    
     std::sort(sorted_faces.begin(), sorted_faces.end(), ByDist(dir));
     //std::clog << "done" << std::endl;
+    
+    //std::cout << sorted_faces.size()<< " - " << fsize << std::endl;
     
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     //glDisable(GL_DEPTH_TEST);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_LIGHTING);
-    glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 1);
+    glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 1);    
+
+
 
     glEnable(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_VERTEX_ARRAY);
+    
+    
+
+    
+    glEnableClientState(GL_VERTEX_ARRAY);    
     glVertexPointer(3, GL_DOUBLE, 2*sizeof(vec3d), &sorted_faces[0].a.x);
+    
+    if (colorArray!=NULL){
+      glEnableClientState(GL_COLOR_ARRAY);
+      glColorPointer(4, GL_FLOAT, 0, colorArray);
+    }
+    
     glEnableClientState(GL_NORMAL_ARRAY);
     glNormalPointer(GL_DOUBLE, 2*sizeof(vec3d), &sorted_faces[0].na.x);
 
@@ -187,6 +229,10 @@ void drawMesh(const TriMesh& mesh, const vec3f& dir)
 
     glDisable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
+    glDisable(GL_COLOR_MATERIAL);
+    
+    if (colorArray!=NULL)
+      delete[] colorArray;
 }
 
 //void drawPlaneIntersection(const std::vector<Segment>& segments)
@@ -295,6 +341,13 @@ void recompute(void *data)
         numRays += dc3d->goodRays(i).size();
       std::clog << "Number of good rays: " << numRays << std::endl;
     }
+    
+    // check interception
+    //const std::list<unsigned int>& ilist = dc3d->intersectionTris();
+    //std::list<unsigned int>::const_iterator it = ilist.begin();
+    //for (;it!=ilist.end(); ++it){
+    //    mesh->faces[*it].intercepted = true;
+    //}
 }
 
 void
@@ -394,6 +447,7 @@ void GLFWCALL mouse_motion(int x, int y){
 
 int doInteractive(const TriMesh& mesh)
 {
+   
     glfwInit();
     std::atexit(glfwTerminate);
     
@@ -517,7 +571,7 @@ int doInteractive(const TriMesh& mesh)
 //        drawPlaneIntersection(intersectionVectors);
         drawRays();
 
-        glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, &objdiff.x);
+        //glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, &objdiff.x);
         glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, &objspec.x);
         glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, shine);
         if (showObj) drawMesh(mesh, vec3f(camera.GetDir().x,camera.GetDir().y,camera.GetDir().z));
@@ -547,7 +601,7 @@ int main(int argc, char **argv)
         std::cerr << "[ERROR] Missing Input File!" << std::endl;
         return 1;
     }
-
+ 
     glutInit(&argc,argv);
     
     try {

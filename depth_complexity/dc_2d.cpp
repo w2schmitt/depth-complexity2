@@ -560,22 +560,14 @@ void DepthComplexity2D::findMaximumRaysAndHistogram() {
           seg.b = _to.a*(1.f-t2) + _to.b*t2;          
           seg.sortPoints();
 
-					//if (val == 1)
-						//printf("%lf %lf %lf %lf %lf %lf\n", seg.a.x, seg.a.y, seg.a.z, seg.b.x, seg.b.y, seg.b.z);
-						//std::cout << seg.a.x << seg.a.y, << seg.a.z << seg.b.x << seg.b.y << seg.b.z << std::endl;
-		         
-          //if (val == _maximum){
-								
 					if (val == _maximum){
-							if (val == 1)
-									_maximumRays.insert(seg);
+            if (_maximumRays.size() < 1)
+              _maximumRays.insert(seg);
 					}
 					else if (val >= _threshold){			   
-					if (_goodRays[val].size() < 10)
+            if (_goodRays[val].size() < 1)
 							_goodRays[val].insert(seg);            
 					}
-
-        //}
       }
     }
 		}
