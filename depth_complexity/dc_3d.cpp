@@ -33,7 +33,11 @@ DepthComplexity3D::DepthComplexity3D(int fboWidth, int fboHeight, int discretSte
   _dc2d = new DepthComplexity2D(_fboWidth, _fboHeight);
 }
 
-DepthComplexity3D::~DepthComplexity3D() {}
+DepthComplexity3D::~DepthComplexity3D() {
+	std::map<int, std::list<unsigned int>* >::iterator it = _intersectionTriList.begin();
+	for (; it != _intersectionTriList.end(); ++it)
+		delete it->second;
+}
 
 void DepthComplexity3D::setComputeHistogram(bool computeHistogram) {
   this->_computeHistogram = computeHistogram;
@@ -277,7 +281,11 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
       }
     }
   }
-  //processMeshSegment(*_maximumRays.begin());  
+    //int index=0;
+    // check which mesh triangles intersect with each rays
+    //std::set<Segment,classcomp>::iterator it = _maximumRays.begin();
+    //for (; it!=_maximumRays.end(); ++it)
+    //        processMeshSegment(*it,index++);
 }
 
 //INPUT: plane -> The normal vector of the plane which we will check overlaps;
@@ -292,21 +300,16 @@ void DepthComplexity3D::processMeshPlane(const vec4d& plane, std::vector<Segment
   }
 }
 
-void DepthComplexity3D::processMeshSegment(const Segment& segment) {
+void DepthComplexity3D::processMeshSegment(const Segment& segment, int rayIndex) {
 	//assert(points);
-  //std::list<int> intersectTriIndexes;
+  std::list<unsigned int> *triIndex = new std::list<unsigned int>;
 	for (unsigned i=0; i<_mesh->faces.size(); ++i) {
 		Point p;
 		if (intersectTriangleSegment(segment, _mesh->faces[i], &p)){
-      //intersectTriIndexes.push_back(i)
-      //_mesh->faces[i].intercepted=true;
-			_intersectionTriList.push_back(i);
-      //points->push_back(p);
+			triIndex->push_back(i);
     }
 	}
-  //if (list.size()>0){
-  //  _intersectionTriList.push_back(intersectTriIndexes);
- // }
+	_intersectionTriList.insert ( std::pair<int,std::list<unsigned int>* >(rayIndex,triIndex) );;
 }
 
 bool DepthComplexity3D::intersectTriangleSegment(const Segment& segment, const Triangle& tri, Point *pnt) {

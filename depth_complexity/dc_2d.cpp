@@ -139,17 +139,12 @@ void DepthComplexity2D::process(
   _from = from;
   _to = to;
   _segments = &segments;
-  
-  //std::clog << (_from.a - _to.a).length() << std::endl;
-  //std::clog << (_from.a - _from.b).length() << std::endl;
-  
+    
   if (!_status){
 	  std::cerr << "[ERROR] Check FBO or SHADERS." << std::endl;
 	  return;
   }
-  
-  //glPixelStorei(GL_UNPACK_ALIGNMENT, 1);  
-  
+    
   findDepthComplexity2D();
   
   if (_computeHistogram or _computeMaximumRays or _computeGoodRays)
@@ -164,15 +159,15 @@ void DepthComplexity2D::findDepthComplexity2D() {
     glViewport(0, 0, _fboWidth, _fboHeight);
 
     // desable all anti-aliasing to avoid precision error
-		glDisable(GL_POINT_SMOOTH);
-	  glDisable(GL_LINE_SMOOTH);
-		glDisable(GL_POLYGON_SMOOTH);
+    glDisable(GL_POINT_SMOOTH);
+    glDisable(GL_LINE_SMOOTH);
+    glDisable(GL_POLYGON_SMOOTH);
+
+    glHint(GL_POLYGON_SMOOTH_HINT,GL_FASTEST);
+    glHint(GL_POINT_SMOOTH, GL_FASTEST);
+    glHint(GL_LINE_SMOOTH, GL_FASTEST);
 				
-		glHint(GL_POLYGON_SMOOTH_HINT,GL_FASTEST);
-		glHint(GL_POINT_SMOOTH, GL_FASTEST);
-		glHint(GL_LINE_SMOOTH, GL_FASTEST);
-				
-	  glDisable(GL_DEPTH_TEST);
+    glDisable(GL_DEPTH_TEST);
 		
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
@@ -180,12 +175,12 @@ void DepthComplexity2D::findDepthComplexity2D() {
     gluOrtho2D(0.0, 1.0, 0.0, 1.0);
       
     glMatrixMode(GL_MODELVIEW);
-		glPushMatrix();
-		glLoadIdentity();
+    glPushMatrix();
+    glLoadIdentity();
 
-		glActiveTexture(GL_TEXTURE0);
-		glEnable(GL_TEXTURE_2D);
-		glBindTexture(GL_TEXTURE_2D, _counterBuffId);   
+    glActiveTexture(GL_TEXTURE0);
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, _counterBuffId);   
 		
     // set shader to clear the counter buffer ---------
     setShaderClearCounterBuffer();
@@ -195,56 +190,38 @@ void DepthComplexity2D::findDepthComplexity2D() {
 
     // Set shader to write DC in the counter buffer 
     setShaderCountDC();
-
     
-		for (unsigned i=0; i<_segments->size(); ++i) {
-		  if (!_segments->at(i).active) continue;
+    for (unsigned i=0; i<_segments->size(); ++i) {
+        if (!_segments->at(i).active) continue;
 
-			Segment Tv0 = computeDualSegmentFromPoint(_segments->at(i).a);
-			Segment Tv1 = computeDualSegmentFromPoint(_segments->at(i).b);
+        Segment Tv0 = computeDualSegmentFromPoint(_segments->at(i).a);
+        Segment Tv1 = computeDualSegmentFromPoint(_segments->at(i).b);
 
-			if (Tv0.a.y < Tv1.a.y) std::swap(Tv0, Tv1); 
-      double t1,t2;
+	if (Tv0.a.y < Tv1.a.y) std::swap(Tv0, Tv1); 
+            double t1,t2;
       
-      if (segmentIntersection2D(Tv0,Tv1, &t1, &t2)){
-        std::vector<Point> polygonA;
-        std::vector<Point> polygonB;
-        if (lineIntersection2D(Tv0, Tv1, &t1, &t2)){
-          Point inter = Tv0.a*(1.0f-t1) + t1*Tv0.b;
+        if (segmentIntersection2D(Tv0,Tv1, &t1, &t2)){
+            std::vector<Point> polygonA;
+            std::vector<Point> polygonB;
+            if (lineIntersection2D(Tv0, Tv1, &t1, &t2)){
+                Point inter = Tv0.a*(1.0f-t1) + t1*Tv0.b;
               
-          clipPolygon(Tv0.a, inter, Tv1.a, polygonA);
-          clipPolygon(Tv0.b, inter, Tv1.b, polygonB);
-          
-
-          glBegin(GL_POLYGON);
-            for (unsigned i=0; i< polygonA.size(); ++i){
-														glVertex2f(polygonA[i].x,polygonA[i].y);
-          }
-          glEnd();
-          
-          glBegin(GL_POLYGON);
-            for (unsigned i=0; i< polygonB.size(); ++i){
-              glVertex2f(polygonB[i].x, polygonB[i].y);
-            }
-          glEnd();
-        
+                clipPolygon(Tv0.a, inter, Tv1.a, polygonA);
+                clipPolygon(Tv0.b, inter, Tv1.b, polygonB);          
+                
+                drawPolygon(polygonA);
+                drawPolygon(polygonB);
+             }                 
         }
-      }
-      else {
+        else {					
 								
-								
-        std::vector<Point> polygonA;
-        clipPolygon(Tv0.a, Tv0.b, Tv1.b, Tv1.a, polygonA);
-								//std::clog << std::setprecision(10) << Tv0.a << Tv0.b << Tv1.b << Tv1.a << std::endl;
-        
-        if (polygonA.size() == 0) continue;
-        glBegin(GL_POLYGON);
-          for (unsigned i=0; i< polygonA.size(); ++i){
-            glVertex2f(polygonA[i].x, polygonA[i].y);
-          }
-        glEnd();
-        
-      }
+            std::vector<Point> polygonA;
+            clipPolygon(Tv0.a, Tv0.b, Tv1.b, Tv1.a, polygonA);
+		
+            if (polygonA.size() == 0) continue;
+            
+            drawPolygon(polygonA);
+        }
     }
     
     // Ensure that all texture writing is done
@@ -255,13 +232,13 @@ void DepthComplexity2D::findDepthComplexity2D() {
     _maximum = findMaxValueInCounterBuffer()-1;
     glBindTexture(GL_TEXTURE_2D, 0);   
 
-	  glMatrixMode(GL_MODELVIEW);
-	  glPopMatrix();
-     
-	  glMatrixMode(GL_PROJECTION);
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
+
+    glMatrixMode(GL_PROJECTION);
     glPopMatrix();
 	  
-	  glEnable(GL_DEPTH_TEST);
+    glEnable(GL_DEPTH_TEST);
     glPopAttrib();
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 }
@@ -269,7 +246,7 @@ void DepthComplexity2D::findDepthComplexity2D() {
 void DepthComplexity2D::clipPolygon(const Point &p1, const Point &p2, const Point &p3, const Point &p4, std::vector<Point> &polygon){
 		
     Segment upSeg(Point(0,1), Point(1,1));
-		Segment lowerSeg(Point(0,0), Point(1,0));
+    Segment lowerSeg(Point(0,0), Point(1,0));
     double t1,t2,t3,t4;
        
     if ((p1.y < p4.y) || (p2.y < p3.y)) return;
@@ -488,9 +465,9 @@ Segment DepthComplexity2D::computeDualSegmentFromPoint(const Point &p) {
 
 void drawPolygon(const std::vector<Point> &polygon){
 	glBegin(GL_POLYGON);
-		for (unsigned i=0; i< polygon.size(); ++i){
-			glVertex2f(polygon[i].x,polygon[i].y);
-		}
+            for (unsigned i=0; i< polygon.size(); ++i){
+                    glVertex2f(polygon[i].x,polygon[i].y);
+            }
 	glEnd();
 }
 
@@ -550,7 +527,6 @@ void DepthComplexity2D::findMaximumRaysAndHistogram() {
         unsigned int val = colorBuffer[r*_fboWidth+c]-1;
 								
         if (_computeHistogram) _histogram[val]++;
-								//std::cout << _computeHistogram << std::endl;
         if ((_computeMaximumRays && val == _maximum) || (_computeGoodRays && val >= _threshold)) {
 		  
           Segment seg;
@@ -560,17 +536,17 @@ void DepthComplexity2D::findMaximumRaysAndHistogram() {
           seg.b = _to.a*(1.f-t2) + _to.b*t2;          
           seg.sortPoints();
 
-					if (val == _maximum){
+          if (val == _maximum){
             if (_maximumRays.size() < 1)
               _maximumRays.insert(seg);
-					}
-					else if (val >= _threshold){			   
+          }
+          else if (val >= _threshold){			   
             if (_goodRays[val].size() < 1)
-							_goodRays[val].insert(seg);            
-					}
-      }
-    }
-		}
+		_goodRays[val].insert(seg);            
+          }
+        }
+     }
+  }
   glPopAttrib();
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 }
@@ -639,15 +615,15 @@ void DepthComplexity2D::copyStencilToColor() {
 void DepthComplexity2D::setShaderClearCounterBuffer(){
     glUseProgram(_shaderclearBuffer);
     
-		// Pass MODELVIEW and PROJECTION matrices to Shader
-		GLfloat model[16],projection[16];
-		glGetFloatv(GL_MODELVIEW_MATRIX, model);
-		glGetFloatv(GL_PROJECTION_MATRIX, projection);
-		glProgramUniformMatrix4fv(_shaderclearBuffer, glGetUniformLocation(_shaderclearBuffer, "modelViewMat"), 1, GL_FALSE, model);
-		glProgramUniformMatrix4fv(_shaderclearBuffer, glGetUniformLocation(_shaderclearBuffer, "projectionMat"), 1, GL_FALSE, projection);
-    
+    // Pass MODELVIEW and PROJECTION matrices to Shader
+    GLfloat model[16],projection[16];
+    glGetFloatv(GL_MODELVIEW_MATRIX, model);
+    glGetFloatv(GL_PROJECTION_MATRIX, projection);
+    glProgramUniformMatrix4fv(_shaderclearBuffer, glGetUniformLocation(_shaderclearBuffer, "modelViewMat"), 1, GL_FALSE, model);
+    glProgramUniformMatrix4fv(_shaderclearBuffer, glGetUniformLocation(_shaderclearBuffer, "projectionMat"), 1, GL_FALSE, projection);
+
     // Pass Counter Buffer Texture
-		glProgramUniform1iEXT(_shaderclearBuffer, glGetUniformLocation(_shaderclearBuffer, "counterBuff"), 0);
+    glProgramUniform1iEXT(_shaderclearBuffer, glGetUniformLocation(_shaderclearBuffer, "counterBuff"), 0);
       
     glBegin(GL_QUADS);
       glVertex2f(-1.0f, 2.0f);
@@ -661,13 +637,13 @@ void DepthComplexity2D::setShaderCountDC(){
     // Set shader to count DC
     glUseProgram(_shaderCountDC);   
 	
-		// Pass MODELVIEW and PROJECTION matrices to Shader
-		GLfloat model[16],projection[16];
-		glGetFloatv(GL_MODELVIEW_MATRIX, model);
-		glGetFloatv(GL_PROJECTION_MATRIX, projection);
-		glProgramUniformMatrix4fv(_shaderCountDC, glGetUniformLocation(_shaderCountDC, "modelViewMat"), 1, GL_FALSE, model);
-		glProgramUniformMatrix4fv(_shaderCountDC, glGetUniformLocation(_shaderCountDC, "projectionMat"), 1, GL_FALSE, projection);
-         
+    // Pass MODELVIEW and PROJECTION matrices to Shader
+    GLfloat model[16],projection[16];
+    glGetFloatv(GL_MODELVIEW_MATRIX, model);
+    glGetFloatv(GL_PROJECTION_MATRIX, projection);
+    glProgramUniformMatrix4fv(_shaderCountDC, glGetUniformLocation(_shaderCountDC, "modelViewMat"), 1, GL_FALSE, model);
+    glProgramUniformMatrix4fv(_shaderCountDC, glGetUniformLocation(_shaderCountDC, "projectionMat"), 1, GL_FALSE, projection);
+
     // Pass counter buff texture
-		glProgramUniform1iEXT(_shaderCountDC, glGetUniformLocation(_shaderCountDC, "counterBuff"), 0);
+    glProgramUniform1iEXT(_shaderCountDC, glGetUniformLocation(_shaderCountDC, "counterBuff"), 0);
 }

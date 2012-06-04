@@ -81,7 +81,7 @@ private:
   std::vector<Point> _intersectionPoints;
   //  std::vector<Segment> _intersectionSegments;
 
-  friend int doInteractive(const TriMesh& mesh);
+  friend int doInteractive(TriMesh& mesh);
   friend void drawRays();
 };
 

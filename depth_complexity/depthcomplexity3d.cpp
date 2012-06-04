@@ -38,6 +38,7 @@ float radius = 0.01;
 bool showPlanes = false;
 bool doGoodRays = true;
 vec4f sphereColor(0.0, 1.0, 0.0, 1.0);
+unsigned int showRayIndex = 0;
 
 #ifdef USE_RANDOM_DC3D
 RDepthComplexity3D *dc3d;
@@ -159,31 +160,9 @@ std::vector<Triangle> sorted_faces;
 
 void drawMesh(const TriMesh& mesh, const vec3f& dir)
 {
-    glDisable(GL_CULL_FACE);
-    float *colorArray = NULL;    
-    unsigned fsize = mesh.faces.size();
-
-    if (fsize > 0){
-      colorArray = new float[fsize*4*3];
-      for (unsigned i=0; i<fsize*4*3; i+=4){
-        colorArray[i] = 0.26f;
-        colorArray[i+1] = 0.4515f;
-        colorArray[i+2] = 0.25f;
-        colorArray[i+3] = 0.65f;
-      }
-        
-        
-    }
     
     glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
     glEnable(GL_COLOR_MATERIAL);
-    
-    
-    //const std::list<unsigned int>& ilist = dc3d->intersectionTris();
-    //std::list<unsigned int>::const_iterator it = ilist.begin();
-    //for (;it!=ilist.end(); ++it){
-    //    mesh->faces[*it].intercepted = true;
-    //}
     
     //std::clog << "sorting...";
     if (sorted_faces.empty()) {
@@ -193,8 +172,6 @@ void drawMesh(const TriMesh& mesh, const vec3f& dir)
     std::sort(sorted_faces.begin(), sorted_faces.end(), ByDist(dir));
     //std::clog << "done" << std::endl;
     
-    //std::cout << sorted_faces.size()<< " - " << fsize << std::endl;
-    
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     //glDisable(GL_DEPTH_TEST);
@@ -202,23 +179,16 @@ void drawMesh(const TriMesh& mesh, const vec3f& dir)
     glEnable(GL_LIGHTING);
     glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 1);    
 
-
-
     glEnable(GL_VERTEX_ARRAY);
-    
-    
 
-    
     glEnableClientState(GL_VERTEX_ARRAY);    
-    glVertexPointer(3, GL_DOUBLE, 2*sizeof(vec3d), &sorted_faces[0].a.x);
+    glVertexPointer(3, GL_DOUBLE, 2*sizeof(vec3d)+sizeof(vec4d), &sorted_faces[0].a.x);
     
-    if (colorArray!=NULL){
-      glEnableClientState(GL_COLOR_ARRAY);
-      glColorPointer(4, GL_FLOAT, 0, colorArray);
-    }
-    
+    glEnableClientState(GL_COLOR_ARRAY);
+    glColorPointer(4, GL_DOUBLE, 2*sizeof(vec3d)+sizeof(vec4d), &sorted_faces[0].ca.x);
+
     glEnableClientState(GL_NORMAL_ARRAY);
-    glNormalPointer(GL_DOUBLE, 2*sizeof(vec3d), &sorted_faces[0].na.x);
+    glNormalPointer(GL_DOUBLE, 2*sizeof(vec3d)+sizeof(vec4d), &sorted_faces[0].na.x);
 
     glDrawArrays(GL_TRIANGLES, 0, sorted_faces.size()*3);
 
@@ -226,13 +196,13 @@ void drawMesh(const TriMesh& mesh, const vec3f& dir)
     glDisable(GL_VERTEX_ARRAY);
     glDisableClientState(GL_NORMAL_ARRAY);
     glDisable(GL_NORMAL_ARRAY);
+    glDisableClientState(GL_COLOR_ARRAY);
+    glDisable(GL_COLOR_ARRAY);
 
     glDisable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
     glDisable(GL_COLOR_MATERIAL);
     
-    if (colorArray!=NULL)
-      delete[] colorArray;
 }
 
 //void drawPlaneIntersection(const std::vector<Segment>& segments)
@@ -321,7 +291,7 @@ void setupCamera(Camera& camera)
     glLoadIdentity();
     //cam.applyTransform();
     camera.update();	
-	camera.lookAt();
+		camera.lookAt();
 }
 
 void recompute(void *data)
@@ -445,7 +415,7 @@ void GLFWCALL mouse_motion(int x, int y){
 	}//end if
 }
 
-int doInteractive(const TriMesh& mesh)
+int doInteractive(TriMesh& mesh)
 {
    
     glfwInit();
@@ -513,7 +483,7 @@ int doInteractive(const TriMesh& mesh)
     dc3d = new DepthComplexity3D(512, 512, 2);
     #endif
     dc3d->setComputeMaximumRays(true);
-				dc3d->setComputeHistogram(true);
+    dc3d->setComputeHistogram(true);
     dc3d->setThreshold(10);
     
     TwAddVarRW(bar, "showPlanes", TW_TYPE_BOOLCPP, &showPlanes, " label='show discret. planes' ");
@@ -536,9 +506,10 @@ int doInteractive(const TriMesh& mesh)
     TwAddVarRW(bar, "Spec", TW_TYPE_COLOR4F, &objspec.x, " group='Object' ");
     TwAddVarRW(bar, "Shin", TW_TYPE_FLOAT, &shine, " group='Object' min='1' max='128' ");
     TwAddVarRW(bar, "Show", TW_TYPE_BOOLCPP, &showObj, " group='Object' ");
-
+		
     TwAddVarRW(bar, "radius", TW_TYPE_FLOAT, &radius, "  group='Sphere' label='radius' min=0.0 step=0.001 max=2.0");
     TwAddVarRW(bar, "Color", TW_TYPE_COLOR4F, &sphereColor.x, " group='Sphere' ");
+    //TwAddVarRW(bar, "Show Ray", TW_TYPE_UINT32, &showRayIndex, " group='rays' min=0");
 
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
@@ -549,7 +520,7 @@ int doInteractive(const TriMesh& mesh)
     BoundingBox aabb = mesh.aabb;
     
     camera.bbox(float3(aabb.min.x,aabb.min.y,aabb.min.z), float3(aabb.max.x,aabb.max.y,aabb.max.z), true );
-	camera.front();
+		camera.front();
     
     //cam.target = aabb.center();
     //cam.up = vec3f(0, 1, 0);
@@ -567,14 +538,27 @@ int doInteractive(const TriMesh& mesh)
 
         /*GLfloat lpos[4] = { camera.GetEye().x, camera.GetEye().y, camera.GetEye().z, 1 };
         glLightfv(GL_LIGHT0, GL_POSITION, lpos);*/
+       
 
-//        drawPlaneIntersection(intersectionVectors);
+        //drawPlaneIntersection(intersectionVectors);
         drawRays();
 
+
+				
         //glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, &objdiff.x);
         glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, &objspec.x);
         glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, shine);
         if (showObj) drawMesh(mesh, vec3f(camera.GetDir().x,camera.GetDir().y,camera.GetDir().z));
+
+        Triangle *t = &mesh.faces[550];
+        t->ca = vec4d(1.0f, 0.0f, 0.0f, 0.7f);
+        t->cb = vec4d(1.0f, 0.0f, 0.0f, 0.7f);
+        t->cc = vec4d(1.0f, 0.0f, 0.0f, 0.7f);
+
+        t = &mesh.faces[608];
+        t->ca = vec4d(1.0f, 0.0f, 0.0f, 0.7f);
+        t->cb = vec4d(1.0f, 0.0f, 0.0f, 0.7f);
+        t->cc = vec4d(1.0f, 0.0f, 0.0f, 0.7f);
 
         // Draw tweak bars
         TwDraw();
