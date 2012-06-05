@@ -34,7 +34,7 @@ DepthComplexity3D::DepthComplexity3D(int fboWidth, int fboHeight, int discretSte
 }
 
 DepthComplexity3D::~DepthComplexity3D() {
-  std::map<int, std::list<unsigned int>*>::iterator it = _intersectionTriList.begin();
+  std::map<int, std::list< std::pair<unsigned int,unsigned int> >*>::iterator it = _intersectionTriList.begin();
   for (; it!=_intersectionTriList.end(); ++it){
     delete it->second;
   }
@@ -106,7 +106,7 @@ void DepthComplexity3D::process(const TriMesh &mesh) {
   this->_mesh = &mesh;
 
   _usedPlanes.clear();
-  std::map<int, std::list<unsigned int>*>::iterator itlist = _intersectionTriList.begin();
+  std::map<int, std::list< std::pair<unsigned int, unsigned int> >* >::iterator itlist = _intersectionTriList.begin();
   for (; itlist!=_intersectionTriList.end(); ++itlist){
     delete (itlist->second);
   }
@@ -131,15 +131,18 @@ void DepthComplexity3D::process(const TriMesh &mesh) {
   std::set<Segment,classcomp>::iterator it = _maximumRays.begin();
   for (; it!=_maximumRays.end(); ++it){
     //std::cout << it << std::endl;
-    processMeshSegment(*it, rayIndex++);
+    processMeshSegment(*it, rayIndex++, _maximum);
   }  
    
-  std::vector< std::set<Segment, classcomp> >::iterator it2 = _goodRays.begin();
-  std::set<Segment,classcomp>::iterator it1 = it2->begin();
-  for (; it1 != it2->end(); ++it1){
-    //std::cout << it << std::endl;
-    processMeshSegment(*it1, rayIndex++);
-  }  
+  //std::vector< std::set<Segment, classcomp> >::iterator it2 = _goodRays.begin();
+  //std::set<Segment,classcomp>::iterator it1 = it2->begin();
+  for (unsigned int i=0; i<_goodRays.size(); ++i){
+    std::set<Segment,classcomp>::iterator it1 = _goodRays[i].begin();
+    for (;it1 != _goodRays[i].end(); ++it1){
+      //std::cout << it << std::endl;
+      processMeshSegment(*it1, rayIndex++, i);
+    }  
+  }
 }
 
 // Call this varying palign and salign.
@@ -315,16 +318,16 @@ void DepthComplexity3D::processMeshPlane(const vec4d& plane, std::vector<Segment
   }
 }
 
-void DepthComplexity3D::processMeshSegment(const Segment& segment, unsigned int rayIndex) {
+void DepthComplexity3D::processMeshSegment(const Segment& segment, unsigned int rayIndex, unsigned int rayDC) {
 	//assert(points);
-  std::list<unsigned int> *ilist = new std::list<unsigned int>;
+  std::list< std::pair<unsigned int, unsigned int> > *ilist = new std::list< std::pair<unsigned int, unsigned int> >;
 	for (unsigned i=0; i<_mesh->faces.size(); ++i) {
 		Point p;
 		if (intersectTriangleSegment(segment, _mesh->faces[i], &p)){
-      ilist->push_back(i);
+      ilist->push_back(std::make_pair<unsigned int, unsigned int>(i,rayDC));
     }
 	}
-  _intersectionTriList.insert(std::make_pair<int, std::list<unsigned int>*>(rayIndex, ilist));
+  _intersectionTriList.insert(std::make_pair<int, std::list< std::pair<unsigned int, unsigned int> >* >(rayIndex, ilist));
 }
 
 bool DepthComplexity3D::intersectTriangleSegment(const Segment& segment, const Triangle& tri, Point *pnt) {

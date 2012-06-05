@@ -582,11 +582,11 @@ int doInteractive(TriMesh& mesh)
           std::vector<int> facesIntersectCount(mesh.faces.size(),0);
           //std::cout << facesIntersectCount.size() << std::endl;
           for (unsigned i=0; i < dc3d->intersectionTrisSize(); ++i){
-            const std::list<unsigned int> &ilist = dc3d->intersectionTris(i);
-            std::list<unsigned int>::const_iterator it = ilist.begin();
+            const std::list<std::pair<unsigned int, unsigned int> > &ilist = dc3d->intersectionTris(i);
+            std::list<std::pair<unsigned int, unsigned int> >::const_iterator it = ilist.begin();
             
             for (; it!=ilist.end(); ++it){
-              facesIntersectCount[*it] += 1;
+              facesIntersectCount[it->first] += it->second;
             }          
           }
           
