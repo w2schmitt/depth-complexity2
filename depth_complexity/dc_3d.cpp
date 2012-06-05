@@ -112,37 +112,47 @@ void DepthComplexity3D::process(const TriMesh &mesh) {
   }
   _intersectionTriList.clear();
   _goodRays.clear();
+	_maximumRays.clear();
   _goodRays.resize(1);
   _dc2d->setThreshold(_threshold);
   _maximum = 0;
   
   //std::cout << _fboWidth << " " << _fboHeight << " " << _discretSteps << " " << _maximum << " " << _threshold << std::endl;
   
+	unsigned int rayIndex=0;
   processMeshAlign(AlignZ, AlignX);
+	//copyRays(rayIndex);
   processMeshAlign(AlignZ, AlignY);
+	//copyRays(rayIndex);
 
   processMeshAlign(AlignY, AlignX);
-  processMeshAlign(AlignY, AlignZ);
+	//copyRays(rayIndex);
+	processMeshAlign(AlignY, AlignZ);
+	//copyRays(rayIndex);
 
   processMeshAlign(AlignX, AlignY);
-  processMeshAlign(AlignX, AlignZ);
+	//copyRays(rayIndex);
+	processMeshAlign(AlignX, AlignZ);
+  
+	copyRays(rayIndex);
+  
+}
 
-  unsigned int rayIndex=0;
-  std::set<Segment,classcomp>::iterator it = _maximumRays.begin();
-  for (; it!=_maximumRays.end(); ++it){
-    //std::cout << it << std::endl;
-    processMeshSegment(*it, rayIndex++, _maximum);
-  }  
-   
-  //std::vector< std::set<Segment, classcomp> >::iterator it2 = _goodRays.begin();
-  //std::set<Segment,classcomp>::iterator it1 = it2->begin();
-  for (unsigned int i=0; i<_goodRays.size(); ++i){
-    std::set<Segment,classcomp>::iterator it1 = _goodRays[i].begin();
-    for (;it1 != _goodRays[i].end(); ++it1){
-      //std::cout << it << std::endl;
-      processMeshSegment(*it1, rayIndex++, i);
-    }  
-  }
+void DepthComplexity3D::copyRays(unsigned int &rayIndex){
+
+				
+				std::set<Segment,classcomp>::iterator it = _maximumRays.begin();
+				for (; it!=_maximumRays.end(); ++it){
+						processMeshSegment(*it, rayIndex++, _maximum);
+				}  
+					
+				for (unsigned int i=0; i<_goodRays.size(); ++i){
+						std::set<Segment,classcomp>::iterator it1 = _goodRays[i].begin();
+						for (;it1 != _goodRays[i].end(); ++it1){
+								processMeshSegment(*it1, rayIndex++, i);
+						}  
+				}
+
 }
 
 // Call this varying palign and salign.
@@ -245,40 +255,20 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
       vec3d dsa = sa.b - sa.a; sa.a -= dsa; sa.b += dsa;
       vec3d dsb = sb.b - sb.a; sb.a -= dsb; sb.b += dsb;
 
-	  
       _dc2d->process(sa, sb, segments);
 
       unsigned int tempMaximum = _dc2d->maximum();
-						//if (tempMaximum==3)
-								//std::cout << "values: " << az << " " << bz << std::endl;
+
       if (tempMaximum >= _maximum) {
         if (tempMaximum > _maximum) {
-          _maximumRays.clear();
           _goodRays.resize(tempMaximum+1);
           _histogram.resize(tempMaximum+1);
-          _intersectionPoints.clear();
+          //_intersectionPoints.clear();
           //          _intersectionSegments.clear();
         }
         _maximum = tempMaximum;
         std::set<Segment, classcomp> tempRays = _dc2d->maximumRays();
-       // std::set<Segment, classcomp>::iterator it = tempRays.begin();
-
-        // Testing rays and saving intersectin points.
-        /*
-        for (; it!=tempRays.end(); ++it) {
-          for (unsigned s=0; s<segments.size(); ++s) {
-            double t1, t2;
-            if(segmentIntersection3D(*it, segments[s], &t1, &t2)) {
-              _intersectionPoints.push_back(it->a + t1*(it->b-it->a));
-            }
-          }
-        }
-        */
-        
-
-//        _intersectionSegments.insert(_intersectionSegments.end(), segments.begin(), segments.end());
-//        _intersectionPoints.insert(_intersectionPoints.end(), points.begin(), points.end());
-
+    
         _maximumRays.insert(tempRays.begin(), tempRays.end());
         // Shouldn't the histogram be used without regard to the current tempMaximum? (changed it)
       }

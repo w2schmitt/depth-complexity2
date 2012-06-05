@@ -50,6 +50,8 @@ private:
       AlignZ, AlignY, AlignX
   };
 
+		void copyRays(unsigned int &rayIndex);
+
   void processMeshAlign(const PlaneAlign &palign, const PlaneAlign &salign);
   void processMeshPlane(const vec4d& plane, std::vector<Segment> *segments);
   void processMeshSegment(const Segment& segment, unsigned int rayIndex, unsigned int rayDC);

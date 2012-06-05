@@ -146,9 +146,9 @@ loadOBJMesh(std::istream& in) {
           t.nb = normals.at(nb-1);
           t.nc = normals.at(nc-1);
           
-          t.ca = vec4d(0.0, 1.0, 0, 0.4);
-          t.cb = vec4d(0.0, 1.0, 0, 0.4);
-          t.cc = vec4d(0.0, 1.0, 0, 0.4);
+          t.ca = vec4d(0.0, 1.0, 0, 0.8);
+          t.cb = vec4d(0.0, 1.0, 0, 0.8);
+          t.cc = vec4d(0.0, 1.0, 0, 0.8);
           
           mesh.faces.push_back(t);
 

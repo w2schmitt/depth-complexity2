@@ -516,7 +516,7 @@ int doInteractive(TriMesh& mesh)
     #endif
     dc3d->setComputeMaximumRays(true);
     dc3d->setComputeHistogram(true);
-    dc3d->setThreshold(10);
+    dc3d->setThreshold(1);
     
     TwAddVarRW(bar, "showPlanes", TW_TYPE_BOOLCPP, &showPlanes, " label='show discret. planes' ");
 
@@ -593,6 +593,7 @@ int doInteractive(TriMesh& mesh)
         }*/
         if (execute){
           std::vector<unsigned int> facesIntersectCount(mesh.faces.size(),0);
+										std::vector<unsigned int> countRays(mesh.faces.size(),0);
           //std::cout << facesIntersectCount.size() << std::endl;
           for (unsigned i=0; i < dc3d->intersectionTrisSize(); ++i){
             const std::list<std::pair<unsigned int, unsigned int> > &ilist = dc3d->intersectionTris(i);
@@ -600,29 +601,34 @@ int doInteractive(TriMesh& mesh)
             
             for (; it!=ilist.end(); ++it){
               facesIntersectCount[it->first] += it->second;
+														countRays[it->first] += it->second;
             }          
           }
           
           sorted_faces.assign(mesh.faces.begin(), mesh.faces.end());    
           for (unsigned int k=0; k<facesIntersectCount.size(); ++k){
-            unsigned int maxNumber = *std::max_element(facesIntersectCount.begin(), facesIntersectCount.end());
-            
-            if (k==maxNumber){
+            unsigned int maxNumber = *std::max_element(facesIntersectCount.begin(), facesIntersectCount.end());            
+
+            //if (k==maxNumber){
             int value = facesIntersectCount[k];
+												unsigned int div = countRays[k];
+
+												//std::cout << "Triangle " << k << ": DC = " << value << std::endl;
             
-              if (value!=0){
+              if (value!=0 && div!=0){
                 
                 //std::cout << "entrou!" << std::endl;
                 Triangle *t = &sorted_faces[k];
-                //t->ca = vec4d((double)value/(double)maxNumber, 1.0f - (double)value/(double)maxNumber, 0.0f, 0.4f);
-                //t->cb = vec4d((double)value/(double)maxNumber, 1.0f - (double)value/(double)maxNumber, 0.0f, 0.4f);
-                //t->cc = vec4d((double)value/(double)maxNumber, 1.0f - (double)value/(double)maxNumber, 0.0f, 0.4f);
-                t->ca = vec4d(0,0,0,0.4);
-                t->cb = vec4d(0,0,0,0.4);
-                t->cc = vec4d(0,0,0,0.4);
+																//t->ca = vec4d(
+                t->ca = vec4d((double)value/(double)maxNumber, 1.0f - (double)value/(double)maxNumber, 0.0f, 0.8f);
+                t->cb = vec4d((double)value/(double)maxNumber, 1.0f - (double)value/(double)maxNumber, 0.0f, 0.8f);
+                t->cc = vec4d((double)value/(double)maxNumber, 1.0f - (double)value/(double)maxNumber, 0.0f, 0.8f);
+                //t->ca = vec4d(0,0,0,0.4);
+                //t->cb = vec4d(0,0,0,0.4);
+                //t->cc = vec4d(0,0,0,0.4);
               }
             }
-          }
+          //}
           execute = false;
         }
         
