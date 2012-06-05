@@ -7,12 +7,12 @@
 #include "vector.hpp"
 
 struct Triangle {
-    vec3d a, na,
-        b, nb,
-        c, nc;
-    
-    //bool intercepted;
-    //Triangle() : intercepted(false){}
+  vec3d a, na;
+  vec4d ca;
+  vec3d b, nb;
+  vec4d cb;
+  vec3d c, nc;
+  vec4d cc;
 };
 
 typedef vec3d Point;

@@ -145,6 +145,11 @@ loadOBJMesh(std::istream& in) {
           t.na = normals.at(na-1);
           t.nb = normals.at(nb-1);
           t.nc = normals.at(nc-1);
+          
+          t.ca = vec4d(0.0, 1.0, 0, 0.4);
+          t.cb = vec4d(0.0, 1.0, 0, 0.4);
+          t.cc = vec4d(0.0, 1.0, 0, 0.4);
+          
           mesh.faces.push_back(t);
 
           b = c;
@@ -160,7 +165,7 @@ loadOBJMesh(std::istream& in) {
   }
 
   std::clog << "Loaded " << mesh.faces.size() << " faces" << std::endl;
-
+  
   return mesh;
 }
 

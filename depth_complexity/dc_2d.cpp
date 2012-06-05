@@ -7,8 +7,6 @@
 bool checkFramebufferStatus();
 
 // Draw polygons in framebuffer.
-//void drawQuad(const Point &p1, const Point &p2, const Point &p3, const Point &p4);
-//void drawTriangle(const Point &p1, const Point &p2, const Point &p3);
 void drawPolygon(const std::vector<Point> &polygon);
 
 bool shrinkSegment(Point &p1, Point &p2, vec3d d1, vec3d d2);
@@ -495,25 +493,6 @@ void drawPolygon(const std::vector<Point> &polygon){
 }
 
 
-/*
-void drawQuad(const Point &p1, const Point &p2, const Point &p3, const Point &p4) {
-  glBegin(GL_QUADS);
-    glVertex2f(p1.x, p1.y);
-    glVertex2f(p2.x, p2.y);
-    glVertex2f(p3.x, p3.y);
-    glVertex2f(p4.x, p4.y);
-  glEnd();
-}
-
-void drawTriangle(const Point &p1, const Point &p2, const Point &p3) {
-  glBegin(GL_TRIANGLES);
-    glVertex2f(p1.x, p1.y);
-    glVertex2f(p2.x, p2.y);
-    glVertex2f(p3.x, p3.y);
-  glEnd();
-}
-*/
-
 unsigned int DepthComplexity2D::findMaxValueInCounterBuffer() {
   const int pixelNumber = _fboWidth * _fboHeight;
   unsigned int colorBuffer[pixelNumber];
@@ -550,22 +529,21 @@ void DepthComplexity2D::findMaximumRaysAndHistogram() {
         unsigned int val = colorBuffer[r*_fboWidth+c]-1;
 								
         if (_computeHistogram) _histogram[val]++;
-								//std::cout << _computeHistogram << std::endl;
         if ((_computeMaximumRays && val == _maximum) || (_computeGoodRays && val >= _threshold)) {
 		  
           Segment seg;
-          double t1 = c/(double)_fboWidth;
-          double t2 = r/(double)_fboHeight;
+          double t1 = ((double)c+0.5)/(double)_fboWidth;
+          double t2 = ((double)r+0.5)/(double)_fboHeight;
           seg.a = _from.a*(1.f-t1) + _from.b*t1;
           seg.b = _to.a*(1.f-t2) + _to.b*t2;          
           seg.sortPoints();
 
 					if (val == _maximum){
-            if (_maximumRays.size() < 1)
+            //if (_maximumRays.size() < 1)
               _maximumRays.insert(seg);
 					}
-					else if (val >= _threshold){			   
-            if (_goodRays[val].size() < 1)
+					else if (val >= val*0.5){			   
+            //if (_goodRays[val].size() < 1)
 							_goodRays[val].insert(seg);            
 					}
       }

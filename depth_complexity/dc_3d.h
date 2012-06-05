@@ -38,7 +38,8 @@ public:
   const std::vector<Segment> &usedPlanes() const { return _usedPlanes; }
   const std::vector<Point> &intersectionPoints() const { return _intersectionPoints; }
   unsigned int getThreshold() { return _threshold; }
-  const std::list<unsigned int> &intersectionTris(){return _intersectionTriList;}
+  const std::list<unsigned int> &intersectionTris(int rayIndex){return *_intersectionTriList.find(rayIndex)->second;}
+  unsigned int intersectionTrisSize() {return _intersectionTriList.size();}
 
   void writeHistogram(std::ostream& out);
   void writeRays(std::ostream& out);
@@ -51,7 +52,7 @@ private:
 
   void processMeshAlign(const PlaneAlign &palign, const PlaneAlign &salign);
   void processMeshPlane(const vec4d& plane, std::vector<Segment> *segments);
-  void processMeshSegment(const Segment& segment);
+  void processMeshSegment(const Segment& segment, unsigned int rayIndex);
   bool intersectTriangleSegment(const Segment& segment, const Triangle& tri, Point *pnt);
   bool intersectPlaneTriangle(const vec4d& plane, const Triangle& tri, Segment *seg);
   bool intersectPlaneSegment(const vec4d& plane, const vec3d& p0, const vec3d& p1, vec3d *pt);
@@ -79,10 +80,10 @@ private:
   std::vector<Segment> _usedPlanes;
   std::vector<unsigned long long> _histogram;
   std::vector<Point> _intersectionPoints;
-  std::list<unsigned int> _intersectionTriList;
+  std::map< int, std::list<unsigned int>* > _intersectionTriList;
   //  std::vector<Segment> _intersectionSegments;
 
-  friend int doInteractive(const TriMesh& mesh);
+  friend int doInteractive(TriMesh& mesh);
   friend void drawRays();
 };
 

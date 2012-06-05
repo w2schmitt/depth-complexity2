@@ -40,6 +40,7 @@ public:
   const std::vector<Segment> &usedPlanes() const { return _usedPlanes; }
   const std::vector<Point> &intersectionPoints() const { return _intersectionPoints; }
   unsigned getThreshold() { return _threshold; }
+  //const std::list<unsigned int> &intersectionTris(int rayIndex){return *_intersectionTriList.find(rayIndex)->second;}
 
   void writeHistogram(std::ostream& out);
   void writeRays(std::ostream& out);
@@ -79,9 +80,10 @@ private:
   std::vector<Segment> _usedPlanes;
   std::vector<unsigned long long> _histogram;
   std::vector<Point> _intersectionPoints;
+  //std::map< int, std::list<unsigned int>* > _intersectionTriList;
   //  std::vector<Segment> _intersectionSegments;
 
-  friend int doInteractive(const TriMesh& mesh);
+  friend int doInteractive(TriMesh& mesh);
   friend void drawRays();
 };
 
