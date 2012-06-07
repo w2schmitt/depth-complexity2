@@ -434,17 +434,17 @@ void GLFWCALL mouse_motion(int x, int y){
 	}//end if
 }
 
-float colors2[10][3] = {
-  {1.0f, 1.0f, 1.0f},
-  {1.0f, 0.0f, 0.0f},
-  {0.0f, 1.0f, 0.0f},
-  {0.0f, 0.0f, 1.0f},
-  {0.5f, 0.0f, 0.5f},
-  {0.5f, 0.5f, 0.0f},
-  {0.0f, 0.5f, 0.5f},
-  {0.5f, 0.5f, 0.5f},
-  {1.0f, 0.0f, 1.0f},
-  {0.0f, 1.0f, 1.0f},
+vec4d colors2[10] = {
+  vec4d(1.0f, 1.0f, 1.0f,1.0f),
+  vec4d(1.0f, 0.0f, 0.0f,1.0f),
+  vec4d(0.0f, 1.0f, 0.0f,1.0f),
+  vec4d(0.0f, 0.0f, 1.0f,1.0f),
+  vec4d(0.5f, 0.0f, 0.5f,1.0f),
+  vec4d(0.5f, 0.5f, 0.0f,1.0f),
+  vec4d(0.0f, 0.5f, 0.5f,1.0f),
+  vec4d(0.5f, 0.5f, 0.5f,1.0f),
+  vec4d(1.0f, 0.0f, 1.0f,1.0f),
+  vec4d(0.0f, 1.0f, 1.0f,1.0f),
 };
 
 int doInteractive(TriMesh& mesh)
@@ -593,7 +593,7 @@ int doInteractive(TriMesh& mesh)
         }*/
         if (execute){
           std::vector<unsigned int> facesIntersectCount(mesh.faces.size(),0);
-										std::vector<unsigned int> countRays(mesh.faces.size(),0);
+	  std::vector<unsigned int> countRays(mesh.faces.size(),0);
           //std::cout << facesIntersectCount.size() << std::endl;
           for (unsigned i=0; i < dc3d->intersectionTrisSize(); ++i){
             const std::list<std::pair<unsigned int, unsigned int> > &ilist = dc3d->intersectionTris(i);
@@ -601,7 +601,7 @@ int doInteractive(TriMesh& mesh)
             
             for (; it!=ilist.end(); ++it){
               facesIntersectCount[it->first] += it->second;
-														countRays[it->first] += it->second;
+	      countRays[it->first] += it->second;
             }          
           }
           
@@ -609,26 +609,45 @@ int doInteractive(TriMesh& mesh)
           for (unsigned int k=0; k<facesIntersectCount.size(); ++k){
             unsigned int maxNumber = *std::max_element(facesIntersectCount.begin(), facesIntersectCount.end());            
 
-            //if (k==maxNumber){
-            int value = facesIntersectCount[k];
-												unsigned int div = countRays[k];
-
-												//std::cout << "Triangle " << k << ": DC = " << value << std::endl;
-            
+            unsigned int value = facesIntersectCount[k];
+            unsigned int div = maxNumber/5;
               if (value!=0 && div!=0){
-                
-                //std::cout << "entrou!" << std::endl;
                 Triangle *t = &sorted_faces[k];
-																//t->ca = vec4d(
-                t->ca = vec4d((double)value/(double)maxNumber, 1.0f - (double)value/(double)maxNumber, 0.0f, 0.8f);
-                t->cb = vec4d((double)value/(double)maxNumber, 1.0f - (double)value/(double)maxNumber, 0.0f, 0.8f);
-                t->cc = vec4d((double)value/(double)maxNumber, 1.0f - (double)value/(double)maxNumber, 0.0f, 0.8f);
+		
+                if (value < div){
+                    t->ca = colors2[0];
+                    t->cb = colors2[0];
+                    t->cc = colors2[0];                    
+                }
+                else if (value < 2*div){
+                    t->ca = colors2[1];
+                    t->cb = colors2[1];
+                    t->cc = colors2[1];  
+                }
+                else if (value < 3*div){
+                    t->ca = colors2[2];
+                    t->cb = colors2[2];
+                    t->cc = colors2[2];   
+                }
+                else if (value < 4*div){
+                    t->ca = colors2[3];
+                    t->cb = colors2[3];
+                    t->cc = colors2[3];  
+                }
+                else {
+                    t->ca = colors2[4];
+                    t->cb = colors2[4];
+                    t->cc = colors2[4];   
+                }
+                //t->ca = vec4d(
+                //t->ca = vec4d((double)value/(double)maxNumber, 1.0f - (double)value/(double)maxNumber, 0.0f, 0.8f);
+                //t->cb = vec4d((double)value/(double)maxNumber, 1.0f - (double)value/(double)maxNumber, 0.0f, 0.8f);
+                //t->cc = vec4d((double)value/(double)maxNumber, 1.0f - (double)value/(double)maxNumber, 0.0f, 0.8f);
                 //t->ca = vec4d(0,0,0,0.4);
                 //t->cb = vec4d(0,0,0,0.4);
                 //t->cc = vec4d(0,0,0,0.4);
               }
             }
-          //}
           execute = false;
         }
         
