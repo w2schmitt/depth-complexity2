@@ -52,7 +52,7 @@ T clamp(const T& min, const T& x, const T& max)
 {
     return x < min ? min : (x > max ? max : x);
 }
-
+/*
 void drawPlane(const vec4d& plane)
 {
     const vec3d& n = plane.xyz();
@@ -79,7 +79,7 @@ void drawPlane(const vec4d& plane)
     glPopMatrix();
     glDisable(GL_BLEND);
 }
-
+*/
 
 void drawQuadTex(const Point &p1, const Point &p2, const Point &p3, const Point &p4) {
   glColor4f(1.f, 0.f, 0.f, 1.0);
@@ -253,19 +253,22 @@ void drawRays()
       glEnd();
     }
     
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     if(showPlanes) {
       const std::vector<Segment>& bounds = dc3d->usedPlanes();
       // draw planes
       glLineWidth(1);
-      glBegin(GL_LINES);
-      glColor3f(0.5, 0.5, 0.5);
-        for (unsigned i=0; i<bounds.size(); ++i) {
+      glBegin(GL_QUADS);
+      glColor4f(0.2, 0.2, 0.2, 0.05);
+        for (unsigned i=0; i<bounds.size() && i<2; ++i) {
           const Segment &r = bounds[i];
           glVertex3f(r.a.x, r.a.y, r.a.z);
           glVertex3f(r.b.x, r.b.y, r.b.z);
         }
       glEnd();
     }
+    glDisable(GL_BLEND);
 
     const std::vector<Point>& points = dc3d->intersectionPoints();
     glEnable(GL_LIGHTING);
@@ -291,7 +294,7 @@ void setupCamera(Camera& camera)
     glLoadIdentity();
     //cam.applyTransform();
     camera.update();	
-		camera.lookAt();
+    camera.lookAt();
 }
 
 void recompute(void *data)

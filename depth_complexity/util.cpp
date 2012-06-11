@@ -79,6 +79,7 @@ loadOBJMesh(std::istream& in) {
   for(;;) {
     if (!getline(in, line))
       break;
+    
     if (line == "")
       continue;
 
@@ -88,7 +89,6 @@ loadOBJMesh(std::istream& in) {
         vec3d p;
         if (sscanf(line.c_str()+2, "%lf %lf %lf", &p.x, &p.y, &p.z) != 3)
           throw std::string("Error reading vertex at line " + line);
-								//printf("px = (%f) - py = (%f) - pz = (%f)\n", p.x, p.y, p.z); 
         vertices.push_back(p);
         mesh.aabb.merge(p);
       } else if (line[1] == 'n') {
@@ -101,63 +101,49 @@ loadOBJMesh(std::istream& in) {
 
     case 'f':
     {
+      
       std::string content = line.substr(2);
       boost::char_separator<char> sep(" ");
       boost::tokenizer<boost::char_separator<char> > tok(content, sep);
-      int a=-2, b=-2, c=-2, na=-2, nb=-2, nc=-2;
+      //int a=-2, b=-2, c=-2, na=-2, nb=-2, nc=-2;
+      std::vector<vec3d> facev;
+      std::vector<vec3d> facen;
       for (boost::tokenizer<boost::char_separator<char> >::iterator i=tok.begin(); i!=tok.end(); ++i) {
         int v=-1, n=-1;
-        if (sscanf(i->c_str(), "%d//%d", &v, &n) != 2
-            &&
-            sscanf(i->c_str(), "%d/%*d/%d", &v, &n) != 2
-            &&
+        if (sscanf(i->c_str(), "%d//%d", &v, &n) != 2 &&
+            sscanf(i->c_str(), "%d/%*d/%d", &v, &n) != 2 &&
             sscanf(i->c_str(), "%d/%*d", &v) != 1 )
           throw std::string("Error reading face at line " + line);
 
-        if (a == -2) {
-          // first vertex
-          a = v;
-          na = n;
-        } else if (b == -2) {
-          // second vertex
-          b = v;
-          nb = n;
-        } else {
-          // third or later vertices, formed a complete face
-          c = v;
-          nc = n;
-
-          Triangle t;
-          t.a = vertices.at(a-1);
-          t.b = vertices.at(b-1);
-          t.c = vertices.at(c-1);
-
-										//printf("ta = (%f,%f) - tb = (%f,%f) - tc = (%f,%f)\n", t.a.x, t.a.y, t.b.x, t.b.y, t.c.x, t.c.y); 
-
-          // if we don't have a normal, make one
-          if (na <= 0) {
-            vec3d normal = cross(t.b - t.a, t.c - t.a);
-            normal.normalize();
-            std::clog << "created normal for face " << mesh.faces.size() << std::endl;
-            normals.push_back(normal);
-            na = nb = nc = normals.size();
-          }
-          t.na = normals.at(na-1);
-          t.nb = normals.at(nb-1);
-          t.nc = normals.at(nc-1);
-
-          t.ca = vec4d(0.057f, 0.25f, 0.42f, 0.35f);
-          t.cb = vec4d(0.057f, 0.25f, 0.42f, 0.35f);
-          t.cc = vec4d(0.057f, 0.25f, 0.42f, 0.35f);
-
-          mesh.faces.push_back(t);			
-
-          b = c;
-          nb = nc;
+        facev.push_back(vertices.at(v-1));
+        if (n>0){
+            facen.push_back(normals.at(n-1));
+        }
+        else {  // if we don't have a normal, make one
+            if (vertices.size()==3){                
+                vec3d normal = cross(vertices[1] - vertices[0], vertices[1] - vertices[2]);
+                normal.normalize();
+                std::clog << "created normal for face " << mesh.faces.size() << std::endl;
+                facen.push_back(normal);
+                facen.push_back(normal);
+                facen.push_back(normal);
+            }
         }
       }
+        
+        Triangle t;
+        t.a = facev[0]; t.na = facen[0];
+        t.b = facev[1]; t.nb = facen[1];
+        t.c = facev[2]; t.nc = facen[2];
+  
+        t.ca = vec4d(0.057f, 0.25f, 0.42f, 0.35f);
+        t.cb = vec4d(0.057f, 0.25f, 0.42f, 0.35f);
+        t.cc = vec4d(0.057f, 0.25f, 0.42f, 0.35f);
+          
+        mesh.faces.push_back(t);			
+      }
       break;
-    }
+      
     default: {
       std::clog << "ignored line: " << line << std::endl;
     }

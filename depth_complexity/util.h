@@ -8,14 +8,12 @@
 
 struct Triangle {
     vec3d a, na; 
-		vec4d ca;
-		vec3d b, nb;
-		vec4d cb;
-		vec3d c, nc;
-		vec4d cc;
+    vec4d ca;
+    vec3d b, nb;
+    vec4d cb;
+    vec3d c, nc;
+    vec4d cc;
     
-    //bool intercepted;
-    //Triangle() : intercepted(false){}
 };
 
 typedef vec3d Point;

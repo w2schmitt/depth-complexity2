@@ -111,7 +111,7 @@ void DepthComplexity3D::process(const TriMesh &mesh) {
   _maximum = 0;
   
   //std::cout << _fboWidth << " " << _fboHeight << " " << _discretSteps << " " << _maximum << " " << _threshold << std::endl;
-  
+ 
   processMeshAlign(AlignZ, AlignX);
   processMeshAlign(AlignZ, AlignY);
 
@@ -130,6 +130,20 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
   BoundingBox aabb = _mesh->aabb;
   aabb.merge(aabb.min - aabb.extents()/10.0);
   aabb.merge(aabb.max + aabb.extents()/10.0);
+  
+  vec3d extents = aabb.extents();
+  if (fabs(extents.x) <= EPS){
+      aabb.merge(vec3d( 0.5,0,0));
+      aabb.merge(vec3d(-0.5,0,0));
+  }
+  else if (fabs(extents.y) <= EPS){
+      aabb.merge(vec3d(0,0.5,0));
+      aabb.merge(vec3d(0,-0.5,0));
+  }
+  else if (fabs(extents.z) <= EPS){
+      aabb.merge(vec3d(0,0,0.5));
+      aabb.merge(vec3d(0,0,-0.5));
+  }
 
   vec3d c0 = vec3d(aabb.min.x, aabb.min.y, aabb.min.z);
   vec3d c1 = vec3d(aabb.max.x, aabb.min.y, aabb.min.z);
@@ -211,31 +225,32 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
       sbb.a = sa.b;
       sbb.b = sb.a;
       _usedPlanes.push_back(sa);
-      _usedPlanes.push_back(saa);
-      _usedPlanes.push_back(sb);
-      _usedPlanes.push_back(sbb);
+      //_usedPlanes.push_back(Segment(saa.b,sbb.a));
+      _usedPlanes.push_back(Segment(sb.b, sb.a));
+      //_usedPlanes.push_back(Segment(sbb.b, saa.a));
 
       vec4d plane = makePlane(sa.a, sa.b, sb.a);
       std::vector<Segment> segments;
       processMeshPlane(plane, &segments);
 
+      if (segments.size()==0) 
+          continue;
       // make the segments extra-long
       vec3d dsa = sa.b - sa.a; sa.a -= dsa; sa.b += dsa;
       vec3d dsb = sb.b - sb.a; sb.a -= dsb; sb.b += dsb;
 
-	  
+      //std::cout << "t3este " << segments.size() <<  std::endl;
       _dc2d->process(sa, sb, segments);
 
       unsigned int tempMaximum = _dc2d->maximum();
-						//if (tempMaximum==3)
-								//std::cout << "values: " << az << " " << bz << std::endl;
+
       if (tempMaximum >= _maximum) {
         if (tempMaximum > _maximum) {
           _maximumRays.clear();
           _goodRays.resize(tempMaximum+1);
           _histogram.resize(tempMaximum+1);
           _intersectionPoints.clear();
-          //          _intersectionSegments.clear();
+          //_intersectionSegments.clear();
         }
         _maximum = tempMaximum;
         std::set<Segment, classcomp> tempRays = _dc2d->maximumRays();
