@@ -6,5 +6,6 @@ hist*.txt
 toPlot.txt
 Tests/
 Tests.tar.gz
+models/
 
 /depth_complexity/nbproject/private/
