@@ -1,6 +1,9 @@
 #ifndef DC_3D_RANDOM_H
 #define DC_3D_RANDOM_H
 
+#include "dc_2d.h"
+
+
 #include "util.h"
 
 #include <map>
@@ -37,9 +40,11 @@ public:
   unsigned maximum() const { return _maximum; }
   const std::set<Segment,classcomp> &maximumRays() const { return _maximumRays; }
   const std::set<Segment,classcomp> &goodRays(int intersect) const { return _goodRays[intersect]; }
-  const std::vector<Segment> &usedPlanes() const { return _usedPlanes; }
+  const std::vector<Plane> &usedPlanes() const { return _usedPlanes; }
   const std::vector<Point> &intersectionPoints() const { return _intersectionPoints; }
   unsigned getThreshold() { return _threshold; }
+  const BoundingBox &getBoundingBox(){return _mesh->aabb;}
+  
 
   void writeHistogram(std::ostream& out);
   void writeRays(std::ostream& out);
@@ -54,8 +59,7 @@ private:
   bool intersectTriangleSegment(const Segment& segment, const Triangle& tri, Point *pnt);
   bool intersectPlaneSegment(const vec4d& plane, const vec3d& p0, const vec3d& p1, vec3d *pt);
   vec4d makePlane(const vec3d& a, const vec3d& b, const vec3d& c);
-
-	bool readRaysFromFile(std::istream& in);
+  bool readRaysFromFile(std::istream& in);
 
 private:
   // Input
@@ -76,7 +80,7 @@ private:
   // Output
   std::set<Segment,classcomp> _maximumRays;
   std::vector< std::set<Segment,classcomp> > _goodRays;
-  std::vector<Segment> _usedPlanes;
+  std::vector<Plane> _usedPlanes;
   std::vector<unsigned long long> _histogram;
   std::vector<Point> _intersectionPoints;
   //  std::vector<Segment> _intersectionSegments;

@@ -110,49 +110,56 @@ void DepthComplexity3D::process(const TriMesh &mesh) {
   _dc2d->setThreshold(_threshold);
   _maximum = 0;
   
-  //std::cout << _fboWidth << " " << _fboHeight << " " << _discretSteps << " " << _maximum << " " << _threshold << std::endl;
- 
+  computeBoundingBox();
+  
   processMeshAlign(AlignZ, AlignX);
   processMeshAlign(AlignZ, AlignY);
 
-  processMeshAlign(AlignY, AlignX);
+  //processMeshAlign(AlignY, AlignX);
   processMeshAlign(AlignY, AlignZ);
 
-  processMeshAlign(AlignX, AlignY);
-  processMeshAlign(AlignX, AlignZ);
+  //processMeshAlign(AlignX, AlignY);
+  //processMeshAlign(AlignX, AlignZ);
 
+}
+
+void DepthComplexity3D::computeBoundingBox(){
+    _aabb = _mesh->aabb;
+
+    // prevent erros in plane meshs
+    _aabb.merge(_aabb.min - _aabb.extents()/10.0);
+    _aabb.merge(_aabb.max + _aabb.extents()/10.0);
+
+    vec3d extents = _aabb.extents();
+    if (fabs(extents.x) <= EPS){
+        _aabb.merge(vec3d( 0.5,0,0));
+        _aabb.merge(vec3d(-0.5,0,0));
+    }
+    else if (fabs(extents.y) <= EPS){
+        _aabb.merge(vec3d(0,0.5,0));
+        _aabb.merge(vec3d(0,-0.5,0));
+    }
+    else if (fabs(extents.z) <= EPS){
+        _aabb.merge(vec3d(0,0,0.5));
+        _aabb.merge(vec3d(0,0,-0.5));
+    }
 }
 
 // Call this varying palign and salign.
 void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAlign &salign) {
 
   assert(palign != salign);
-  BoundingBox aabb = _mesh->aabb;
-  aabb.merge(aabb.min - aabb.extents()/10.0);
-  aabb.merge(aabb.max + aabb.extents()/10.0);
   
-  vec3d extents = aabb.extents();
-  if (fabs(extents.x) <= EPS){
-      aabb.merge(vec3d( 0.5,0,0));
-      aabb.merge(vec3d(-0.5,0,0));
-  }
-  else if (fabs(extents.y) <= EPS){
-      aabb.merge(vec3d(0,0.5,0));
-      aabb.merge(vec3d(0,-0.5,0));
-  }
-  else if (fabs(extents.z) <= EPS){
-      aabb.merge(vec3d(0,0,0.5));
-      aabb.merge(vec3d(0,0,-0.5));
-  }
+  //BoundingBox aabb = computeBoundingBox();  
 
-  vec3d c0 = vec3d(aabb.min.x, aabb.min.y, aabb.min.z);
-  vec3d c1 = vec3d(aabb.max.x, aabb.min.y, aabb.min.z);
-  vec3d c2 = vec3d(aabb.min.x, aabb.max.y, aabb.min.z);
-  vec3d c3 = vec3d(aabb.max.x, aabb.max.y, aabb.min.z);
-  vec3d c4 = vec3d(aabb.min.x, aabb.min.y, aabb.max.z);
-  vec3d c5 = vec3d(aabb.max.x, aabb.min.y, aabb.max.z);
-  vec3d c6 = vec3d(aabb.min.x, aabb.max.y, aabb.max.z);
-  vec3d c7 = vec3d(aabb.max.x, aabb.max.y, aabb.max.z);
+  vec3d c0 = vec3d(_aabb.min.x, _aabb.min.y, _aabb.min.z);
+  vec3d c1 = vec3d(_aabb.max.x, _aabb.min.y, _aabb.min.z);
+  vec3d c2 = vec3d(_aabb.min.x, _aabb.max.y, _aabb.min.z);
+  vec3d c3 = vec3d(_aabb.max.x, _aabb.max.y, _aabb.min.z);
+  vec3d c4 = vec3d(_aabb.min.x, _aabb.min.y, _aabb.max.z);
+  vec3d c5 = vec3d(_aabb.max.x, _aabb.min.y, _aabb.max.z);
+  vec3d c6 = vec3d(_aabb.min.x, _aabb.max.y, _aabb.max.z);
+  vec3d c7 = vec3d(_aabb.max.x, _aabb.max.y, _aabb.max.z);
 
   // generate all planes varying on z  
   const unsigned steps = _discretSteps;
@@ -174,12 +181,12 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
 		
         if (salign == AlignX) {
           // extend along X
-          sa.b.x = aabb.max.x;
-          sb.a.x = aabb.min.x;
+          sa.b.x = _aabb.max.x;
+          sb.a.x = _aabb.min.x;
         } else {
           // extend along Y
-          sa.b.y = aabb.max.y;
-          sb.a.y = aabb.min.y;
+          sa.b.y = _aabb.max.y;
+          sb.a.y = _aabb.min.y;
         }
         break;
       }
@@ -191,12 +198,12 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
 
         if (salign == AlignX) {
           // extend along X
-          sa.b.x = aabb.max.x;
-          sb.a.x = aabb.min.x;
+          sa.b.x = _aabb.max.x;
+          sb.a.x = _aabb.min.x;
         } else {
           // extend along Z
-          sa.b.z = aabb.max.z;
-          sb.a.z = aabb.min.z;
+          sa.b.z = _aabb.max.z;
+          sb.a.z = _aabb.min.z;
         }
         break;
       }
@@ -208,12 +215,12 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
 
         if (salign == AlignY) {
           // extend along Y
-          sa.b.y = aabb.max.y;
-          sb.a.y = aabb.min.y;
+          sa.b.y = _aabb.max.y;
+          sb.a.y = _aabb.min.y;
         } else {
           // extend along Z
-          sa.b.z = aabb.max.z;
-          sb.a.z = aabb.min.z;
+          sa.b.z = _aabb.max.z;
+          sb.a.z = _aabb.min.z;
         }
         break;
       }
@@ -224,9 +231,14 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
       saa.b = sb.b;
       sbb.a = sa.b;
       sbb.b = sb.a;
-      _usedPlanes.push_back(sa);
+      
+      Plane p;
+      p.a = sa.a; p.b = sa.b;
+      p.c = sb.b; p.d = sb.a;
+      _usedPlanes.push_back(p);
+      //_usedPlanes.push_back(sa);
       //_usedPlanes.push_back(Segment(saa.b,sbb.a));
-      _usedPlanes.push_back(Segment(sb.b, sb.a));
+      //_usedPlanes.push_back(Segment(sb.b, sb.a));
       //_usedPlanes.push_back(Segment(sbb.b, saa.a));
 
       vec4d plane = makePlane(sa.a, sa.b, sb.a);
@@ -355,6 +367,10 @@ bool DepthComplexity3D::intersectTriangleSegment(const Segment& segment, const T
 		return false;
 	
 	return true;
+}
+
+unsigned int* DepthComplexity3D::getDualSpace(unsigned i){
+     return _dc2d->getDuallSpace(i);
 }
 
 

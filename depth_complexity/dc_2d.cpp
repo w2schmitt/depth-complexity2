@@ -493,14 +493,13 @@ void drawTriangle(const Point &p1, const Point &p2, const Point &p3) {
 
 unsigned int DepthComplexity2D::findMaxValueInCounterBuffer() {
   const int pixelNumber = _fboWidth * _fboHeight;
-  unsigned int colorBuffer[pixelNumber];
+  unsigned int *colorBuffer = new unsigned int[pixelNumber];
   
   glBindTexture(GL_TEXTURE_2D, _counterBuffId);
   glGetTexImage( GL_TEXTURE_2D, 0 , GL_RED_INTEGER, GL_UNSIGNED_INT, colorBuffer ); 
   glBindTexture(GL_TEXTURE_2D, 0);
   
-  //for (int i=0; i<pixelNumber; i++)
-  //  std::cout << colorBuffer[i]-1 << std::endl;
+  _dualSpace.push_back(colorBuffer);
   
   return *(std::max_element(colorBuffer, colorBuffer + pixelNumber));
 }

@@ -35,11 +35,13 @@ public:
   unsigned int maximum() const { return _maximum; }
   const std::set<Segment, classcomp> &maximumRays() const { return _maximumRays; }
   const std::set<Segment, classcomp> &goodRays(int intersect) const { return _goodRays[intersect]; }
-  const std::vector<Segment> &usedPlanes() const { return _usedPlanes; }
+  const std::vector<Plane> &usedPlanes() const { return _usedPlanes; }
   const std::vector<Point> &intersectionPoints() const { return _intersectionPoints; }
   unsigned int getThreshold() { return _threshold; }
   const std::list<unsigned int> &intersectionTris(int rayIndex){return *_intersectionTriList.find(rayIndex)->second;}
-
+  const BoundingBox &getBoundingBox() { return _aabb;}
+  unsigned int* getDualSpace(unsigned i);
+  
   void writeHistogram(std::ostream& out);
   void writeRays(std::ostream& out);
   void writeRays(std::ostream& out, const std::set<Segment,classcomp> & _rays);
@@ -56,7 +58,8 @@ private:
   bool intersectPlaneTriangle(const vec4d& plane, const Triangle& tri, Segment *seg);
   bool intersectPlaneSegment(const vec4d& plane, const vec3d& p0, const vec3d& p1, vec3d *pt);
   vec4d makePlane(const vec3d& a, const vec3d& b, const vec3d& c);
-
+  void computeBoundingBox();
+  
 private:
   DepthComplexity2D *_dc2d;
 
@@ -76,10 +79,11 @@ private:
   // Output
   std::set<Segment,classcomp> _maximumRays;
   std::vector< std::set<Segment, classcomp> > _goodRays;
-  std::vector<Segment> _usedPlanes;
+  std::vector<Plane> _usedPlanes;
   std::vector<unsigned long long> _histogram;
   std::vector<Point> _intersectionPoints;
   std::map<int, std::list<unsigned int>* > _intersectionTriList;
+  BoundingBox _aabb;
   //  std::vector<Segment> _intersectionSegments;
 
   friend int doInteractive(TriMesh& mesh);
