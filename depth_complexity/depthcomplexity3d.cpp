@@ -38,7 +38,8 @@ float radius = 0.01;
 bool showPlanes = false;
 bool doGoodRays = true;
 vec4f sphereColor(0.0, 1.0, 0.0, 1.0);
-unsigned int showRayIndex = 0;
+//unsigned int showRayIndex = 0;
+unsigned int planeSelected = 0;
 
 #ifdef USE_RANDOM_DC3D
 RDepthComplexity3D *dc3d;
@@ -219,6 +220,7 @@ void drawMesh(const TriMesh& mesh, const vec3f& dir)
 //    }
 //    glEnd();
 //}
+
     
 void drawRays()
 {
@@ -254,19 +256,72 @@ void drawRays()
     }
     
     glEnable(GL_BLEND);
-    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    //glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     if(showPlanes) {
-      const std::vector<Segment>& bounds = dc3d->usedPlanes();
-      // draw planes
-      glLineWidth(1);
-      glBegin(GL_QUADS);
-      glColor4f(0.2, 0.2, 0.2, 0.05);
-        for (unsigned i=0; i<bounds.size() && i<2; ++i) {
-          const Segment &r = bounds[i];
-          glVertex3f(r.a.x, r.a.y, r.a.z);
-          glVertex3f(r.b.x, r.b.y, r.b.z);
+        const std::vector<Plane>& bounds = dc3d->usedPlanes();
+        if (planeSelected < bounds.size()){
+            const Plane &p = bounds[planeSelected];
+            // draw planes
+            
+            glColor4f(0.2, 0.2, 0.2, 0.05);
+            glBegin(GL_QUADS);
+            
+            //for (unsigned i=0; i< bounds.size() &&; ++i) {
+                //const Segment &r = bounds[i];
+                glVertex3f(p.a.x, p.a.y, p.a.z);
+                glVertex3f(p.b.x, p.b.y, p.b.z);
+                glVertex3f(p.c.x, p.c.y, p.c.z);
+                glVertex3f(p.d.x, p.d.y, p.d.z);
         }
-      glEnd();
+        glEnd();
+        
+        //draw bounding box
+        const BoundingBox &aabb = dc3d->getBoundingBox();
+        glLineWidth(2);
+        glColor4f(0.15, 0.15, 0.15, 0.5);
+        glBegin(GL_LINES);
+                //side1
+                glVertex3f(aabb.min.x, aabb.min.y, aabb.min.z);
+                glVertex3f(aabb.max.x, aabb.min.y, aabb.min.z);
+                
+                glVertex3f(aabb.min.x, aabb.max.y, aabb.min.z);
+                glVertex3f(aabb.max.x, aabb.max.y, aabb.min.z);
+                
+                glVertex3f(aabb.min.x, aabb.min.y, aabb.min.z);
+                glVertex3f(aabb.min.x, aabb.max.y, aabb.min.z);
+                
+                glVertex3f(aabb.max.x, aabb.min.y, aabb.min.z);
+                glVertex3f(aabb.max.x, aabb.max.y, aabb.min.z);
+                
+                //side 2
+                glVertex3f(aabb.min.x, aabb.min.y, aabb.max.z);
+                glVertex3f(aabb.max.x, aabb.min.y, aabb.max.z);
+                
+                glVertex3f(aabb.min.x, aabb.max.y, aabb.max.z);
+                glVertex3f(aabb.max.x, aabb.max.y, aabb.max.z);
+                
+                glVertex3f(aabb.min.x, aabb.min.y, aabb.max.z);
+                glVertex3f(aabb.min.x, aabb.max.y, aabb.max.z);
+                
+                glVertex3f(aabb.max.x, aabb.min.y, aabb.max.z);
+                glVertex3f(aabb.max.x, aabb.max.y, aabb.max.z);
+                
+                //side 3
+                glVertex3f(aabb.min.x, aabb.min.y, aabb.min.z);
+                glVertex3f(aabb.min.x, aabb.min.y, aabb.max.z);
+                
+                glVertex3f(aabb.min.x, aabb.max.y, aabb.min.z);
+                glVertex3f(aabb.min.x, aabb.max.y, aabb.max.z);
+                
+                glVertex3f(aabb.max.x, aabb.max.y, aabb.min.z);
+                glVertex3f(aabb.max.x, aabb.max.y, aabb.max.z);
+                
+                glVertex3f(aabb.max.x, aabb.min.y, aabb.min.z);
+                glVertex3f(aabb.max.x, aabb.min.y, aabb.max.z);
+                
+        glEnd();        
+        
     }
     glDisable(GL_BLEND);
 
@@ -284,10 +339,10 @@ void drawRays()
 
 void setupCamera(Camera& camera)
 {
-    glViewport(0, 0, winWidth, winHeight);
+    
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    camera.setPerspec(50, (double)winWidth/winHeight, 0.1, 10000);
+    camera.setPerspec(50, (double)(winWidth)/winHeight, 0.1, 10000);
    // gluPerspective(50, (double)winWidth/winHeight, 0.1, 1000);
 
     glMatrixMode(GL_MODELVIEW);
@@ -323,6 +378,50 @@ void recompute(void *data)
     //}
 }
 
+
+void drawDualSpace(){
+    glDisable(GL_DEPTH_TEST);
+    //glDepthMask(GL_FALSE);
+    glDisable(GL_LIGHTING);
+    glDisable(GL_BLEND);
+    
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+        glLoadIdentity();
+        glOrtho(-1,1,-1,1,-1,1);
+        
+        int size = 512;
+        glViewport(winWidth-size, winHeight-size, winWidth, winHeight);
+        
+        glMatrixMode(GL_MODELVIEW);
+        glPushMatrix();
+        glLoadIdentity();
+        
+        unsigned int* dualSpace = dc3d->getDualSpace(planeSelected);
+        if (dualSpace){
+            
+            unsigned char *test = new unsigned char[size*size];
+            for (int i=0; i<(size)*(size); ++i ) { 
+                dualSpace[i]>1? test[i]=255 : test[i]=0;
+            }
+            glRasterPos2f(-1,-1);        
+            glDrawPixels(size,size,GL_LUMINANCE, GL_UNSIGNED_BYTE, test);
+            delete[] test;
+        }
+        //unsigned char *pixels = new unsigned char[(size)*(size)];
+        
+        
+        
+        glPopMatrix();
+        glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+        
+    glDepthMask(GL_TRUE);
+    glEnable(GL_DEPTH_TEST);
+    
+    //delete[] pixels;
+}
+
 void
 drawBackground(const vec3f& top, const vec3f& mid, const vec3f& bot)
 {
@@ -338,6 +437,8 @@ drawBackground(const vec3f& top, const vec3f& mid, const vec3f& bot)
     glPushMatrix();
     glLoadIdentity();
     glOrtho(-1, 1, -1, 1, -1, 1);
+    
+    glMatrixMode(GL_MODELVIEW);
 
     glBegin(GL_QUAD_STRIP);
     glColor3fv(&bot.x);
@@ -352,7 +453,7 @@ drawBackground(const vec3f& top, const vec3f& mid, const vec3f& bot)
     glEnd();
 
     glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);
+    glMatrixMode(GL_PROJECTION);
     glPopMatrix();
 
     glDepthMask(GL_TRUE);
@@ -424,7 +525,12 @@ int doInteractive(TriMesh& mesh)
     glfwInit();
     std::atexit(glfwTerminate);
     
+    
+    //GLWF_WINPAR	sWinPar;	// Window parameters data structure.
+    //GLFW_WCTXT	*pWinCntx;	// Window Context pointer.
+    
     GLFWvidmode mode;
+    //GLFWvidmode mode2;
     
     glfwGetDesktopMode(&mode);
     if( !glfwOpenWindow(1024, 768, mode.RedBits, mode.GreenBits, mode.BlueBits, 
@@ -476,6 +582,8 @@ int doInteractive(TriMesh& mesh)
     vec4f objdiff(0.55, 0.5, 0, 0.5), objspec(.75, .75, .75, .2);
     GLfloat shine = 50;
     bool showObj = true;
+
+    
     
     #ifdef USE_RANDOM_DC3D
 		if (strcmp(filenameRays, "")!=0)
@@ -513,6 +621,7 @@ int doInteractive(TriMesh& mesh)
     TwAddVarRW(bar, "radius", TW_TYPE_FLOAT, &radius, "  group='Sphere' label='radius' min=0.0 step=0.001 max=2.0");
     TwAddVarRW(bar, "Color", TW_TYPE_COLOR4F, &sphereColor.x, " group='Sphere' ");
     //TwAddVarRW(bar, "Show Ray", TW_TYPE_UINT32, &showRayIndex, " group='rays' min=0");
+    TwAddVarRW(bar, "Show Plane", TW_TYPE_UINT32, &planeSelected, " group='planes' min=0");
 
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
@@ -532,9 +641,13 @@ int doInteractive(TriMesh& mesh)
     while( glfwGetWindowParam(GLFW_OPENED) && !glfwGetKey(GLFW_KEY_ESC) ) {
         glClear( GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT );
 
+        
+        
+        glViewport(0, 0, winWidth, winHeight);
+        
         drawBackground(top, mid, bot);
-
         setupCamera(camera);
+       
         
         /*camera.update();	
 	    camera.lookAt();*/
@@ -545,6 +658,7 @@ int doInteractive(TriMesh& mesh)
 
         //drawPlaneIntersection(intersectionVectors);
         drawRays();
+        
 
 
 				
@@ -552,6 +666,7 @@ int doInteractive(TriMesh& mesh)
         glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, &objspec.x);
         glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, shine);
         if (showObj) drawMesh(mesh, vec3f(camera.GetDir().x,camera.GetDir().y,camera.GetDir().z));
+        drawDualSpace();
 
         Triangle *t = &mesh.faces[550];
         t->ca = vec4d(1.0f, 0.0f, 0.0f, 0.7f);
