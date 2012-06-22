@@ -231,22 +231,19 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
       saa.b = sb.b;
       sbb.a = sa.b;
       sbb.b = sb.a;
-      
-      Plane p;
-      p.a = sa.a; p.b = sa.b;
-      p.c = sb.b; p.d = sb.a;
-      _usedPlanes.push_back(p);
-      //_usedPlanes.push_back(sa);
-      //_usedPlanes.push_back(Segment(saa.b,sbb.a));
-      //_usedPlanes.push_back(Segment(sb.b, sb.a));
-      //_usedPlanes.push_back(Segment(sbb.b, saa.a));
-
+     
       vec4d plane = makePlane(sa.a, sa.b, sb.a);
       std::vector<Segment> segments;
       processMeshPlane(plane, &segments);
 
       if (segments.size()==0) 
-          continue;
+          continue;      
+       
+      Plane p;
+      p.a = sa.a; p.b = sa.b;
+      p.c = sb.b; p.d = sb.a;
+      _usedPlanes.push_back(p);
+      
       // make the segments extra-long
       vec3d dsa = sa.b - sa.a; sa.a -= dsa; sa.b += dsa;
       vec3d dsb = sb.b - sb.a; sb.a -= dsb; sb.b += dsb;
