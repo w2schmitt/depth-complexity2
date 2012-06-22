@@ -15,6 +15,7 @@
 #include <GL/glew.h>
 #include <GL/glfw.h>
 #include <AntTweakBar.h>
+#include "CImg.h"
 #ifdef __APPLE__
 #include <GLUT/glut.h>
 #else
@@ -34,12 +35,23 @@
 #endif
 #include "timer.h"
 
+#define DUAL_SIZE 512
+
+using namespace cimg_library;
+
 float radius = 0.01;
 bool showPlanes = false;
 bool doGoodRays = true;
 vec4f sphereColor(0.0, 1.0, 0.0, 1.0);
-//unsigned int showRayIndex = 0;
+
+//dual space plane display
 unsigned int planeSelected = 0;
+bool planeSelectedChanged = true;
+
+unsigned int filterDC = 1;
+bool filterDCChanged = true;
+
+CImgDisplay dualDisplay;
 
 #ifdef USE_RANDOM_DC3D
 RDepthComplexity3D *dc3d;
@@ -264,7 +276,7 @@ void drawRays()
             const Plane &p = bounds[planeSelected];
             // draw planes
             
-            glColor4f(0.2, 0.2, 0.2, 0.05);
+            glColor4f(0.5, 0.25, 0.1, 0.5);
             glBegin(GL_QUADS);
             
             //for (unsigned i=0; i< bounds.size() &&; ++i) {
@@ -369,57 +381,51 @@ void recompute(void *data)
         numRays += dc3d->goodRays(i).size();
       std::clog << "Number of good rays: " << numRays << std::endl;
     }
+}
+
+void TW_CALL saveAll(void*){
+
+    unsigned int *img=NULL;
+    int count = 0;
+    for (unsigned int i=0; (img=dc3d->getDualSpace(i))!=NULL; ++i,++count){
+        unsigned char *test = new unsigned char[DUAL_SIZE*DUAL_SIZE];
+        for (int i=0; i<(DUAL_SIZE)*(DUAL_SIZE); ++i ) { 
+            if (img[i] == filterDC+1) test[i]=255;
+            else test[i]=0;
+        }
+        
+        CImg<unsigned char> out(test,DUAL_SIZE, DUAL_SIZE);
+        out.save("DualImages/dualSpace.png",count);
+        //std::cout << "saved image: " << count << std::endl;
+
+        delete[] test;
+    }
     
-    // check interception
-    //const std::list<unsigned int>& ilist = dc3d->intersectionTris();
-    //std::list<unsigned int>::const_iterator it = ilist.begin();
-    //for (;it!=ilist.end(); ++it){
-    //    mesh->faces[*it].intercepted = true;
-    //}
+    
 }
 
 
 void drawDualSpace(){
-    glDisable(GL_DEPTH_TEST);
-    //glDepthMask(GL_FALSE);
-    glDisable(GL_LIGHTING);
-    glDisable(GL_BLEND);
-    
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-        glLoadIdentity();
-        glOrtho(-1,1,-1,1,-1,1);
-        
-        int size = 512;
-        glViewport(winWidth-size, winHeight-size, winWidth, winHeight);
-        
-        glMatrixMode(GL_MODELVIEW);
-        glPushMatrix();
-        glLoadIdentity();
-        
-        unsigned int* dualSpace = dc3d->getDualSpace(planeSelected);
-        if (dualSpace){
-            
-            unsigned char *test = new unsigned char[size*size];
-            for (int i=0; i<(size)*(size); ++i ) { 
-                dualSpace[i]>1? test[i]=255 : test[i]=0;
-            }
-            glRasterPos2f(-1,-1);        
-            glDrawPixels(size,size,GL_LUMINANCE, GL_UNSIGNED_BYTE, test);
+
+    unsigned int* dualSpace = dc3d->getDualSpace(planeSelected);
+    if (dualSpace){
+
+        if (dualDisplay.is_closed() || dualDisplay.is_empty() || filterDCChanged || planeSelectedChanged){
+            unsigned char *test = new unsigned char[DUAL_SIZE*DUAL_SIZE];
+            for (int i=0; i<(DUAL_SIZE*DUAL_SIZE); ++i ) { 
+                if (dualSpace[i] == filterDC+1) test[i]=255;
+                else test[i]=0;
+            }   
+
+            CImg<unsigned char> dualImg(test, DUAL_SIZE, DUAL_SIZE);
+            dualDisplay.display(dualImg);
+            dualDisplay.set_title("Dual Space - DC = %d", filterDC);
+
             delete[] test;
         }
-        //unsigned char *pixels = new unsigned char[(size)*(size)];
-        
-        
-        
-        glPopMatrix();
-        glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-        
-    glDepthMask(GL_TRUE);
-    glEnable(GL_DEPTH_TEST);
-    
-    //delete[] pixels;
+
+    }
+
 }
 
 void
@@ -519,6 +525,30 @@ void GLFWCALL mouse_motion(int x, int y){
 	}//end if
 }
 
+
+// ____________________________________________________________________TW CALLBACKS_
+void TW_CALL setSelectedPlaneCB(const void *value, void*){
+    if (planeSelected != *(const unsigned int*)value) 
+        {planeSelectedChanged=true;}
+    
+    planeSelected = *(const unsigned int*)value;
+}
+void TW_CALL getSelectedPlaneCB(void* value, void*){
+    *(unsigned int*)value = planeSelected;
+}
+
+void TW_CALL setFilterPlaneCB(const void *value, void*){
+    if (filterDC != *(const unsigned int*)value) 
+        {filterDCChanged=true;}
+    
+    filterDC = *(const unsigned int*)value;
+}
+void TW_CALL getFilterPlaneCB(void* value, void*){
+    *(unsigned int*)value = filterDC;
+}
+
+
+
 int doInteractive(TriMesh& mesh)
 {
    
@@ -586,12 +616,12 @@ int doInteractive(TriMesh& mesh)
     
     
     #ifdef USE_RANDOM_DC3D
-		if (strcmp(filenameRays, "")!=0)
-			dc3d = new RDepthComplexity3D(512, 512, 2, filenameRays);
-		else
-			dc3d = new RDepthComplexity3D(512, 512, 2);
+    if (strcmp(filenameRays, "")!=0)
+            dc3d = new RDepthComplexity3D(512, 512, 2, filenameRays);
+    else
+            dc3d = new RDepthComplexity3D(512, 512, 2);
     #else
-    dc3d = new DepthComplexity3D(512, 512, 2);
+    dc3d = new DepthComplexity3D(DUAL_SIZE, DUAL_SIZE, 2);
     #endif
     dc3d->setComputeMaximumRays(true);
     dc3d->setComputeHistogram(true);
@@ -621,7 +651,9 @@ int doInteractive(TriMesh& mesh)
     TwAddVarRW(bar, "radius", TW_TYPE_FLOAT, &radius, "  group='Sphere' label='radius' min=0.0 step=0.001 max=2.0");
     TwAddVarRW(bar, "Color", TW_TYPE_COLOR4F, &sphereColor.x, " group='Sphere' ");
     //TwAddVarRW(bar, "Show Ray", TW_TYPE_UINT32, &showRayIndex, " group='rays' min=0");
-    TwAddVarRW(bar, "Show Plane", TW_TYPE_UINT32, &planeSelected, " group='planes' min=0");
+    TwAddVarCB(bar, "Show Plane", TW_TYPE_UINT32, setSelectedPlaneCB, getSelectedPlaneCB, NULL, " group='planes' min=0");
+    TwAddVarCB(bar, "Filter DC", TW_TYPE_UINT32, setFilterPlaneCB, getFilterPlaneCB, NULL, "group='planes' min=0");
+    TwAddButton(bar, "Save all", saveAll, NULL, "group='planes'" );
 
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
@@ -641,22 +673,10 @@ int doInteractive(TriMesh& mesh)
     while( glfwGetWindowParam(GLFW_OPENED) && !glfwGetKey(GLFW_KEY_ESC) ) {
         glClear( GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT );
 
-        
-        
         glViewport(0, 0, winWidth, winHeight);
         
         drawBackground(top, mid, bot);
-        setupCamera(camera);
-       
-        
-        /*camera.update();	
-	    camera.lookAt();*/
-
-        /*GLfloat lpos[4] = { camera.GetEye().x, camera.GetEye().y, camera.GetEye().z, 1 };
-        glLightfv(GL_LIGHT0, GL_POSITION, lpos);*/
-       
-
-        //drawPlaneIntersection(intersectionVectors);
+        setupCamera(camera);       
         drawRays();
         
 
@@ -688,6 +708,10 @@ int doInteractive(TriMesh& mesh)
     return 0;
 }
 
+
+
+
+
 std::string getExtension(const std::string& filename)
 {
     std::string::size_type dotpos = filename.rfind(".");
@@ -710,10 +734,6 @@ int main(int argc, char **argv)
         std::ifstream file(argv[1]);
         std::string ext = getExtension(argv[1]);
 
-#ifdef USE_RANDOM_DC3D
-				filenameRays = cmd_option("-fr", "", "load text file with rays");
-				//std::clog << "[RAYS FILES] : " << filenameRays << std::endl;
-#endif
         TriMesh mesh;
 
        if (ext == "off" || ext == "OFF")
