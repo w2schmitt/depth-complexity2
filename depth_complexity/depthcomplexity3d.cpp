@@ -50,8 +50,10 @@ bool planeSelectedChanged = true;
 
 unsigned int filterDC = 1;
 bool filterDCChanged = true;
+bool colorTable=false;
+bool colorTableChanged = true;
 
-CImgDisplay dualDisplay;
+cimg_library::CImgDisplay dualDisplay;
 
 #ifdef USE_RANDOM_DC3D
 RDepthComplexity3D *dc3d;
@@ -394,7 +396,7 @@ void TW_CALL saveAll(void*){
             else test[i]=0;
         }
         
-        CImg<unsigned char> out(test,DUAL_SIZE, DUAL_SIZE);
+        cimg_library::CImg<unsigned char> out(test,DUAL_SIZE, DUAL_SIZE);
         out.save("DualImages/dualSpace.png",count);
         //std::cout << "saved image: " << count << std::endl;
 
@@ -404,20 +406,60 @@ void TW_CALL saveAll(void*){
     
 }
 
+float CTable[11][3] = {
+  {0.0f, 0.0f, 0.0f},
+  {1.0f, 1.0f, 1.0f},
+  {1.0f, 0.0f, 0.0f},
+  {0.0f, 1.0f, 0.0f},
+  {0.0f, 0.0f, 1.0f},
+  {0.5f, 0.0f, 0.5f},
+  {0.5f, 0.5f, 0.0f},
+  {0.0f, 0.5f, 0.5f},
+  {0.5f, 0.5f, 0.5f},
+  {1.0f, 0.0f, 1.0f},
+  {0.0f, 1.0f, 1.0f},
+};
+
 
 void drawDualSpace(){
 
+    unsigned int CChannel;
     unsigned int* dualSpace = dc3d->getDualSpace(planeSelected);
     if (dualSpace){
 
-        if (dualDisplay.is_closed() || dualDisplay.is_empty() || filterDCChanged || planeSelectedChanged){
-            unsigned char *test = new unsigned char[DUAL_SIZE*DUAL_SIZE];
-            for (int i=0; i<(DUAL_SIZE*DUAL_SIZE); ++i ) { 
-                if (dualSpace[i] == filterDC+1) test[i]=255;
-                else test[i]=0;
-            }   
+        if (dualDisplay.is_closed() || dualDisplay.is_empty() || filterDCChanged || planeSelectedChanged || colorTableChanged){
+            unsigned char *test;
+            
+            if (!colorTable){
+                CChannel = 1;
+                test = new unsigned char[DUAL_SIZE*DUAL_SIZE*CChannel];
+                for (int i=0; i<(DUAL_SIZE*DUAL_SIZE); ++i ) { 
 
-            CImg<unsigned char> dualImg(test, DUAL_SIZE, DUAL_SIZE);
+                    if (dualSpace[i] == filterDC+1) test[i]=255;
+                    else test[i]=0;
+
+                }   
+            }
+            else {
+                CChannel = 3;
+                test = new unsigned char[DUAL_SIZE*DUAL_SIZE*CChannel];
+
+                int Ngroups = 2;
+                
+                for (int i=0; i<(DUAL_SIZE); i++ ) { 
+                    int colorIndex = (dualSpace[i]-1)/Ngroups;
+                    if (colorIndex>10) colorIndex = 10;
+                    
+
+                    test[i]   = (unsigned char) CTable[colorIndex][0]*255;
+                    test[DUAL_SIZE+i] = (unsigned char) CTable[colorIndex][1]*255;
+                    test[DUAL_SIZE*DUAL_SIZE + i] = (unsigned char) CTable[colorIndex][2]*255;      
+                    
+                    //std::cout << (int)test[i] << " - " << (int)test[i+1] << " - " << (int)test[i+2] << std::endl;
+                }
+            }
+            //test[1] = 255;
+            CImg<unsigned char> dualImg(test, DUAL_SIZE, DUAL_SIZE, 1, CChannel);
             dualDisplay.display(dualImg);
             dualDisplay.set_title("Dual Space - DC = %d", filterDC);
 
@@ -547,6 +589,18 @@ void TW_CALL getFilterPlaneCB(void* value, void*){
     *(unsigned int*)value = filterDC;
 }
 
+void TW_CALL setColorTableCB(const void *value, void*){
+    if (colorTable != *(const unsigned int*)value) 
+        {colorTableChanged=true;}
+    
+    colorTable = *(const unsigned int*)value;
+}
+void TW_CALL getColorTableCB(void* value, void*){
+    *(unsigned int*)value = colorTable;
+}
+
+
+
 
 
 int doInteractive(TriMesh& mesh)
@@ -653,8 +707,9 @@ int doInteractive(TriMesh& mesh)
     //TwAddVarRW(bar, "Show Ray", TW_TYPE_UINT32, &showRayIndex, " group='rays' min=0");
     TwAddVarCB(bar, "Show Plane", TW_TYPE_UINT32, setSelectedPlaneCB, getSelectedPlaneCB, NULL, " group='planes' min=0");
     TwAddVarCB(bar, "Filter DC", TW_TYPE_UINT32, setFilterPlaneCB, getFilterPlaneCB, NULL, "group='planes' min=0");
+    TwAddVarCB(bar, "Color Table", TW_TYPE_BOOLCPP, setColorTableCB, getColorTableCB, NULL, "group='planes'");
     TwAddButton(bar, "Save all", saveAll, NULL, "group='planes'" );
-
+    
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
     glDisable(GL_CULL_FACE);
@@ -678,10 +733,7 @@ int doInteractive(TriMesh& mesh)
         drawBackground(top, mid, bot);
         setupCamera(camera);       
         drawRays();
-        
-
-
-				
+        		
         //glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, &objdiff.x);
         glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, &objspec.x);
         glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, shine);

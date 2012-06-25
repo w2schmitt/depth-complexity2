@@ -13,6 +13,10 @@
         <in>opengl.h</in>
         <in>quaternion.h</in>
       </df>
+      <df name="DualImages">
+      </df>
+      <df name="hist">
+      </df>
       <df name="histogram">
       </df>
       <df name="models">
@@ -21,6 +25,7 @@
       </df>
       <df name="shader">
       </df>
+      <in>CImg.h</in>
       <in>ShaderMgr.cpp</in>
       <in>ShaderMgr.h</in>
       <in>camera.cpp</in>
