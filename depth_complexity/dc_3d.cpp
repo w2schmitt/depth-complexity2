@@ -126,7 +126,7 @@ void DepthComplexity3D::process(const TriMesh &mesh) {
 void DepthComplexity3D::computeBoundingBox(){
     _aabb = _mesh->aabb;
 
-    // prevent erros in plane meshs
+    // prevent erros in planar meshs
     _aabb.merge(_aabb.min - _aabb.extents()/10.0);
     _aabb.merge(_aabb.max + _aabb.extents()/10.0);
 
@@ -237,16 +237,16 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
       processMeshPlane(plane, &segments);
 
       if (segments.size()==0) 
-          continue;      
-       
+          continue; 
+      
       Plane p;
       p.a = sa.a; p.b = sa.b;
       p.c = sb.b; p.d = sb.a;
-      _usedPlanes.push_back(p);
+      _usedPlanes.push_back(p);   
       
       // make the segments extra-long
       vec3d dsa = sa.b - sa.a; sa.a -= dsa; sa.b += dsa;
-      vec3d dsb = sb.b - sb.a; sb.a -= dsb; sb.b += dsb;
+      vec3d dsb = sb.b - sb.a; sb.a -= dsb; sb.b += dsb;     
 
       //std::cout << "t3este " << segments.size() <<  std::endl;
       _dc2d->process(sa, sb, segments);

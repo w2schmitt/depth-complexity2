@@ -441,15 +441,23 @@ void drawDualSpace(){
                 }   
             }
             else {
+                
                 CChannel = 3;
                 test = new unsigned char[DUAL_SIZE*DUAL_SIZE*CChannel];
 
-                int Ngroups = 5;
-                int DCMax = dc3d->maximum();
+                unsigned int Ngroups = 5;
+                unsigned int DCMax = *std::max_element(dualSpace, dualSpace + DUAL_SIZE*DUAL_SIZE) - 1;
+                assert(DCMax>0);
+                
+                if (Ngroups > DCMax) 
+                    Ngroups = DCMax;
                 int limit = DCMax/Ngroups;
+               
+                if (limit==0) limit=1;
                 
                 for (int i=0; i<(DUAL_SIZE)*(DUAL_SIZE); i++ ) { 
                     int colorIndex = (dualSpace[i]-1)/limit;
+                    
                     if (colorIndex>10) colorIndex = 10;                   
 
                     test[i]   = (unsigned char) CTable[colorIndex][0]*255;
@@ -720,7 +728,7 @@ int doInteractive(TriMesh& mesh)
     BoundingBox aabb = mesh.aabb;
     
     camera.bbox(float3(aabb.min.x,aabb.min.y,aabb.min.z), float3(aabb.max.x,aabb.max.y,aabb.max.z), true );
-		camera.front();
+    camera.front();
     
     //cam.target = aabb.center();
     //cam.up = vec3f(0, 1, 0);
