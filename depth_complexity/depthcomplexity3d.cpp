@@ -444,16 +444,17 @@ void drawDualSpace(){
                 CChannel = 3;
                 test = new unsigned char[DUAL_SIZE*DUAL_SIZE*CChannel];
 
-                int Ngroups = 2;
+                int Ngroups = 5;
+                int DCMax = dc3d->maximum();
+                int limit = DCMax/Ngroups;
                 
-                for (int i=0; i<(DUAL_SIZE); i++ ) { 
-                    int colorIndex = (dualSpace[i]-1)/Ngroups;
-                    if (colorIndex>10) colorIndex = 10;
-                    
+                for (int i=0; i<(DUAL_SIZE)*(DUAL_SIZE); i++ ) { 
+                    int colorIndex = (dualSpace[i]-1)/limit;
+                    if (colorIndex>10) colorIndex = 10;                   
 
                     test[i]   = (unsigned char) CTable[colorIndex][0]*255;
-                    test[DUAL_SIZE+i] = (unsigned char) CTable[colorIndex][1]*255;
-                    test[DUAL_SIZE*DUAL_SIZE + i] = (unsigned char) CTable[colorIndex][2]*255;      
+                    test[DUAL_SIZE*DUAL_SIZE+i] = (unsigned char) CTable[colorIndex][1]*255;
+                    test[DUAL_SIZE*DUAL_SIZE*2 + i] = (unsigned char) CTable[colorIndex][2]*255;      
                     
                     //std::cout << (int)test[i] << " - " << (int)test[i+1] << " - " << (int)test[i+2] << std::endl;
                 }
@@ -462,7 +463,7 @@ void drawDualSpace(){
             CImg<unsigned char> dualImg(test, DUAL_SIZE, DUAL_SIZE, 1, CChannel);
             dualDisplay.display(dualImg);
             dualDisplay.set_title("Dual Space - DC = %d", filterDC);
-
+            //dualImg.per
             delete[] test;
         }
 
