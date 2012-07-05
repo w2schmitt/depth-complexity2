@@ -405,8 +405,10 @@ void TW_CALL saveAll(void*){
     
     
 }
+const int colorTableSize = 6;
 
-float CTable[11][3] = {
+/*
+float CTable[colorTableSize][3] = {
   {0.0f, 0.0f, 0.0f},
   {1.0f, 1.0f, 1.0f},
   {1.0f, 0.0f, 0.0f},
@@ -419,6 +421,64 @@ float CTable[11][3] = {
   {1.0f, 0.0f, 1.0f},
   {0.0f, 1.0f, 1.0f},
 };
+ */
+
+float CTable[colorTableSize][3] = {
+    {0.0, 0.0, 1.0},    // Azul
+    {1.0, 0.0, 1.0},    // Roxo/Rosa
+    {1.0, 0.5, 0.0},    // Laranja
+    {1.0, 1.0, 0.0},    // Amarelo
+    {0.0, 1.0, 0.0},    // Verde
+    {1.0, 1.0, 1.0}     // Verde
+    
+	 //	 Color(0.0f, 0.0f, 1.0f),
+	 //Color(1.0f, 0.0f, 1.0f),
+	 //Color(1.0f, 0.5f, 0.0f),
+	 //Color(1.0f, 1.0f, 0.0f),
+	 //Color(0.0f, 1.0f, 0.0f),
+	 //Color(0.0f, 1.0f, 0.0f)
+};
+
+
+void lerpColor(float* newColor, const float *color1, const float *color2, float value){
+    
+    if (value<=0){
+        //memcpy(newColor, color1, sizeof(float*)*3);
+        newColor[0] = color1[0];
+        newColor[1] = color1[1];
+        newColor[2] = color1[2];
+    }
+    else if (value>=1){
+        newColor[0] = color2[0];
+        newColor[1] = color2[1];
+        newColor[2] = color2[2];
+        //memcpy(newColor, color2, sizeof(float*)*3);        
+    }
+    else {        
+        newColor[0] = (1-value)*color1[0] + (value)*color2[0];
+        newColor[1] = (1-value)*color1[1] + (value)*color2[1];
+        newColor[2] = (1-value)*color1[2] + (value)*color2[2];
+    }    
+}
+
+void findColor(float *pxColor, float normalizedDC){
+    
+    float intensity;
+    float tableIndex = normalizedDC*(float)(colorTableSize-1);
+    
+    int firstColor = (int)tableIndex;  
+    
+    if (firstColor==colorTableSize-1){
+        intensity=1.0;
+        firstColor--;
+    }else{
+        intensity = tableIndex - (float)firstColor;
+    }
+    
+    int secondColor = (int)tableIndex+1;    
+    lerpColor(pxColor, CTable[firstColor], CTable[secondColor], intensity);
+}
+
 
 
 void drawDualSpace(){
@@ -441,28 +501,23 @@ void drawDualSpace(){
                 }   
             }
             else {
-                
+
                 CChannel = 3;
                 test = new unsigned char[DUAL_SIZE*DUAL_SIZE*CChannel];
 
-                unsigned int Ngroups = 5;
+                //unsigned int Ngroups = 5;
                 unsigned int DCMax = *std::max_element(dualSpace, dualSpace + DUAL_SIZE*DUAL_SIZE) - 1;
                 assert(DCMax>0);
-                
-                if (Ngroups > DCMax) 
-                    Ngroups = DCMax;
-                int limit = DCMax/Ngroups;
-               
-                if (limit==0) limit=1;
-                
+                  
                 for (int i=0; i<(DUAL_SIZE)*(DUAL_SIZE); i++ ) { 
-                    int colorIndex = (dualSpace[i]-1)/limit;
-                    
-                    if (colorIndex>10) colorIndex = 10;                   
+                    //int colorIndex = (dualSpace[i]-1)/limit;
+                    float pxColor[3];
+                    findColor(pxColor, (float)(dualSpace[i]-1.0)/(float)DCMax);
+                    //if (colorIndex>10) colorIndex = 10;                   
 
-                    test[i]   = (unsigned char) CTable[colorIndex][0]*255;
-                    test[DUAL_SIZE*DUAL_SIZE+i] = (unsigned char) CTable[colorIndex][1]*255;
-                    test[DUAL_SIZE*DUAL_SIZE*2 + i] = (unsigned char) CTable[colorIndex][2]*255;      
+                    test[i]   = (unsigned char) pxColor[0]*255;
+                    test[DUAL_SIZE*DUAL_SIZE+i] = (unsigned char) pxColor[1]*255;
+                    test[DUAL_SIZE*DUAL_SIZE*2 + i] = (unsigned char) pxColor[2]*255;      
                     
                     //std::cout << (int)test[i] << " - " << (int)test[i+1] << " - " << (int)test[i+2] << std::endl;
                 }
@@ -474,6 +529,7 @@ void drawDualSpace(){
             //dualImg.per
             delete[] test;
         }
+                 
 
     }
 
