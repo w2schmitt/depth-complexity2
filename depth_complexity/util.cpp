@@ -6,12 +6,6 @@
 
 const double EPS = 1.0E-5;
 
-bool operator<(const Segment &s1, const Segment &s2) {
-  if (s1.a.x == s2.a.x)
-    return s1.a.y < s2.a.y;
-  return s1.a.x < s2.a.x;
-}
-
 TriMesh
 loadOFFMesh(std::istream& in){
   std::clog << "Loading OFF file" << std::endl;
@@ -94,6 +88,7 @@ loadOBJMesh(std::istream& in) {
         vec3d p;
         if (sscanf(line.c_str()+2, "%lf %lf %lf", &p.x, &p.y, &p.z) != 3)
           throw std::string("Error reading vertex at line " + line);
+								//printf("px = (%f) - py = (%f) - pz = (%f)\n", p.x, p.y, p.z); 
         vertices.push_back(p);
         mesh.aabb.merge(p);
       } else if (line[1] == 'n') {
@@ -137,6 +132,8 @@ loadOBJMesh(std::istream& in) {
           t.b = vertices.at(b-1);
           t.c = vertices.at(c-1);
 
+										//printf("ta = (%f,%f) - tb = (%f,%f) - tc = (%f,%f)\n", t.a.x, t.a.y, t.b.x, t.b.y, t.c.x, t.c.y); 
+
           // if we don't have a normal, make one
           if (na <= 0) {
             vec3d normal = cross(t.b - t.a, t.c - t.a);
@@ -148,7 +145,12 @@ loadOBJMesh(std::istream& in) {
           t.na = normals.at(na-1);
           t.nb = normals.at(nb-1);
           t.nc = normals.at(nc-1);
-          mesh.faces.push_back(t);
+
+          t.ca = vec4d(0.057f, 0.25f, 0.42f, 0.35f);
+          t.cb = vec4d(0.057f, 0.25f, 0.42f, 0.35f);
+          t.cc = vec4d(0.057f, 0.25f, 0.42f, 0.35f);
+
+          mesh.faces.push_back(t);			
 
           b = c;
           nb = nc;
@@ -174,7 +176,7 @@ bool lineIntersection2D(const Segment &line1, const Segment &line2, double *t1, 
   vec3d v = line2.b - line2.a;
   vec3d w = line1.a - line2.a;
   // just X and Y values are used
-  float D = perp(u,v);
+  double D = perp(u,v);
 
   // test if they are parallel (includes either being a point)
   if (fabs(D) < EPS) // S1 and S2 are parallel

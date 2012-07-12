@@ -2,13 +2,20 @@
 #define UTIL_H_
 
 #include <vector>
+#include <algorithm>
 
 #include "vector.hpp"
 
 struct Triangle {
-    vec3d a, na,
-        b, nb,
-        c, nc;
+    vec3d a, na; 
+		vec4d ca;
+		vec3d b, nb;
+		vec4d cb;
+		vec3d c, nc;
+		vec4d cc;
+    
+    //bool intercepted;
+    //Triangle() : intercepted(false){}
 };
 
 typedef vec3d Point;
@@ -16,6 +23,16 @@ typedef vec3d Point;
 struct Segment {
   Segment(const Point &a_, const Point &b_):a(a_), b(b_), active(true) {}
   Segment() : active(true){}
+  void sortPoints()
+  {
+	   double sega[3]={this->a.x, this->a.y, this->a.z};
+       double segb[3]={this->b.x, this->b.y, this->b.z};
+       if (!std::lexicographical_compare(sega,sega+3,segb,segb+3)){
+		   vec3d aux = this->a;
+		   this->a = this->b;
+		   this->b = aux;
+	   }
+  }
   vec3d a, b;
   bool active;
 };
@@ -26,6 +43,7 @@ bool operator<(const Segment &s1, const Segment &s2);
   CuttingSegment(const Segment &s, const int intersect_ = 0):intersect(intersect_) {}
   int intersect;
 };*/
+
 
 struct BoundingBox {
     vec3d min, max;
@@ -67,6 +85,19 @@ struct BoundingBox {
 struct TriMesh {
     std::vector<Triangle> faces;
     BoundingBox aabb;
+};
+
+struct classcomp {
+	bool operator() (const Segment& lhs, const Segment& rhs) const
+	{
+		float seg1[6] = { lhs.a.x, lhs.a.y, lhs.a.z, 
+						  lhs.b.x, lhs.b.y, lhs.b.z};
+						  
+		float seg2[6] = { rhs.a.x, rhs.a.y, rhs.a.z, 
+						  rhs.b.x, rhs.b.y, rhs.b.z}; 
+		
+		return std::lexicographical_compare(seg1,seg1+6,seg2,seg2+6);	
+	}
 };
 
 TriMesh loadOFFMesh(std::istream& in);

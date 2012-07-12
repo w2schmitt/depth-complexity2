@@ -4,7 +4,11 @@
 #include "util.h"
 
 #include <map>
+#include <set>
 #include <vector>
+#include <fstream>
+#include <sstream>
+#include <cstring>
 
 // Usage:
 //   TriMesh mesh = ...;
@@ -19,6 +23,8 @@
 class RDepthComplexity3D {
 public:
   RDepthComplexity3D(int fboWidth, int fboHeight, int discretSteps);
+	RDepthComplexity3D(int fboWidith, int fboHeight, int discretSteps, const char* filenameRays);
+
   virtual ~RDepthComplexity3D();
 
   void process(const TriMesh &mesh);
@@ -29,15 +35,15 @@ public:
   void setThreshold(unsigned threshold);
 
   unsigned maximum() const { return _maximum; }
-  const std::vector<Segment> &maximumRays() const { return _maximumRays; }
-  const std::vector<Segment> &goodRays(int intersect) const { return _goodRays[intersect]; }
+  const std::set<Segment,classcomp> &maximumRays() const { return _maximumRays; }
+  const std::set<Segment,classcomp> &goodRays(int intersect) const { return _goodRays[intersect]; }
   const std::vector<Segment> &usedPlanes() const { return _usedPlanes; }
   const std::vector<Point> &intersectionPoints() const { return _intersectionPoints; }
   unsigned getThreshold() { return _threshold; }
 
   void writeHistogram(std::ostream& out);
   void writeRays(std::ostream& out);
-  void writeRays(std::ostream& out, const std::vector<Segment> & _rays);
+  void writeRays(std::ostream& out, const std::set<Segment,classcomp> & _rays);
 
 private:
   enum PlaneAlign{
@@ -49,6 +55,8 @@ private:
   bool intersectPlaneSegment(const vec4d& plane, const vec3d& p0, const vec3d& p1, vec3d *pt);
   vec4d makePlane(const vec3d& a, const vec3d& b, const vec3d& c);
 
+	bool readRaysFromFile(std::istream& in);
+
 private:
   // Input
   const TriMesh *_mesh;
@@ -57,21 +65,23 @@ private:
   int _discretSteps;
   unsigned _maximum;
   unsigned _threshold;
+	std::vector<Segment> _raysFromFile;
 
   // State
   bool _computeHistogram;
   bool _computeMaximumRays;
   bool _computeGoodRays;
+	bool _computeRaysFromFile;
 
   // Output
-  std::vector<Segment> _maximumRays;
-  std::vector< std::vector<Segment> > _goodRays;
+  std::set<Segment,classcomp> _maximumRays;
+  std::vector< std::set<Segment,classcomp> > _goodRays;
   std::vector<Segment> _usedPlanes;
   std::vector<unsigned long long> _histogram;
   std::vector<Point> _intersectionPoints;
   //  std::vector<Segment> _intersectionSegments;
 
-  friend int doInteractive(const TriMesh& mesh);
+  friend int doInteractive(TriMesh& mesh);
   friend void drawRays();
 };
 

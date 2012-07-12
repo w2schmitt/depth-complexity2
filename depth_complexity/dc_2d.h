@@ -3,6 +3,8 @@
 
 #define GL_GLEXT_PROTOTYPES
 
+
+#include <GL/glew.h>
 #ifdef __APPLE__
 #include <GLUT/glut.h>
 #else
@@ -11,7 +13,13 @@
 #endif
 
 #include "util.h"
+#include "ShaderMgr.h"
+//#include "clip_polygon.h"
 #include <map>
+#include <set>
+#include <cstdlib>
+#include <stdio.h>
+#include <iomanip>
 
 // Compute the Depth complexity in 2D
 //
@@ -27,6 +35,7 @@
 class DepthComplexity2D {
 public:
   DepthComplexity2D(const int fboWidth, const int fboHeight);
+  ~DepthComplexity2D();
 
   void setComputeHistogram(bool computeHistogram) { this->_computeHistogram = computeHistogram; }
   void setComputeMaximumRays(bool computeMaximumRays) {this->_computeMaximumRays = computeMaximumRays; }
@@ -42,11 +51,11 @@ public:
   void copyStencilToColor();
 
   // Methods to obtain outputs
-  unsigned                         maximum() const           { return _maximum; }
+  unsigned int                     maximum() const           { return _maximum; }
   std::vector<unsigned long long>  histogram()               { return _histogram; }
-  std::vector<Segment>             maximumRays()             { return _maximumRays; }
-  std::vector<Segment>             goodRays(unsigned i)      { return _goodRays[i]; }
-  GLuint                           textureId() const         { return _textureId; }
+  std::set<Segment,classcomp>      maximumRays()             { return _maximumRays; }
+  std::set<Segment,classcomp>      goodRays(unsigned i)      { return _goodRays[i]; }
+  GLuint                           textureId() const         { return _cboTexId; }
 
 private:
   // Create framebuffer objects
@@ -54,40 +63,51 @@ private:
 
   // Primal: point -> Dual: Segment
   Segment computeDualSegmentFromPoint(const Point &p);
-
-  // Go through the framebuffer to find the maximum value.
-  int findMaxValueInStencil();
+		
+  void clipPolygon(const Point &p1, const Point &p2, const Point &p3, std::vector<Point> &polygon);
+  void clipPolygon(const Point &p1, const Point &p2, const Point &p3, const Point &p4, std::vector<Point> &polygon);
+		
+  // Go through the counter buffer to find the maximum value.
+  unsigned int findMaxValueInCounterBuffer();
+  void setShaderClearCounterBuffer();
+  void setShaderCountDC();
 
   // Compute depth complexity using rays from one segment to the other.
   void findDepthComplexity2D();
 
-  //
   void findMaximumRaysAndHistogram();
-
+  
 private:
-  GLuint                                _textureId;
-  GLuint                                _fboId;
-  GLuint                                _rboId;
+  //buffers 
+  GLuint                                		_cboTexId;
+  GLuint										                _counterBuffId;
+  GLuint                                		_fboId;
+  GLuint                                		_rboId;
+  
+  // Shaders
+  GLuint 										                _shaderclearBuffer;
+  GLuint                                    _shaderCountDC;
 
   // State
-  bool                                  _status;
-  bool                                  _computeHistogram;
-  bool                                  _computeMaximumRays;
-  bool                                  _computeGoodRays;
+  bool                                  		_status;
+  bool                                  		_computeHistogram;
+  bool                                 			_computeMaximumRays;
+  bool                                  		_computeGoodRays;
 
   // Inputs
-  int                                   _fboWidth;
-  int                                   _fboHeight;
-  Segment                               _from;
-  Segment                               _to;
-  const std::vector<Segment>*           _segments;
-  unsigned                              _threshold;
+  int                                   		_fboWidth;
+  int                                   		_fboHeight;
+  Segment                               		_from;
+  Segment                               		_to;
+  const std::vector<Segment>*           		_segments;
+  unsigned                              		_threshold;
 
   // Outputs
-  unsigned                              _maximum;
-  std::vector<unsigned long long>       _histogram;
-  std::vector<Segment>                  _maximumRays;
-  std::vector< std::vector<Segment> >   _goodRays;
+  unsigned int                              _maximum;
+  std::vector<unsigned long long>       		_histogram;
+  std::set<Segment, classcomp>              _maximumRays;
+  std::vector< std::set<Segment,classcomp> >_goodRays;
+  
 };
 
 #endif // DC_2D2_H

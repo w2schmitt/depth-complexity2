@@ -70,7 +70,7 @@ void drawBox() {
   glEnd();
 }
 
-// Draw a set of segments
+// Draw a vector of segments
 void drawSegments(const std::vector<Segment> &segs, int color) {
   if (color) glColor4f(0.0, 0.0, 1.0, 1.0);
   else glColor4f(0.0, 0.0, 0.0, 1.0);
@@ -79,6 +79,20 @@ void drawSegments(const std::vector<Segment> &segs, int color) {
       if (!segs[i].active) continue;
       glVertex2f(segs[i].a.x, segs[i].a.y);
       glVertex2f(segs[i].b.x, segs[i].b.y);
+    }
+  glEnd();
+}
+
+// Draw a set of segments
+void drawSegments(const std::set<Segment,classcomp> &segs, int color) {
+  if (color) glColor4f(0.0, 0.0, 1.0, 1.0);
+  else glColor4f(0.0, 0.0, 0.0, 1.0);
+  std::set<Segment,classcomp>::const_iterator it = segs.begin();
+  glBegin(GL_LINES);
+    for (; it!=segs.end(); ++it) {
+      if (!it->active) continue;
+      glVertex2f(it->a.x, it->a.y);
+      glVertex2f(it->b.x, it->b.y);
     }
   glEnd();
 }
@@ -110,7 +124,7 @@ void display() {
   int max = dc2d->maximum();
   printf("Max value is: %i\n", max);
 
-  std::vector<Segment> rays;
+  std::set<Segment,classcomp> rays;
   if (showRays) rays = dc2d->maximumRays();
   dc2d->copyStencilToColor();
 
