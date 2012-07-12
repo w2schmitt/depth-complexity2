@@ -388,16 +388,28 @@ void recompute(void *data)
 void TW_CALL saveAll(void*){
 
     unsigned int *img=NULL;
-    int count = 0;
-    for (unsigned int i=0; (img=dc3d->getDualSpace(i))!=NULL; ++i,++count){
+    int ds = dc3d->getDiscreteSteps();
+    ds = 3*(ds*ds)-6;
+    int totalImgs = 1,imgNumber=1;
+    
+    for (unsigned int i=0; (img=dc3d->getDualSpace(i))!=NULL; ++i, imgNumber = (totalImgs+1)%(ds/3)+1, totalImgs++){
         unsigned char *test = new unsigned char[DUAL_SIZE*DUAL_SIZE];
         for (int i=0; i<(DUAL_SIZE)*(DUAL_SIZE); ++i ) { 
             if (img[i] == filterDC+1) test[i]=255;
             else test[i]=0;
         }
         
+        //std::cout << count << std::endl;
+        
         cimg_library::CImg<unsigned char> out(test,DUAL_SIZE, DUAL_SIZE);
-        out.save("DualImages/dualSpace.png",count);
+        if (totalImgs < ds/3){
+            out.save("DualImages/x/dualSpace.png",imgNumber);
+        }else if (totalImgs < 2*ds/3){
+            out.save("DualImages/y/dualSpace.png",imgNumber);
+        }
+        else{
+            out.save("DualImages/z/dualSpace.png",imgNumber);
+        }
         //std::cout << "saved image: " << count << std::endl;
 
         delete[] test;

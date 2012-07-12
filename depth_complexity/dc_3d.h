@@ -40,6 +40,7 @@ public:
   unsigned int getThreshold() { return _threshold; }
   const std::list<unsigned int> &intersectionTris(int rayIndex){return *_intersectionTriList.find(rayIndex)->second;}
   const BoundingBox &getBoundingBox() { return _aabb;}
+  unsigned int getDiscreteSteps() { return _discretSteps;}
   unsigned int* getDualSpace(unsigned i);
   
   void writeHistogram(std::ostream& out);
