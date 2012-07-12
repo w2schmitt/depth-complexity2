@@ -429,7 +429,7 @@ float CTable[colorTableSize][3] = {
     {1.0, 0.5, 0.0},    // Laranja
     {1.0, 1.0, 0.0},    // Amarelo
     {0.0, 1.0, 0.0},    // Verde
-    {1.0, 1.0, 1.0}     // Verde
+    {0.0, 1.0, 0.0}     // Branco
     
 	 //	 Color(0.0f, 0.0f, 1.0f),
 	 //Color(1.0f, 0.0f, 1.0f),
@@ -452,12 +452,13 @@ void lerpColor(float* newColor, const float *color1, const float *color2, float 
         newColor[0] = color2[0];
         newColor[1] = color2[1];
         newColor[2] = color2[2];
+        //std::cout << value << " - [" << color2[0] << " " << color2[1] << " " << color2[2] << "]\n";
         //memcpy(newColor, color2, sizeof(float*)*3);        
     }
     else {        
-        newColor[0] = (1-value)*color1[0] + (value)*color2[0];
-        newColor[1] = (1-value)*color1[1] + (value)*color2[1];
-        newColor[2] = (1-value)*color1[2] + (value)*color2[2];
+        newColor[0] = (1.0-value)*color1[0] + (value)*color2[0];
+        newColor[1] = (1.0-value)*color1[1] + (value)*color2[1];
+        newColor[2] = (1.0-value)*color1[2] + (value)*color2[2];
     }    
 }
 
@@ -471,11 +472,13 @@ void findColor(float *pxColor, float normalizedDC){
     if (firstColor==colorTableSize-1){
         intensity=1.0;
         firstColor--;
-    }else{
+    }
+    else{
         intensity = tableIndex - (float)firstColor;
     }
     
-    int secondColor = (int)tableIndex+1;    
+    int secondColor = ((int)firstColor)+1;    
+    //std::cout << secondColor << "\n";
     lerpColor(pxColor, CTable[firstColor], CTable[secondColor], intensity);
 }
 
@@ -488,14 +491,14 @@ void drawDualSpace(){
     if (dualSpace){
 
         if (dualDisplay.is_closed() || dualDisplay.is_empty() || filterDCChanged || planeSelectedChanged || colorTableChanged){
-            unsigned char *test;
+            float *test;
             
             if (!colorTable){
                 CChannel = 1;
-                test = new unsigned char[DUAL_SIZE*DUAL_SIZE*CChannel];
+                test = new float[DUAL_SIZE*DUAL_SIZE*CChannel];
                 for (int i=0; i<(DUAL_SIZE*DUAL_SIZE); ++i ) { 
 
-                    if (dualSpace[i] == filterDC+1) test[i]=255;
+                    if (dualSpace[i] == filterDC+1) test[i]=1;
                     else test[i]=0;
 
                 }   
@@ -503,10 +506,11 @@ void drawDualSpace(){
             else {
 
                 CChannel = 3;
-                test = new unsigned char[DUAL_SIZE*DUAL_SIZE*CChannel];
+                test = new float[DUAL_SIZE*DUAL_SIZE*CChannel];
 
                 //unsigned int Ngroups = 5;
-                unsigned int DCMax = *std::max_element(dualSpace, dualSpace + DUAL_SIZE*DUAL_SIZE) - 1;
+                //unsigned int DCMax = *std::max_element(dualSpace, dualSpace + DUAL_SIZE*DUAL_SIZE) - 1;
+                unsigned int DCMax = dc3d->maximum();
                 assert(DCMax>0);
                   
                 for (int i=0; i<(DUAL_SIZE)*(DUAL_SIZE); i++ ) { 
@@ -515,15 +519,15 @@ void drawDualSpace(){
                     findColor(pxColor, (float)(dualSpace[i]-1.0)/(float)DCMax);
                     //if (colorIndex>10) colorIndex = 10;                   
 
-                    test[i]   = (unsigned char) pxColor[0]*255;
-                    test[DUAL_SIZE*DUAL_SIZE+i] = (unsigned char) pxColor[1]*255;
-                    test[DUAL_SIZE*DUAL_SIZE*2 + i] = (unsigned char) pxColor[2]*255;      
+                    test[i]   =  pxColor[0];
+                    test[DUAL_SIZE*DUAL_SIZE+i] = pxColor[1];
+                    test[DUAL_SIZE*DUAL_SIZE*2 + i] = pxColor[2];      
                     
                     //std::cout << (int)test[i] << " - " << (int)test[i+1] << " - " << (int)test[i+2] << std::endl;
                 }
             }
             //test[1] = 255;
-            CImg<unsigned char> dualImg(test, DUAL_SIZE, DUAL_SIZE, 1, CChannel);
+            CImg<float> dualImg(test, DUAL_SIZE, DUAL_SIZE, 1, CChannel);
             dualDisplay.display(dualImg);
             dualDisplay.set_title("Dual Space - DC = %d", filterDC);
             //dualImg.per
