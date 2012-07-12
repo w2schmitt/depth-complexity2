@@ -60,5 +60,8 @@ randomdepthcomplexity3d_offline: dc_3d_random.o flags.o util.o timer.o
 	g++ -g -o $@ depthcomplexity3d_offline.cpp -D "USE_RANDOM_DC3D" $^ \
 	$(LDFLAGS) $(GLFW_LDFLAGS) $(GLUT_LDFLAGS) $(GLEW_CFLAGS)
 
+bps_model: bps_model.o flags.o util.o timer.o
+	g++ -g -o $@ $^ -Wall -Werror
+
 mergeOFF: mergeOFF.o
 	g++ -g -o $@ $^

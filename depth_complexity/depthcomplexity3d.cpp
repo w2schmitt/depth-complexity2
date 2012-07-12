@@ -336,6 +336,7 @@ int mDx = 0;
 int mDy = 0;
 bool mclicked;
 int mbutton;
+int mwhell;
 
 //_______________________________________________________________ Called when a mouse button is pressed or released
 void GLFWCALL mouse_click(int button, int action){
@@ -346,6 +347,19 @@ void GLFWCALL mouse_click(int button, int action){
 	mbutton=button;
 }
 
+//_______________________________________________________________ Called when the mouse whell move
+void GLFWCALL mouse_whell(int pos){
+  if(TwEventMouseWheelGLFW(pos)){
+    mwhell = pos;
+    return;
+  }
+  float Dw = pos - mwhell;
+  float delta = 0.1;
+  
+  camera.MoveFrente(Dw * delta);
+  
+  mwhell = pos;
+}
 //_______________________________________________________________ Called when a mouse move and a button is pressed
 void GLFWCALL mouse_motion(int x, int y){
 	if(TwEventMousePosGLFW(x,y))
@@ -357,7 +371,7 @@ void GLFWCALL mouse_motion(int x, int y){
 		float delta = 0.001;
 
 		switch(mbutton){
-			case GLFW_MOUSE_BUTTON_MIDDLE : //look
+			case GLFW_MOUSE_BUTTON_LEFT : //look
 				//if( glutGetModifiers() == GLUT_ACTIVE_SHIFT){
 					camera.lookLefRigObj(dx * delta );
 					camera.lookUpDownObj(dy * delta);
@@ -366,7 +380,7 @@ void GLFWCALL mouse_motion(int x, int y){
 					camera.lookUpDown(dy * delta);
 				}*/
 			break;
-			case GLFW_MOUSE_BUTTON_LEFT:			
+			case GLFW_MOUSE_BUTTON_RIGHT:			
 				//if( glutGetModifiers() != GLUT_ACTIVE_SHIFT){
 					camera.MoveLado(dx*delta);
 					camera.MoveCimaBaixo(-dy*delta);
@@ -375,7 +389,7 @@ void GLFWCALL mouse_motion(int x, int y){
 					camera.MoveCimaBaixoObj(-dy*delta);				
 				//}*/
 			break;
-			case GLFW_MOUSE_BUTTON_RIGHT: 
+			case GLFW_MOUSE_BUTTON_MIDDLE: 
 				if( dy>0) d = -d;
 				//if( glutGetModifiers() != GLUT_ACTIVE_SHIFT)
 					camera.MoveFrente(d*delta);
@@ -419,10 +433,12 @@ int doInteractive(const TriMesh& mesh)
 
     glfwSetMouseButtonCallback(mouse_click);
     glfwSetMousePosCallback(mouse_motion);
-    glfwSetMouseWheelCallback((GLFWmousewheelfun)TwEventMouseWheelGLFW);
+    glfwSetMouseWheelCallback(mouse_whell);
     glfwSetKeyCallback((GLFWkeyfun)TwEventKeyGLFW);
     glfwSetCharCallback((GLFWcharfun)TwEventCharGLFW);
 
+    mwhell = glfwGetMouseWheel();
+    
     TwBar *bar = TwNewBar("Controls");
     TwDefine(" GLOBAL ");
 
