@@ -385,38 +385,8 @@ void recompute(void *data)
     }
 }
 
-void TW_CALL saveAll(void*){
 
-    unsigned int *img=NULL;
-    int ds = dc3d->getDiscreteSteps();
-    ds = 3*(ds*ds)-6;
-    int totalImgs = 1,imgNumber=1;
-    
-    for (unsigned int i=0; (img=dc3d->getDualSpace(i))!=NULL; ++i, imgNumber = (totalImgs+1)%(ds/3)+1, totalImgs++){
-        unsigned char *test = new unsigned char[DUAL_SIZE*DUAL_SIZE];
-        for (int i=0; i<(DUAL_SIZE)*(DUAL_SIZE); ++i ) { 
-            if (img[i] == filterDC+1) test[i]=255;
-            else test[i]=0;
-        }
-        
-        //std::cout << count << std::endl;
-        
-        cimg_library::CImg<unsigned char> out(test,DUAL_SIZE, DUAL_SIZE);
-        if (totalImgs < ds/3){
-            out.save("DualImages/x/dualSpace.png",imgNumber);
-        }else if (totalImgs < 2*ds/3){
-            out.save("DualImages/y/dualSpace.png",imgNumber);
-        }
-        else{
-            out.save("DualImages/z/dualSpace.png",imgNumber);
-        }
-        //std::cout << "saved image: " << count << std::endl;
 
-        delete[] test;
-    }
-    
-    
-}
 const int colorTableSize = 6;
 
 /*
@@ -497,7 +467,7 @@ void findColor(float *pxColor, float normalizedDC){
 
 
 void drawDualSpace(){
-
+#ifndef USE_RANDOM_DC3D
     unsigned int CChannel;
     unsigned int* dualSpace = dc3d->getDualSpace(planeSelected);
     if (dualSpace){
@@ -548,7 +518,51 @@ void drawDualSpace(){
                  
 
     }
+#endif
+}
 
+void TW_CALL saveAll(void*){
+#ifndef USE_RANDOM_DC3D
+    unsigned int *img=NULL;
+    int ds = dc3d->getDiscreteSteps();
+    unsigned int CChannel = 3;
+    ds = 3*(ds*ds)-6;
+    int imgs = ds/3;
+    int totalImgs = 1,imgNumber=1;
+        
+    for (unsigned int i=0; (img=dc3d->getDualSpace(i))!=NULL; ++i, imgNumber = (totalImgs)%(ds/3)+1, totalImgs++){
+        unsigned int DCMax = dc3d->maximum();
+        assert(DCMax>0);
+    
+        float *test = new float[DUAL_SIZE*DUAL_SIZE*CChannel];
+        //unsigned int Ngroups = 5;
+        //unsigned int DCMax = *std::max_element(dualSpace, dualSpace + DUAL_SIZE*DUAL_SIZE) - 1;
+        for (int i=0; i<(DUAL_SIZE)*(DUAL_SIZE); i++ ) { 
+            float pxColor[3];
+            findColor(pxColor, (float)(img[i]-1.0)/(float)DCMax);
+             
+            test[i]   =  pxColor[0];
+            test[DUAL_SIZE*DUAL_SIZE+i] = pxColor[1];
+            test[DUAL_SIZE*DUAL_SIZE*2 + i] = pxColor[2];      
+        }
+
+        
+        CImg<float> out(test, DUAL_SIZE, DUAL_SIZE, 1, CChannel);
+        if (totalImgs <= imgs){
+            out.normalize(0,255).save("DualImages/x/dualSpace.png",imgNumber);
+        }else if (totalImgs <= 2*imgs){
+            out.normalize(0,255).save("DualImages/y/dualSpace.png",imgNumber);
+        }
+        else{
+            out.normalize(0,255).save("DualImages/z/dualSpace.png",imgNumber);
+        }
+        //dualDisplay.display(out);
+        //std::cout << "saved image: " << count << std::endl;
+
+        delete[] test;
+    }
+    
+#endif
 }
 
 void

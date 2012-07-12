@@ -14,6 +14,12 @@
         <in>quaternion.h</in>
       </df>
       <df name="DualImages">
+        <df name="x">
+        </df>
+        <df name="y">
+        </df>
+        <df name="z">
+        </df>
       </df>
       <df name="histogram">
       </df>
