@@ -7,6 +7,10 @@
 #include <vector>
 #include <set>
 #include <list>
+#include <GL/glew.h>
+
+#include "CImg.h"
+using namespace cimg_library;
 
 class DepthComplexity2D;
 
@@ -41,7 +45,10 @@ public:
   const std::list<unsigned int> &intersectionTris(int rayIndex){return *_intersectionTriList.find(rayIndex)->second;}
   const BoundingBox &getBoundingBox() { return _aabb;}
   unsigned int getDiscreteSteps() { return _discretSteps;}
-  unsigned int* getDualSpace(unsigned i);
+  
+  //unsigned int* getDualSpace(unsigned i);
+  GLuint getTextureID(unsigned int i);
+  CImg<float> *getBufferImg(unsigned int i);
   
   void writeHistogram(std::ostream& out);
   void writeRays(std::ostream& out);

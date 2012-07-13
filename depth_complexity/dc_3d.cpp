@@ -39,6 +39,11 @@ DepthComplexity3D::~DepthComplexity3D() {
 		delete it->second;
 }
 
+GLuint DepthComplexity3D::getTextureID(unsigned int i) { return _dc2d->getTextureID(i);}
+
+CImg<float> *DepthComplexity3D::getBufferImg(unsigned int i)  { return _dc2d->getBufferImg(i);}
+  
+
 void DepthComplexity3D::setComputeHistogram(bool computeHistogram) {
   this->_computeHistogram = computeHistogram;
   assert(_dc2d != 0);
@@ -114,12 +119,13 @@ void DepthComplexity3D::process(const TriMesh &mesh) {
   
   processMeshAlign(AlignZ, AlignX);
   processMeshAlign(AlignZ, AlignY);
-
   //processMeshAlign(AlignY, AlignX);
   processMeshAlign(AlignY, AlignZ);
-
   //processMeshAlign(AlignX, AlignY);
   //processMeshAlign(AlignX, A/#!/music/stationslignZ);
+  
+  
+  _dc2d->counterBufferToColor(_maximum);
 
 }
 
@@ -365,10 +371,15 @@ bool DepthComplexity3D::intersectTriangleSegment(const Segment& segment, const T
 	
 	return true;
 }
+/*
+GLuint DepthComplexity3D::getColorImg(unsigned int i){
+        
+}
 
 unsigned int* DepthComplexity3D::getDualSpace(unsigned i){
      return _dc2d->getDuallSpace(i);
 }
+ */
 
 
 bool DepthComplexity3D::intersectPlaneTriangle(const vec4d& plane, const Triangle& tri, Segment *seg) {

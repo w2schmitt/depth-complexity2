@@ -12,6 +12,7 @@ bool checkFramebufferStatus();
 void drawPolygon(const std::vector<Point> &polygon);
 
 bool shrinkSegment(Point &p1, Point &p2, vec3d d1, vec3d d2);
+void saveDualSpaceToImg(const unsigned int* img);
 
 DepthComplexity2D::DepthComplexity2D(const int fboWidth, const int fboHeight){
   _fboWidth = fboWidth;
@@ -23,7 +24,7 @@ DepthComplexity2D::DepthComplexity2D(const int fboWidth, const int fboHeight){
   _threshold = 0;
   _shaderclearBuffer = 0;
   _shaderCountDC = 0;
-  _status = false;   
+  _status = false;
   
   assert(initFBO());
   
@@ -230,6 +231,8 @@ void DepthComplexity2D::findDepthComplexity2D() {
     glUseProgram(0);
 
     _maximum = findMaxValueInCounterBuffer()-1;
+    saveCounterbuffer();
+    
     glBindTexture(GL_TEXTURE_2D, 0);   
 
     glMatrixMode(GL_MODELVIEW);
@@ -491,6 +494,20 @@ void drawTriangle(const Point &p1, const Point &p2, const Point &p3) {
 }
 */
 
+
+
+void DepthComplexity2D::saveCounterbuffer(){
+    const int pixelNumber = _fboWidth * _fboHeight;
+    unsigned int *colorBuffer = new unsigned int[pixelNumber];
+
+    glBindTexture(GL_TEXTURE_2D, _counterBuffId);
+    glGetTexImage( GL_TEXTURE_2D, 0 , GL_RED_INTEGER, GL_UNSIGNED_INT, colorBuffer ); 
+    glBindTexture(GL_TEXTURE_2D, 0);
+    
+    _dualSpace.push_back(colorBuffer);    
+}
+
+
 unsigned int DepthComplexity2D::findMaxValueInCounterBuffer() {
   const int pixelNumber = _fboWidth * _fboHeight;
   unsigned int *colorBuffer = new unsigned int[pixelNumber];
@@ -499,7 +516,9 @@ unsigned int DepthComplexity2D::findMaxValueInCounterBuffer() {
   glGetTexImage( GL_TEXTURE_2D, 0 , GL_RED_INTEGER, GL_UNSIGNED_INT, colorBuffer ); 
   glBindTexture(GL_TEXTURE_2D, 0);
   
-  _dualSpace.push_back(colorBuffer);
+  // save color buffer
+  //dualSpaceToImg(colorBuffer);
+  //_dualSpace.push_back(colorBuffer);
   
   return *(std::max_element(colorBuffer, colorBuffer + pixelNumber));
 }
@@ -550,6 +569,8 @@ void DepthComplexity2D::findMaximumRaysAndHistogram() {
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 }
 
+// ---------------------------------------------------------------------------
+/*
 float colors[10][3] = {
   {1.0f, 1.0f, 1.0f},
   {1.0f, 0.0f, 0.0f},
@@ -562,9 +583,120 @@ float colors[10][3] = {
   {1.0f, 0.0f, 1.0f},
   {0.0f, 1.0f, 1.0f},
 };
+ */
+
+const unsigned int colorTableSize=6;
+
+float CTable[colorTableSize][3] = {
+    {0.0, 0.0, 1.0},    // Azul
+    {1.0, 0.0, 1.0},    // Roxo/Rosa
+    {1.0, 0.5, 0.0},    // Laranja
+    {1.0, 1.0, 0.0},    // Amarelo
+    {0.0, 1.0, 0.0},    // Verde
+    {0.0, 1.0, 0.0}     // Verde
+};
+
+
+GLuint createTexture(int width, int height, const float* pixels){
+    //allocate texture name
+    GLuint id;
+    glGenTextures(1, &id);    
+    glBindTexture(GL_TEXTURE_2D, id);
+    
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    
+    
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_FLOAT, pixels);
+    //gluBuild2DMipmaps(...)
+    
+    return id;
+    
+}
+
+
+/* Linear Interpolation between color1 and color2*/
+void lerpColor(float* newColor, const float *color1, const float *color2, float value){
+    
+    if (value<=0){
+        //memcpy(newColor, color1, sizeof(float*)*3);
+        newColor[0] = color1[0];
+        newColor[1] = color1[1];
+        newColor[2] = color1[2];
+    }
+    else if (value>=1){
+        newColor[0] = color2[0];
+        newColor[1] = color2[1];
+        newColor[2] = color2[2];
+        //std::cout << value << " - [" << color2[0] << " " << color2[1] << " " << color2[2] << "]\n";
+        //memcpy(newColor, color2, sizeof(float*)*3);        
+    }
+    else {        
+        newColor[0] = (1.0-value)*color1[0] + (value)*color2[0];
+        newColor[1] = (1.0-value)*color1[1] + (value)*color2[1];
+        newColor[2] = (1.0-value)*color1[2] + (value)*color2[2];
+    }    
+}
+
+
+void findColor(float *pxColor, float normalizedDC){
+    
+    float intensity;
+    float tableIndex = normalizedDC*(float)(colorTableSize-1);
+    
+    int firstColor = (int)tableIndex;  
+    
+    if (firstColor==colorTableSize-1){
+        intensity=1.0;
+        firstColor--;
+    }
+    else{
+        intensity = tableIndex - (float)firstColor;
+    }
+    
+    int secondColor = ((int)firstColor)+1;    
+    lerpColor(pxColor, CTable[firstColor], CTable[secondColor], intensity);
+}
+
+
+void DepthComplexity2D::counterBufferToColor(unsigned int dcMax){
+    
+    unsigned int *dsImg = NULL;
+    unsigned int cbSize = _fboWidth*_fboHeight;
+    unsigned int channels = 3;  // color img channels
+    float pxColor[3] = {0.0, 0.0, 0.0};
+    
+    assert(dcMax>0);
+    //std::cout << _dualSpace[0][0] << std::endl;
+    for (unsigned int i=0; i < _dualSpace.size(); i++ ){
+        dsImg = _dualSpace[i];
+        float *imgColor = new float[cbSize*channels];
+        // for each pixel (which represents DC) compute a color
+        for (unsigned int j=0; j < cbSize; j++){
+            findColor(pxColor, (dsImg[j]-1.0)/(float)dcMax);
+            
+            imgColor[j]   =  pxColor[0];
+            imgColor[cbSize + j] = pxColor[1];
+            imgColor[cbSize*2 + j] = pxColor[2];   
+            
+        }       
+        _texIDs.push_back( createTexture(_fboWidth, _fboHeight, imgColor) );
+        
+        CImg<float> out(imgColor, _fboWidth, _fboHeight, 1, channels);
+        _colorGfx.push_back(out);
+        
+        delete[] imgColor;
+    }
+}
+
 
 void DepthComplexity2D::copyStencilToColor() {
-  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _fboId);
+
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _fboId);
 
   glPushAttrib(GL_VIEWPORT_BIT | GL_ENABLE_BIT);
     glViewport(0.0, 0.0, _fboWidth, _fboHeight);
@@ -578,9 +710,9 @@ void DepthComplexity2D::copyStencilToColor() {
     for(register int y = 0; y < _fboHeight; ++y) {
       for(register int x = 0; x < _fboWidth; ++x) {
         int stencilValue  = stencilSave[_fboWidth * y + x];
-        colorSave[(_fboWidth * y + x) * 3 + 0] = colors[stencilValue % 10][0];
-        colorSave[(_fboWidth * y + x) * 3 + 1] = colors[stencilValue % 10][1];
-        colorSave[(_fboWidth * y + x) * 3 + 2] = colors[stencilValue % 10][2];
+        colorSave[(_fboWidth * y + x) * 3 + 0] = CTable[stencilValue % 6][0];
+        colorSave[(_fboWidth * y + x) * 3 + 1] = CTable[stencilValue % 6][1];
+        colorSave[(_fboWidth * y + x) * 3 + 2] = CTable[stencilValue % 6][2];
       }
     }
 
@@ -607,6 +739,7 @@ void DepthComplexity2D::copyStencilToColor() {
 
   glPopAttrib();
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+ 
 }
 
 
@@ -631,7 +764,7 @@ void DepthComplexity2D::setShaderClearCounterBuffer(){
       glVertex2f(-1.0f, -1.0f);
     glEnd();
 }
-
+ 
 void DepthComplexity2D::setShaderCountDC(){
     // Set shader to count DC
     glUseProgram(_shaderCountDC);   
@@ -646,3 +779,4 @@ void DepthComplexity2D::setShaderCountDC(){
     // Pass counter buff texture
     glProgramUniform1iEXT(_shaderCountDC, glGetUniformLocation(_shaderCountDC, "counterBuff"), 0);
 }
+

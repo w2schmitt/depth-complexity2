@@ -87,13 +87,6 @@
       </item>
       <item path="camera/opengl.cpp" ex="true" tool="1" flavor="0">
       </item>
-      <item path="depthcomplexity3d_offline.cpp" ex="false" tool="1" flavor="0">
-        <ccTool>
-          <preprocessorList>
-            <Elem>USE_RANDOM_DC3D</Elem>
-          </preprocessorList>
-        </ccTool>
-      </item>
       <folder path="depth_complexity/camera">
         <ccTool>
           <incDir>

@@ -386,88 +386,16 @@ void recompute(void *data)
 }
 
 
-
-const int colorTableSize = 6;
-
-/*
-float CTable[colorTableSize][3] = {
-  {0.0f, 0.0f, 0.0f},
-  {1.0f, 1.0f, 1.0f},
-  {1.0f, 0.0f, 0.0f},
-  {0.0f, 1.0f, 0.0f},
-  {0.0f, 0.0f, 1.0f},
-  {0.5f, 0.0f, 0.5f},
-  {0.5f, 0.5f, 0.0f},
-  {0.0f, 0.5f, 0.5f},
-  {0.5f, 0.5f, 0.5f},
-  {1.0f, 0.0f, 1.0f},
-  {0.0f, 1.0f, 1.0f},
-};
- */
-
-float CTable[colorTableSize][3] = {
-    {0.0, 0.0, 1.0},    // Azul
-    {1.0, 0.0, 1.0},    // Roxo/Rosa
-    {1.0, 0.5, 0.0},    // Laranja
-    {1.0, 1.0, 0.0},    // Amarelo
-    {0.0, 1.0, 0.0},    // Verde
-    {0.0, 1.0, 0.0}     // Branco
-    
-	 //	 Color(0.0f, 0.0f, 1.0f),
-	 //Color(1.0f, 0.0f, 1.0f),
-	 //Color(1.0f, 0.5f, 0.0f),
-	 //Color(1.0f, 1.0f, 0.0f),
-	 //Color(0.0f, 1.0f, 0.0f),
-	 //Color(0.0f, 1.0f, 0.0f)
-};
-
-
-void lerpColor(float* newColor, const float *color1, const float *color2, float value){
-    
-    if (value<=0){
-        //memcpy(newColor, color1, sizeof(float*)*3);
-        newColor[0] = color1[0];
-        newColor[1] = color1[1];
-        newColor[2] = color1[2];
-    }
-    else if (value>=1){
-        newColor[0] = color2[0];
-        newColor[1] = color2[1];
-        newColor[2] = color2[2];
-        //std::cout << value << " - [" << color2[0] << " " << color2[1] << " " << color2[2] << "]\n";
-        //memcpy(newColor, color2, sizeof(float*)*3);        
-    }
-    else {        
-        newColor[0] = (1.0-value)*color1[0] + (value)*color2[0];
-        newColor[1] = (1.0-value)*color1[1] + (value)*color2[1];
-        newColor[2] = (1.0-value)*color1[2] + (value)*color2[2];
-    }    
-}
-
-void findColor(float *pxColor, float normalizedDC){
-    
-    float intensity;
-    float tableIndex = normalizedDC*(float)(colorTableSize-1);
-    
-    int firstColor = (int)tableIndex;  
-    
-    if (firstColor==colorTableSize-1){
-        intensity=1.0;
-        firstColor--;
-    }
-    else{
-        intensity = tableIndex - (float)firstColor;
-    }
-    
-    int secondColor = ((int)firstColor)+1;    
-    //std::cout << secondColor << "\n";
-    lerpColor(pxColor, CTable[firstColor], CTable[secondColor], intensity);
-}
-
-
-
 void drawDualSpace(){
 #ifndef USE_RANDOM_DC3D
+    
+    CImg<float> *curImg = dc3d->getBufferImg(planeSelected);
+    if (curImg){
+        //CImg<float> t = dc3d->getBufferImg(0);
+        dualDisplay.display(*curImg);
+        dualDisplay.set_title("Dual Space to Color");
+    }
+    /*
     unsigned int CChannel;
     unsigned int* dualSpace = dc3d->getDualSpace(planeSelected);
     if (dualSpace){
@@ -518,11 +446,13 @@ void drawDualSpace(){
                  
 
     }
+     */
 #endif
 }
 
 void TW_CALL saveAll(void*){
 #ifndef USE_RANDOM_DC3D
+    /*
     unsigned int *img=NULL;
     int ds = dc3d->getDiscreteSteps();
     unsigned int CChannel = 3;
@@ -561,7 +491,7 @@ void TW_CALL saveAll(void*){
 
         delete[] test;
     }
-    
+    */
 #endif
 }
 

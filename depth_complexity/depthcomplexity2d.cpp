@@ -8,6 +8,8 @@
 #include "dc_2d.h"
 #include "flags.h"
 #include "timer.h"
+#include "CImg.h"
+using namespace cimg_library;
 
 #include <cstdlib>
 #include <cstdio>

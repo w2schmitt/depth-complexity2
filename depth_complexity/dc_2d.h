@@ -14,12 +14,16 @@
 
 #include "util.h"
 #include "ShaderMgr.h"
+#include "CImg.h"
+
 //#include "clip_polygon.h"
 #include <map>
 #include <set>
 #include <cstdlib>
 #include <stdio.h>
 #include <iomanip>
+
+using namespace cimg_library;
 
 // Compute the Depth complexity in 2D
 //
@@ -48,7 +52,9 @@ public:
 
   // Copy stencil buffer to color buffer.
   // Colors are defined in a table.
+  void saveCounterbuffer();
   void copyStencilToColor();
+  void counterBufferToColor(unsigned int dcMax);
 
   // Methods to obtain outputs
   unsigned int                     maximum() const           { return _maximum; }
@@ -56,9 +62,16 @@ public:
   std::set<Segment,classcomp>      maximumRays()             { return _maximumRays; }
   std::set<Segment,classcomp>      goodRays(unsigned i)      { return _goodRays[i]; }
   GLuint                           textureId() const         { return _cboTexId; }
-  unsigned int*                    getDuallSpace(unsigned i) { 
-      if (i >= _dualSpace.size()) return NULL;
-      return _dualSpace[i];}
+  
+  GLuint                           getTextureID(unsigned int i) { return _texIDs[i]; }
+  CImg<float>                      *getBufferImg(unsigned int i) { 
+      if (i >= _colorGfx.size()) return NULL;
+      return &_colorGfx[i];}
+  //unsigned int*                    getDuallSpace(unsigned i) { 
+  //    if (i >= _dualSpace.size()) return NULL;
+  //    return _dualSpace[i];}
+  
+ 
 
 private:
   // Create framebuffer objects
@@ -110,7 +123,11 @@ private:
   std::vector<unsigned long long>       		_histogram;
   std::set<Segment, classcomp>                          _maximumRays;
   std::vector< std::set<Segment,classcomp> >            _goodRays;
-  std::vector<unsigned int*>                            _dualSpace;
+  
+  std::vector<unsigned int*>                            _dualSpace;  // counter buffer textures
+  CImgList<float>                                       _colorGfx;  // counter buffer to Color image list
+  std::vector<GLuint>                                   _texIDs;
+  //std::vector<GLuint>                                   _textureIDs;
   
 };
 
