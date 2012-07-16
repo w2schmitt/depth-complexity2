@@ -7,4 +7,7 @@ toPlot.txt
 Tests/
 Tests.tar.gz
 
-/depth_complexity/nbproject/private/
+nbproject/
+DualImages/
+models/
+histogram/
