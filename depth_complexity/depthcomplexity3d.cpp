@@ -391,67 +391,41 @@ void drawDualSpace(){
     
     CImg<float> *curImg = dc3d->getBufferImg(planeSelected);
     if (curImg){
-        //CImg<float> t = dc3d->getBufferImg(0);
         dualDisplay.display(*curImg);
         dualDisplay.set_title("Dual Space to Color");
     }
-    /*
-    unsigned int CChannel;
-    unsigned int* dualSpace = dc3d->getDualSpace(planeSelected);
-    if (dualSpace){
-
-        if (dualDisplay.is_closed() || dualDisplay.is_empty() || filterDCChanged || planeSelectedChanged || colorTableChanged){
-            float *test;
-            
-            if (!colorTable){
-                CChannel = 1;
-                test = new float[DUAL_SIZE*DUAL_SIZE*CChannel];
-                for (int i=0; i<(DUAL_SIZE*DUAL_SIZE); ++i ) { 
-
-                    if (dualSpace[i] == filterDC+1) test[i]=1;
-                    else test[i]=0;
-
-                }   
-            }
-            else {
-
-                CChannel = 3;
-                test = new float[DUAL_SIZE*DUAL_SIZE*CChannel];
-
-                //unsigned int Ngroups = 5;
-                //unsigned int DCMax = *std::max_element(dualSpace, dualSpace + DUAL_SIZE*DUAL_SIZE) - 1;
-                unsigned int DCMax = dc3d->maximum();
-                assert(DCMax>0);
-                  
-                for (int i=0; i<(DUAL_SIZE)*(DUAL_SIZE); i++ ) { 
-                    //int colorIndex = (dualSpace[i]-1)/limit;
-                    float pxColor[3];
-                    findColor(pxColor, (float)(dualSpace[i]-1.0)/(float)DCMax);
-                    //if (colorIndex>10) colorIndex = 10;                   
-
-                    test[i]   =  pxColor[0];
-                    test[DUAL_SIZE*DUAL_SIZE+i] = pxColor[1];
-                    test[DUAL_SIZE*DUAL_SIZE*2 + i] = pxColor[2];      
-                    
-                    //std::cout << (int)test[i] << " - " << (int)test[i+1] << " - " << (int)test[i+2] << std::endl;
-                }
-            }
-            //test[1] = 255;
-            CImg<float> dualImg(test, DUAL_SIZE, DUAL_SIZE, 1, CChannel);
-            dualDisplay.display(dualImg);
-            dualDisplay.set_title("Dual Space - DC = %d", filterDC);
-            //dualImg.per
-            delete[] test;
-        }
-                 
-
-    }
-     */
+   
 #endif
 }
 
 void TW_CALL saveAll(void*){
 #ifndef USE_RANDOM_DC3D
+    CImg<float> *curImg = NULL;
+    int ds = dc3d->getDiscreteSteps(); ds = 3*(ds*ds) - 6;    
+    int imgsGroup = ds/3;
+    int countImgs = 0;
+    char imgname[255];
+    
+    for (int i=0; (curImg = dc3d->getBufferImg(i)) != NULL; i++){
+
+        countImgs = (countImgs % imgsGroup)+1;
+
+        //CImg<float> out(test, DUAL_SIZE, DUAL_SIZE, 1, CChannel);
+        if (i <= imgsGroup){
+            sprintf(imgname, "x-step_%d-dc_%d", dc3d->getDiscreteSteps(), dc3d->maximum())
+            curImg.normalize(0,255).save(imgname,countImgs);
+        }
+        else if (i <= 2*imgsGroup){
+            sprintf(imgname, "y-step_%d-dc_%d", dc3d->getDiscreteSteps(), dc3d->maximum())
+            curImg.normalize(0,255).save(imgname,countImgs);
+        }
+        else {
+            sprintf(imgname, "z-step_%d-dc_%d", dc3d->getDiscreteSteps(), dc3d->maximum())
+            curImg.normalize(0,255).save(imgname,countImgs);
+        }
+       
+    }
+    #endif
     /*
     unsigned int *img=NULL;
     int ds = dc3d->getDiscreteSteps();
@@ -492,7 +466,6 @@ void TW_CALL saveAll(void*){
         delete[] test;
     }
     */
-#endif
 }
 
 void

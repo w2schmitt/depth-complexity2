@@ -2,17 +2,6 @@
 <configurationDescriptor version="80">
   <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
     <df name="depth_complexity" root=".">
-      <df name="analysis_samples">
-      </df>
-      <df name="camera">
-        <in>Camera.cpp</in>
-        <in>Camera.h</in>
-        <in>float3.cpp</in>
-        <in>float3.h</in>
-        <in>opengl.cpp</in>
-        <in>opengl.h</in>
-        <in>quaternion.h</in>
-      </df>
       <df name="DualImages">
         <df name="x">
         </df>
@@ -21,39 +10,12 @@
         <df name="z">
         </df>
       </df>
-      <df name="histogram">
-      </df>
-      <df name="models">
-      </df>
-      <df name="profiling">
-      </df>
-      <df name="shader">
-      </df>
-      <in>CImg.h</in>
-      <in>ShaderMgr.cpp</in>
-      <in>ShaderMgr.h</in>
-      <in>camera.cpp</in>
-      <in>camera.hpp</in>
       <in>dc_2d.cpp</in>
       <in>dc_2d.h</in>
       <in>dc_3d.cpp</in>
       <in>dc_3d.h</in>
-      <in>dc_3d_random.cpp</in>
-      <in>dc_3d_random.h</in>
       <in>depthcomplexity2d.cpp</in>
       <in>depthcomplexity3d.cpp</in>
-      <in>depthcomplexity3d_offline.cpp</in>
-      <in>flags.cpp</in>
-      <in>flags.h</in>
-      <in>main.cpp</in>
-      <in>main_joao.cpp</in>
-      <in>mergeOFF.cpp</in>
-      <in>test.cpp</in>
-      <in>timer.cpp</in>
-      <in>timer.h</in>
-      <in>util.cpp</in>
-      <in>util.h</in>
-      <in>vector.hpp</in>
     </df>
     <logicalFolder name="ExternalFiles"
                    displayName="Arquivos importantes"
@@ -81,21 +43,6 @@
           <executablePath>depthcomplexity3d</executablePath>
         </makeTool>
       </makefileType>
-      <item path="camera.cpp" ex="true" tool="1" flavor="0">
-      </item>
-      <item path="camera.hpp" ex="true" tool="3" flavor="0">
-      </item>
-      <item path="camera/opengl.cpp" ex="true" tool="1" flavor="0">
-      </item>
-      <folder path="depth_complexity/camera">
-        <ccTool>
-          <incDir>
-            <pElem>.</pElem>
-          </incDir>
-        </ccTool>
-      </folder>
-      <item path="main.cpp" ex="true" tool="1" flavor="0">
-      </item>
     </conf>
   </confs>
 </configurationDescriptor>

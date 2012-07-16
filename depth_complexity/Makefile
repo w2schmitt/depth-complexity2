@@ -27,7 +27,7 @@ LDFLAGS = $(ATB_LDFLAGS) $(GLEW_LDFLAGS) -Wall -Werror
 
 .PHONY: all clean
 
-all : test main_joao depthcomplexity2d depthcomplexity3d_offline depthcomplexity3d \
+all : main_joao depthcomplexity2d depthcomplexity3d_offline depthcomplexity3d \
 	  randomdepthcomplexity3d randomdepthcomplexity3d_offline mergeOFF
 
 clean:
@@ -52,8 +52,8 @@ depthcomplexity3d_offline: \
 main_joao: main_joao.o
 	g++ -g -o $@ $^ $(LDFLAGS) $(GLUT_LDFLAGS)
 
-test: test.o
-	g++ -g -o $@ $^ $(LDFLAGS) $(GLUT_LDFLAGS)
+#test: test.o
+#	g++ -g -o $@ $^ $(LDFLAGS) $(GLUT_LDFLAGS)
   
 randomdepthcomplexity3d: dc_3d_random.o camera/Camera.o camera/float3.o util.o timer.o flags.o
 	g++ -g -o $@ depthcomplexity3d.cpp -D "USE_RANDOM_DC3D" $^ $(LDFLAGS) \
