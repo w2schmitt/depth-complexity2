@@ -5,10 +5,8 @@ hist*.txt
 *.svg
 toPlot.txt
 Tests/
+nbproject/
 Tests.tar.gz
 models/
-nbproject/private/
-DualImages/Result/
-DualImages/x/
-DualImages/y/
-DualImages/z/
+DualImages/
+histogram/
