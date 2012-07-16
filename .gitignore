@@ -8,4 +8,7 @@ Tests/
 Tests.tar.gz
 models/
 nbproject/private/
-DualImages/*
+DualImages/Result/
+DualImages/x/
+DualImages/y/
+DualImages/z/
