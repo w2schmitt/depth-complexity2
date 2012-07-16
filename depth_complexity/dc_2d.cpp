@@ -675,20 +675,29 @@ void DepthComplexity2D::counterBufferToColor(unsigned int dcMax){
     for (unsigned int i=0; i < _dualSpace.size(); i++ ){
         dsImg = _dualSpace[i];
         float *imgColor = new float[cbSize*channels];
+        float *imgInterleavedColor = new float[cbSize*channels];
         // for each pixel (which represents DC) compute a color
         for (unsigned int j=0; j < cbSize; j++){
             findColor(pxColor, (dsImg[j]-1.0)/(float)dcMax);
             
+            // image non-interleaved format (r1r2r3... g1g2g3... b1b2b3...)
             imgColor[j]   =  pxColor[0];
             imgColor[cbSize + j] = pxColor[1];
             imgColor[cbSize*2 + j] = pxColor[2];   
             
+            // opengl texture interleaved format (r1g1b1 ... r2g2b2...)
+            imgInterleavedColor[3*j] = pxColor[0];
+            imgInterleavedColor[3*j +1] = pxColor[1];
+            imgInterleavedColor[3*j +2] = pxColor[2];
+            
+            
         }       
-        _texIDs.push_back( createTexture(_fboWidth, _fboHeight, imgColor) );
+        _texIDs.push_back( createTexture(_fboWidth, _fboHeight, imgInterleavedColor) );
         
         CImg<float> out(imgColor, _fboWidth, _fboHeight, 1, channels);
         _colorGfx.push_back(out);
         
+        delete[] imgInterleavedColor;
         delete[] imgColor;
     }
 }

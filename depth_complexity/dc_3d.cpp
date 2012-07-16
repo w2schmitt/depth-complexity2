@@ -242,8 +242,7 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
       std::vector<Segment> segments;
       processMeshPlane(plane, &segments);
 
-      if (segments.size()==0) 
-          continue; 
+
       
       Plane p;
       p.a = sa.a; p.b = sa.b;
@@ -256,6 +255,9 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
 
       //std::cout << "t3este " << segments.size() <<  std::endl;
       _dc2d->process(sa, sb, segments);
+      
+      if (segments.size()==0) 
+        continue; 
 
       unsigned int tempMaximum = _dc2d->maximum();
 

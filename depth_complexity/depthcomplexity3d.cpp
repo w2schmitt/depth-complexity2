@@ -39,6 +39,7 @@
 
 using namespace cimg_library;
 
+string filename;
 float radius = 0.01;
 bool showPlanes = false;
 bool doGoodRays = true;
@@ -268,7 +269,7 @@ void drawRays()
         }
       glEnd();
     }
-    
+#ifndef USE_RANDOM_DC3D
     glEnable(GL_BLEND);
     //glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -276,19 +277,30 @@ void drawRays()
         const std::vector<Plane>& bounds = dc3d->usedPlanes();
         if (planeSelected < bounds.size()){
             const Plane &p = bounds[planeSelected];
-            // draw planes
-            
-            glColor4f(0.5, 0.25, 0.1, 0.5);
+            // draw planes 
+            CImg<float> *curTex = dc3d->getBufferImg(planeSelected);
+            if (curTex){
+                glEnable(GL_TEXTURE_2D);
+                GLuint texID = dc3d->getTextureID(planeSelected);
+                glBindTexture(GL_TEXTURE_2D, texID);
+                
+            } else {
+                glColor4f(0.5, 0.25, 0.1, 0.5);
+               
+            }
             glBegin(GL_QUADS);
-            
-            //for (unsigned i=0; i< bounds.size() &&; ++i) {
-                //const Segment &r = bounds[i];
+            if (curTex) glTexCoord2f(1.0f, 0.0f);
                 glVertex3f(p.a.x, p.a.y, p.a.z);
+            if (curTex) glTexCoord2f(1.0f, 1.0f);
                 glVertex3f(p.b.x, p.b.y, p.b.z);
+            if (curTex) glTexCoord2f(0.0f, 1.0f);
                 glVertex3f(p.c.x, p.c.y, p.c.z);
+            if (curTex) glTexCoord2f(0.0f, 0.0f);
                 glVertex3f(p.d.x, p.d.y, p.d.z);
+            glEnd();
         }
-        glEnd();
+        glDisable(GL_TEXTURE_2D);
+        glBindTexture(GL_TEXTURE_2D, 0);
         
         //draw bounding box
         const BoundingBox &aabb = dc3d->getBoundingBox();
@@ -337,8 +349,8 @@ void drawRays()
         glEnd();        
         
     }
+#endif
     glDisable(GL_BLEND);
-
     const std::vector<Point>& points = dc3d->intersectionPoints();
     glEnable(GL_LIGHTING);
     glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, &sphereColor.x);
@@ -401,7 +413,7 @@ void drawDualSpace(){
 void TW_CALL saveAll(void*){
 #ifndef USE_RANDOM_DC3D
     CImg<float> *curImg = NULL;
-    int ds = dc3d->getDiscreteSteps(); ds = 3*(ds*ds) - 6;    
+    int ds = dc3d->getDiscreteSteps(); ds = 3*(ds*ds);    
     int imgsGroup = ds/3;
     int countImgs = 0;
     char imgname[255];
@@ -410,62 +422,37 @@ void TW_CALL saveAll(void*){
 
         countImgs = (countImgs % imgsGroup)+1;
 
-        //CImg<float> out(test, DUAL_SIZE, DUAL_SIZE, 1, CChannel);
-        if (i <= imgsGroup){
-            sprintf(imgname, "x-step_%d-dc_%d", dc3d->getDiscreteSteps(), dc3d->maximum())
-            curImg.normalize(0,255).save(imgname,countImgs);
+        if (i+1 <= imgsGroup){
+            sprintf(imgname, "DualImages/x/x-step_%d-dc_%d.png", dc3d->getDiscreteSteps(), dc3d->maximum());
+            curImg->normalize(0,255).save(imgname,countImgs);
         }
-        else if (i <= 2*imgsGroup){
-            sprintf(imgname, "y-step_%d-dc_%d", dc3d->getDiscreteSteps(), dc3d->maximum())
-            curImg.normalize(0,255).save(imgname,countImgs);
+        else if (i+1 <= 2*imgsGroup){
+            sprintf(imgname, "DualImages/y/y-step_%d-dc_%d.png", dc3d->getDiscreteSteps(), dc3d->maximum());
+            curImg->normalize(0,255).save(imgname,countImgs);
         }
         else {
-            sprintf(imgname, "z-step_%d-dc_%d", dc3d->getDiscreteSteps(), dc3d->maximum())
-            curImg.normalize(0,255).save(imgname,countImgs);
+            sprintf(imgname, "DualImages/z/z-step_%d-dc_%d.png", dc3d->getDiscreteSteps(), dc3d->maximum());
+            curImg->normalize(0,255).save(imgname,countImgs);
         }
-       
+        dualDisplay.display(*curImg);
     }
-    #endif
-    /*
-    unsigned int *img=NULL;
-    int ds = dc3d->getDiscreteSteps();
-    unsigned int CChannel = 3;
-    ds = 3*(ds*ds)-6;
-    int imgs = ds/3;
-    int totalImgs = 1,imgNumber=1;
-        
-    for (unsigned int i=0; (img=dc3d->getDualSpace(i))!=NULL; ++i, imgNumber = (totalImgs)%(ds/3)+1, totalImgs++){
-        unsigned int DCMax = dc3d->maximum();
-        assert(DCMax>0);
+    std::cout << "Saved!\n";
+    // join images using shell commands
+    char cmd[255];
+    int id=0;
     
-        float *test = new float[DUAL_SIZE*DUAL_SIZE*CChannel];
-        //unsigned int Ngroups = 5;
-        //unsigned int DCMax = *std::max_element(dualSpace, dualSpace + DUAL_SIZE*DUAL_SIZE) - 1;
-        for (int i=0; i<(DUAL_SIZE)*(DUAL_SIZE); i++ ) { 
-            float pxColor[3];
-            findColor(pxColor, (float)(img[i]-1.0)/(float)DCMax);
-             
-            test[i]   =  pxColor[0];
-            test[DUAL_SIZE*DUAL_SIZE+i] = pxColor[1];
-            test[DUAL_SIZE*DUAL_SIZE*2 + i] = pxColor[2];      
-        }
-
-        
-        CImg<float> out(test, DUAL_SIZE, DUAL_SIZE, 1, CChannel);
-        if (totalImgs <= imgs){
-            out.normalize(0,255).save("DualImages/x/dualSpace.png",imgNumber);
-        }else if (totalImgs <= 2*imgs){
-            out.normalize(0,255).save("DualImages/y/dualSpace.png",imgNumber);
-        }
-        else{
-            out.normalize(0,255).save("DualImages/z/dualSpace.png",imgNumber);
-        }
-        //dualDisplay.display(out);
-        //std::cout << "saved image: " << count << std::endl;
-
-        delete[] test;
-    }
-    */
+    sprintf(cmd,"mkdir DualImages/Results/%s",filename.c_str());
+    id = system(cmd);   
+    sprintf(cmd, "montage -geometry +1+1 DualImages/x/* DualImages/Results/%s/x-step_%d-dc_%d.png", filename.c_str(), dc3d->getDiscreteSteps(), dc3d->maximum());
+    id = system(cmd);
+    sprintf(cmd, "montage -geometry +1+1 DualImages/y/* DualImages/Results/%s/y-step_%d-dc_%d.png", filename.c_str(), dc3d->getDiscreteSteps(), dc3d->maximum());
+    id = system(cmd);
+    sprintf(cmd, "montage -geometry +1+1 DualImages/z/* DualImages/Results/%s/z-step_%d-dc_%d.png", filename.c_str(), dc3d->getDiscreteSteps(), dc3d->maximum());
+    id = system(cmd);
+    
+    cmd[255] = (char)id;
+    
+#endif
 }
 
 void
@@ -770,6 +757,16 @@ std::string getExtension(const std::string& filename)
     return "";
 }
 
+std::string removeExtension(const std::string& filename)
+{
+    std::string::size_type dotpos = filename.rfind(".");
+    std::string::size_type barpos = filename.rfind("/");
+    if (dotpos != std::string::npos && barpos != std::string::npos)
+        return filename.substr(barpos,dotpos);
+    return "";
+    
+}
+
 
 int main(int argc, char **argv)
 {
@@ -781,6 +778,7 @@ int main(int argc, char **argv)
     glutInit(&argc,argv);
     
     try {
+        filename = removeExtension(argv[1]);
         std::ifstream file(argv[1]);
         std::string ext = getExtension(argv[1]);
 
