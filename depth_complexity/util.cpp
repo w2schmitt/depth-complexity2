@@ -234,3 +234,53 @@ bool segmentIntersection2D(const Segment &seg1, const Segment &seg2, double *t1,
     return true;
   return false;
 }
+
+bool intersectPlaneSegment(const vec4d& plane, const vec3d& p0, const vec3d& p1, vec3d *pt) {
+  double num = -plane.w - dot(plane.xyz(), p0);
+  double den = dot(plane.xyz(), p1 - p0);
+  double r = num / den;
+  *pt = mix(p0, p1, r);
+  if (0 <= r && r <= 1)
+      return true;
+  return false;
+}
+
+
+// GIVEN 3 POINTS --> RETURN A 4D VECTOR NORMAL (PLANE EQUATION): 
+vec4d makePlane(const vec3d& a, const vec3d& b, const vec3d& c) {
+    vec3d normal = cross(b-a, c-a);
+    normal.normalize();
+    double d = dot(a, normal);
+    return vec4d(normal, -d);
+}
+
+
+bool intersectTriangleSegment(const Segment& segment, const Triangle& tri, Point *pnt) {
+	assert(pnt);
+
+	if(!intersectPlaneSegment(makePlane(tri.a, tri.b, tri.c),segment.a,segment.b,pnt))
+		return false;
+
+	vec3d u = tri.b - tri.a;
+	vec3d v = tri.c - tri.a;
+	vec3d w =	*pnt - tri.a;
+
+	double uu = dot(u,u);
+	double uv = dot(u,v);
+	double vv = dot(v,v);
+	double wu = dot(w,u);
+	double wv = dot(w,v);
+	
+	double den = uv*uv - uu*vv;
+
+	double s = (uv*wv - vv*wu)/den;
+	//std::cout << "s=" << s << std::endl;
+	if(s<0. || s>1.)
+		return false;
+	double t = (uv*wu - uu*wv)/den;
+	//std::cout << "t=" << t << std::endl;
+	if(t<0. || s+t>1.)
+		return false;
+	
+	return true;
+}

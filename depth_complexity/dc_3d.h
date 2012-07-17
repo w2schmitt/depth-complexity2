@@ -50,7 +50,7 @@ private:
   };
 
   void processMeshAlign(const PlaneAlign &palign, const PlaneAlign &salign);
-  void processMeshPlane(const vec4d& plane, std::vector<Segment> *segments);
+  void processMeshPlane(const vec4d& plane, std::vector<Segment> *segments, std::vector<Triangle> *meshTris);
   void processMeshSegment(const Segment& segment, int index);
   bool intersectTriangleSegment(const Segment& segment, const Triangle& tri, Point *pnt);
   bool intersectPlaneTriangle(const vec4d& plane, const Triangle& tri, Segment *seg);

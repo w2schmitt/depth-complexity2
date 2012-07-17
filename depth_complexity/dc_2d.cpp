@@ -25,6 +25,11 @@ DepthComplexity2D::DepthComplexity2D(const int fboWidth, const int fboHeight){
   _shaderCountDC = 0;
   _status = false;   
   
+  texSize = vec3d(256.,256.,256.);
+  
+  // initialize 3d texture (size x, size y, size z, channels, px values)
+  tex3D = CImg<float>(texSize.x,texSize.y,texSize.z,1,0);
+  
   assert(initFBO());
   
   //set up shaders
@@ -135,10 +140,11 @@ bool checkFramebufferStatus() {
 }
 
 void DepthComplexity2D::process(
-  const Segment &from, const Segment &to, const std::vector<Segment> &segments) {
+  const Segment &from, const Segment &to, const std::vector<Segment> &segments, const std::vector<Triangle> &tris) {
   _from = from;
   _to = to;
   _segments = &segments;
+  _meshTris = &tris;
     
   if (!_status){
 	  std::cerr << "[ERROR] Check FBO or SHADERS." << std::endl;
@@ -464,11 +470,11 @@ Segment DepthComplexity2D::computeDualSegmentFromPoint(const Point &p) {
 }
 
 void drawPolygon(const std::vector<Point> &polygon){
-	glBegin(GL_POLYGON);
-            for (unsigned i=0; i< polygon.size(); ++i){
-                    glVertex2f(polygon[i].x,polygon[i].y);
-            }
-	glEnd();
+    glBegin(GL_POLYGON);
+        for (unsigned i=0; i< polygon.size(); ++i){
+                glVertex2f(polygon[i].x,polygon[i].y);
+        }
+    glEnd();
 }
 
 
@@ -535,6 +541,8 @@ void DepthComplexity2D::findMaximumRaysAndHistogram() {
           seg.a = _from.a*(1.f-t1) + _from.b*t1;
           seg.b = _to.a*(1.f-t2) + _to.b*t2;          
           seg.sortPoints();
+          
+          createTexture3D(seg, val);
 
           if (val == _maximum){
             if (_maximumRays.size() < 1)
@@ -550,6 +558,34 @@ void DepthComplexity2D::findMaximumRaysAndHistogram() {
   glPopAttrib();
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 }
+
+
+
+void DepthComplexity2D::createTexture3D(Segment line, unsigned int dc){
+    
+    std::list<Point> inter;
+    
+    // compute intersection points
+    double t1,t2;
+    for (unsigned int i=0; i < _meshTris->size(); ++i){        
+        const Triangle &s = _meshTris->at(i);
+        //if(segmentIntersection3D(line, s, &t1, &t2)) {
+        //        inter.push_back(s.a + t1*(s.b - s.a));
+        //}
+    }
+    
+    //computeIntersectionPoints();
+}
+
+
+
+
+
+//void DepthComplexity2D::computeIntersectionPoints(std::list<Point> &pts){
+    
+    
+    
+//}
 
 float colors[10][3] = {
   {1.0f, 1.0f, 1.0f},

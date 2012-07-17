@@ -17,9 +17,13 @@
 //#include "clip_polygon.h"
 #include <map>
 #include <set>
+#include <list>
 #include <cstdlib>
 #include <stdio.h>
 #include <iomanip>
+
+#include "CImg.h"
+using namespace cimg_library;
 
 // Compute the Depth complexity in 2D
 //
@@ -44,7 +48,7 @@ public:
 
   // Compute the maximum depth complexity
   void process(
-    const Segment &from, const Segment &to, const std::vector<Segment> &segments);
+    const Segment &from, const Segment &to, const std::vector<Segment> &segments, const std::vector<Triangle> &tris);
 
   // Copy stencil buffer to color buffer.
   // Colors are defined in a table.
@@ -77,16 +81,20 @@ private:
 
   void findMaximumRaysAndHistogram();
   
+  // functions for 3d texturing
+  void createTexture3D(Segment line, unsigned int dc);
+  void computeIntersectionPoints(std::list<Point> &pts);
+  
 private:
   //buffers 
   GLuint                                		_cboTexId;
-  GLuint										                _counterBuffId;
+  GLuint						_counterBuffId;
   GLuint                                		_fboId;
   GLuint                                		_rboId;
   
   // Shaders
-  GLuint 										                _shaderclearBuffer;
-  GLuint                                    _shaderCountDC;
+  GLuint 						_shaderclearBuffer;
+  GLuint                                                _shaderCountDC;
 
   // State
   bool                                  		_status;
@@ -100,13 +108,17 @@ private:
   Segment                               		_from;
   Segment                               		_to;
   const std::vector<Segment>*           		_segments;
+  const std::vector<Triangle>*                          _meshTris;
   unsigned                              		_threshold;
 
   // Outputs
-  unsigned int                              _maximum;
+  unsigned int                                          _maximum;
   std::vector<unsigned long long>       		_histogram;
-  std::set<Segment, classcomp>              _maximumRays;
-  std::vector< std::set<Segment,classcomp> >_goodRays;
+  std::set<Segment, classcomp>                          _maximumRays;
+  std::vector< std::set<Segment,classcomp> >            _goodRays;
+  
+  CImg<float>                                           tex3D;
+  vec3d                                                 texSize;
   
 };
 

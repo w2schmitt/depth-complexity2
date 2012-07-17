@@ -217,14 +217,15 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
 
       vec4d plane = makePlane(sa.a, sa.b, sb.a);
       std::vector<Segment> segments;
-      processMeshPlane(plane, &segments);
+      std::vector<Triangle> meshTris;
+      processMeshPlane(plane, &segments, &meshTris);
 
       // make the segments extra-long
       vec3d dsa = sa.b - sa.a; sa.a -= dsa; sa.b += dsa;
       vec3d dsb = sb.b - sb.a; sb.a -= dsb; sb.b += dsb;
 
 	  
-      _dc2d->process(sa, sb, segments);
+      _dc2d->process(sa, sb, segments, meshTris);
 
       unsigned int tempMaximum = _dc2d->maximum();
 						//if (tempMaximum==3)
@@ -235,7 +236,7 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
           _goodRays.resize(tempMaximum+1);
           _histogram.resize(tempMaximum+1);
           _intersectionPoints.clear();
-          //          _intersectionSegments.clear();
+          //_intersectionSegments.clear();
         }
         _maximum = tempMaximum;
         std::set<Segment, classcomp> tempRays = _dc2d->maximumRays();
@@ -290,13 +291,16 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
 
 //INPUT: plane -> The normal vector of the plane which we will check overlaps;
 //OUTPUT: segments -> A vector containing the segments of the mesh that intersect the plane.
-void DepthComplexity3D::processMeshPlane(const vec4d& plane, std::vector<Segment> *segments) {
+void DepthComplexity3D::processMeshPlane(const vec4d& plane, std::vector<Segment> *segments, std::vector<Triangle> *meshTris) {
   assert(segments);
+  assert(meshTris);
 
   for (unsigned i=0; i<_mesh->faces.size(); ++i) {
     Segment s;
-    if (intersectPlaneTriangle(plane, _mesh->faces[i], &s))
+    if (intersectPlaneTriangle(plane, _mesh->faces[i], &s)){
       segments->push_back(s);
+      meshTris->push_back(_mesh->faces[i]);
+    }
   }
 }
 
