@@ -300,6 +300,8 @@ void DepthComplexity3D::processMeshPlane(const vec4d& plane, std::vector<Segment
   }
 }
 
+// INPUT: A Line Segment to test for a collision with the 
+// INPUT: The index that represents this segment in the hashmap
 void DepthComplexity3D::processMeshSegment(const Segment& segment, int rayIndex) {
 	//assert(points);
   std::list<unsigned int> *triIndex = new std::list<unsigned int>;
