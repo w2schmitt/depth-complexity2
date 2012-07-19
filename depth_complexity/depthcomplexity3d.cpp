@@ -161,6 +161,10 @@ std::vector<Triangle> sorted_faces;
 void drawMesh(const TriMesh& mesh, const vec3f& dir)
 {
     
+    glEnable(GL_TEXTURE_3D);
+#ifndef USE_RANDOM_DC3D
+    glBindTexture(GL_TEXTURE_3D, dc3d->getTextureID());
+#endif
     glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
     glEnable(GL_COLOR_MATERIAL);
     
@@ -202,6 +206,9 @@ void drawMesh(const TriMesh& mesh, const vec3f& dir)
     glDisable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
     glDisable(GL_COLOR_MATERIAL);
+    
+    glDisable(GL_TEXTURE_3D);
+    glBindTexture(GL_TEXTURE_3D, 0);
     
 }
 

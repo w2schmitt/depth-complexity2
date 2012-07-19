@@ -25,10 +25,11 @@ DepthComplexity2D::DepthComplexity2D(const int fboWidth, const int fboHeight){
   _shaderCountDC = 0;
   _status = false;   
   
-  texSize = vec3d(256.,256.,256.);
+  //texSize = vec3d(256.,256.,256.);
   
   // initialize 3d texture (size x, size y, size z, channels, px values)
-  tex3D = CImg<float>(texSize.x,texSize.y,texSize.z,1,0);
+  //_tex3D = CImg<float>(texSize.x,texSize.y,texSize.z,1,0);
+  _tex3D = CImg<float>(256,256,64,1,0);
   
   assert(initFBO());
   
@@ -145,12 +146,15 @@ void DepthComplexity2D::process(
   _to = to;
   _segments = &segments;
   _meshTris = &tris;
+  
     
   if (!_status){
 	  std::cerr << "[ERROR] Check FBO or SHADERS." << std::endl;
 	  return;
   }
-    
+  
+  
+   
   findDepthComplexity2D();
   
   if (_computeHistogram or _computeMaximumRays or _computeGoodRays)
@@ -159,7 +163,7 @@ void DepthComplexity2D::process(
 
 
 void DepthComplexity2D::findDepthComplexity2D() {
-  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _fboId);  
+  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _fboId);
   
   glPushAttrib(GL_VIEWPORT_BIT | GL_ENABLE_BIT);
     glViewport(0, 0, _fboWidth, _fboHeight);
@@ -561,27 +565,78 @@ void DepthComplexity2D::findMaximumRaysAndHistogram() {
 
 
 
+
+GLuint createTexture3D(int width, int height, int depth, const float* texels){
+    //allocate texture name
+    GLuint id;
+    glGenTextures(1, &id);
+    glBindTexture(GL_TEXTURE_3D, id);
+    
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+    glTexParameterf(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    
+    glTexParameterf(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameterf(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameterf(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_REPEAT);
+    
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB, width, height, depth, 0, GL_RGB, GL_FLOAT, texels);
+    //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_FLOAT, pixels);
+    
+    glBindTexture(GL_TEXTURE_3D, 0);
+    
+    return id;
+    
+}
+
+
+void DepthComplexity2D::cimg2Tex(){
+    // each layer
+    const float *data = _tex3D.data();
+    //unsigned int size = _tex3D.size();
+    
+    _texID = createTexture3D(_tex3D.width(), _tex3D.height(), _tex3D.depth(), data);
+    //for (int i=0; i<size; ++i){
+        
+      //  for (int j=0; j<_tex3D.width(); ++j){
+        //    for (int k=0; k<_tex3D.height(); ++k){
+                
+                
+          //  }
+        //}
+        
+    //}
+}
+
+
 void DepthComplexity2D::updateTexture3D(Segment line, unsigned int dc){
+     
+    vec3d t = _aabb.min;
     
-    std::list<Point> inter;
-    
-    // compute intersection points
-    //double t1,t2;
     for (unsigned int i=0; i < _meshTris->size(); ++i){
         Point pt_inter;
         const Triangle &s = _meshTris->at(i);
         if (intersectTriangleSegment(line, s, &pt_inter)){            
-            inter.push_back(pt_inter);
+            // compute position in texture
+           
+            
+            
+            pt_inter -= t;
+            std::cout << pt_inter << std::endl;
+            pt_inter.x = (pt_inter.x/_texSize.x)*_tex3D.width();
+            pt_inter.y = (pt_inter.y/_texSize.y)*_tex3D.height();
+            pt_inter.z = (pt_inter.z/_texSize.z)*_tex3D.depth();
+            
+            // set texture values
+            
+            //_tex3D(pt_inter.x, pt_inter.y, pt_inter.z, 1) = 1.0f;            
+            //_tex3D(pt_inter.x, pt_inter.y, pt_inter.z, 2) = 0.0f;
+            //std::cout << "teste" << std::endl;
+            //_tex3D(pt_inter.x, pt_inter.y, pt_inter.z, 3) = 0.0f;
+            
+            
         }
-        //if(segmentIntersection3D(line, s, &t1, &t2)) {
-        //        inter.push_back(s.a + t1*(s.b - s.a));
-        //}
     }
-    
-    // set texture values
-    
-    
-    //computeIntersectionPoints();
 }
 
 

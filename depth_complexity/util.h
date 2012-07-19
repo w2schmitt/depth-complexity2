@@ -6,6 +6,8 @@
 
 #include "vector.hpp"
 
+
+
 struct Triangle {
     vec3d a, na; 
 		vec4d ca;
@@ -108,5 +110,10 @@ bool lineIntersection3D(const Segment &line1, const Segment &line2, double *t1, 
 bool lineIntersection2D(const Segment &line1, const Segment &line2, double *t1, double *t2);
 bool segmentIntersection2D(const Segment &seg1, const Segment &seg2, double *t1, double *t2);
 bool segmentIntersection3D(const Segment &seg1, const Segment &seg2, double *t1, double *t2);
+
+
+bool intersectPlaneSegment(const vec4d& plane, const vec3d& p0, const vec3d& p1, vec3d *pt);
+vec4d makePlane(const vec3d& a, const vec3d& b, const vec3d& c);
+bool intersectTriangleSegment(const Segment& segment, const Triangle& tri, Point *pnt);
 
 #endif

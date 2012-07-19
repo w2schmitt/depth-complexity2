@@ -6,6 +6,14 @@
 
 const double EPS = 1.0E-5;
 
+template<class T>
+T mix(const T& a, const T& b, double x) {
+  const T& p = (1-x)*a;
+  const T& q = x*b;
+  return p + q;
+}
+
+
 TriMesh
 loadOFFMesh(std::istream& in){
   std::clog << "Loading OFF file" << std::endl;

@@ -45,8 +45,10 @@ public:
   void setComputeMaximumRays(bool computeMaximumRays) {this->_computeMaximumRays = computeMaximumRays; }
   void setComputeGoodRays(bool computeGoodRays) {this->_computeGoodRays = computeGoodRays; }
   void setThreshold(unsigned threshold) {this->_threshold = threshold; }
-  void setTex3dSize(vec3d size) { this->texSize = size; }
+  void setTex3dSize(vec3d size) { this->_texSize = size;}
+  void setMeshBoundingbox(BoundingBox aabb) { this->_aabb = aabb; }
   
+  void cimg2Tex();
   // Compute the maximum depth complexity
   void process(
     const Segment &from, const Segment &to, const std::vector<Segment> &segments, const std::vector<Triangle> &tris);
@@ -61,7 +63,7 @@ public:
   std::set<Segment,classcomp>      maximumRays()             { return _maximumRays; }
   std::set<Segment,classcomp>      goodRays(unsigned i)      { return _goodRays[i]; }
   GLuint                           textureId() const         { return _cboTexId; }
-
+  GLuint                           texture3DId() const       { return _texID; }
 private:
   // Create framebuffer objects
   bool initFBO();
@@ -118,8 +120,10 @@ private:
   std::set<Segment, classcomp>                          _maximumRays;
   std::vector< std::set<Segment,classcomp> >            _goodRays;
   
-  CImg<float>                                           tex3D;
-  vec3d                                                 texSize;
+  CImg<float>                                           _tex3D;
+  vec3d                                                 _texSize;
+  BoundingBox                                           _aabb;
+  GLuint                                                _texID;
   
 };
 

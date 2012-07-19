@@ -20,6 +20,8 @@ T mix(const T& a, const T& b, double x) {
   return p + q;
 }
 
+GLuint DepthComplexity3D::getTextureID() { return _dc2d->texture3DId();}
+
 DepthComplexity3D::DepthComplexity3D(int fboWidth, int fboHeight, int discretSteps):
   _fboWidth(fboWidth),
   _fboHeight(fboHeight),
@@ -115,13 +117,10 @@ void DepthComplexity3D::process(const TriMesh &mesh) {
   
   processMeshAlign(AlignZ, AlignX);
   processMeshAlign(AlignZ, AlignY);
-
-  processMeshAlign(AlignY, AlignX);
   processMeshAlign(AlignY, AlignZ);
-
-  processMeshAlign(AlignX, AlignY);
-  processMeshAlign(AlignX, AlignZ);
-
+  
+  _dc2d->cimg2Tex();
+  
 }
 
 // Call this varying palign and salign.
@@ -134,7 +133,7 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
 
   vec3d c0 = vec3d(aabb.min.x, aabb.min.y, aabb.min.z);
   vec3d c1 = vec3d(aabb.max.x, aabb.min.y, aabb.min.z);
-  vec3d c2 = vec3d(aabb.min.x, aabb.max.y,aabb aabb.min.z);
+  vec3d c2 = vec3d(aabb.min.x, aabb.max.y, aabb.min.z);
   vec3d c3 = vec3d(aabb.max.x, aabb.max.y, aabb.min.z);
   vec3d c4 = vec3d(aabb.min.x, aabb.min.y, aabb.max.z);
   vec3d c5 = vec3d(aabb.max.x, aabb.min.y, aabb.max.z);
@@ -225,12 +224,12 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
       vec3d dsa = sa.b - sa.a; sa.a -= dsa; sa.b += dsa;
       vec3d dsb = sb.b - sb.a; sb.a -= dsb; sb.b += dsb;
 
-	  
+      _dc2d->setMeshBoundingbox(aabb);
       _dc2d->process(sa, sb, segments, meshTris);
 
       unsigned int tempMaximum = _dc2d->maximum();
-						//if (tempMaximum==3)
-								//std::cout << "values: " << az << " " << bz << std::endl;
+      
+
       if (tempMaximum >= _maximum) {
         if (tempMaximum > _maximum) {
           _maximumRays.clear();

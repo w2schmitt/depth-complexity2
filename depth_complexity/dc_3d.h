@@ -3,10 +3,12 @@
 
 #include "util.h"
 
+
 #include <map>
 #include <vector>
 #include <set>
 #include <list>
+#include <GL/glew.h>
 
 class DepthComplexity2D;
 
@@ -39,6 +41,7 @@ public:
   const std::vector<Point> &intersectionPoints() const { return _intersectionPoints; }
   unsigned int getThreshold() { return _threshold; }
   const std::list<unsigned int> &intersectionTris(int rayIndex){return *_intersectionTriList.find(rayIndex)->second;}
+  GLuint getTextureID();
 
   void writeHistogram(std::ostream& out);
   void writeRays(std::ostream& out);
