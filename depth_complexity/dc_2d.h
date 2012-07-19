@@ -45,7 +45,8 @@ public:
   void setComputeMaximumRays(bool computeMaximumRays) {this->_computeMaximumRays = computeMaximumRays; }
   void setComputeGoodRays(bool computeGoodRays) {this->_computeGoodRays = computeGoodRays; }
   void setThreshold(unsigned threshold) {this->_threshold = threshold; }
-
+  void setTex3dSize(vec3d size) { this->texSize = size; }
+  
   // Compute the maximum depth complexity
   void process(
     const Segment &from, const Segment &to, const std::vector<Segment> &segments, const std::vector<Triangle> &tris);
@@ -82,8 +83,8 @@ private:
   void findMaximumRaysAndHistogram();
   
   // functions for 3d texturing
-  void createTexture3D(Segment line, unsigned int dc);
-  void computeIntersectionPoints(std::list<Point> &pts);
+  void updateTexture3D(Segment line, unsigned int dc);
+  //void computeIntersectionPoints(std::list<Point> &pts);
   
 private:
   //buffers 

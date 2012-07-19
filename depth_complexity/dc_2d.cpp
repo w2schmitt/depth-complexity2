@@ -542,7 +542,7 @@ void DepthComplexity2D::findMaximumRaysAndHistogram() {
           seg.b = _to.a*(1.f-t2) + _to.b*t2;          
           seg.sortPoints();
           
-          createTexture3D(seg, val);
+          updateTexture3D(seg, val);
 
           if (val == _maximum){
             if (_maximumRays.size() < 1)
@@ -561,21 +561,29 @@ void DepthComplexity2D::findMaximumRaysAndHistogram() {
 
 
 
-void DepthComplexity2D::createTexture3D(Segment line, unsigned int dc){
+void DepthComplexity2D::updateTexture3D(Segment line, unsigned int dc){
     
     std::list<Point> inter;
     
     // compute intersection points
-    double t1,t2;
-    for (unsigned int i=0; i < _meshTris->size(); ++i){        
+    //double t1,t2;
+    for (unsigned int i=0; i < _meshTris->size(); ++i){
+        Point pt_inter;
         const Triangle &s = _meshTris->at(i);
+        if (intersectTriangleSegment(line, s, &pt_inter)){            
+            inter.push_back(pt_inter);
+        }
         //if(segmentIntersection3D(line, s, &t1, &t2)) {
         //        inter.push_back(s.a + t1*(s.b - s.a));
         //}
     }
     
+    // set texture values
+    
+    
     //computeIntersectionPoints();
 }
+
 
 
 

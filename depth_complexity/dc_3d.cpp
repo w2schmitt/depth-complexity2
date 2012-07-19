@@ -108,6 +108,7 @@ void DepthComplexity3D::process(const TriMesh &mesh) {
   _goodRays.clear();
   _goodRays.resize(1);
   _dc2d->setThreshold(_threshold);
+  _dc2d->setTex3dSize(_mesh->aabb.extents());
   _maximum = 0;
   
   //std::cout << _fboWidth << " " << _fboHeight << " " << _discretSteps << " " << _maximum << " " << _threshold << std::endl;
@@ -133,7 +134,7 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
 
   vec3d c0 = vec3d(aabb.min.x, aabb.min.y, aabb.min.z);
   vec3d c1 = vec3d(aabb.max.x, aabb.min.y, aabb.min.z);
-  vec3d c2 = vec3d(aabb.min.x, aabb.max.y, aabb.min.z);
+  vec3d c2 = vec3d(aabb.min.x, aabb.max.y,aabb aabb.min.z);
   vec3d c3 = vec3d(aabb.max.x, aabb.max.y, aabb.min.z);
   vec3d c4 = vec3d(aabb.min.x, aabb.min.y, aabb.max.z);
   vec3d c5 = vec3d(aabb.max.x, aabb.min.y, aabb.max.z);
