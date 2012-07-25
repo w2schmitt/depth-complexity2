@@ -448,7 +448,7 @@ int doInteractive(TriMesh& mesh)
     std::clog << "----- << VERSION >>\n";
     std::clog << "OPENGL VERSION: " << glGetString(GL_VERSION) << std::endl;
     std::clog << "SHADER VERSION: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
-    std::cerr << "GLEW VERSION: "<<glewGetString(GLEW_VERSION)<<std::endl;
+    std::clog << "GLEW VERSION: "<<glewGetString(GLEW_VERSION)<<std::endl;
     std::clog << "---------------- \n";
  
 

@@ -105,12 +105,15 @@ void DepthComplexity3D::writeRays(std::ostream& out, const std::set<Segment,clas
 
 void DepthComplexity3D::process(const TriMesh &mesh) {
   this->_mesh = &mesh;
+  BoundingBox aabb = _mesh->aabb;
+  aabb.merge(aabb.min - aabb.extents()/10.0);
+  aabb.merge(aabb.max + aabb.extents()/10.0);
 
   _usedPlanes.clear();
   _goodRays.clear();
   _goodRays.resize(1);
   _dc2d->setThreshold(_threshold);
-  _dc2d->setTex3dSize(_mesh->aabb.extents());
+  _dc2d->setTex3dSize(aabb.extents());
   _maximum = 0;
   
   //std::cout << _fboWidth << " " << _fboHeight << " " << _discretSteps << " " << _maximum << " " << _threshold << std::endl;

@@ -29,7 +29,7 @@ DepthComplexity2D::DepthComplexity2D(const int fboWidth, const int fboHeight){
   
   // initialize 3d texture (size x, size y, size z, channels, px values)
   //_tex3D = CImg<float>(texSize.x,texSize.y,texSize.z,1,0);
-  _tex3D = CImg<float>(256,256,64,1,0);
+  _tex3D = CImg<float>(256,256,64,3,0);
   
   assert(initFBO());
   
@@ -612,6 +612,8 @@ void DepthComplexity2D::cimg2Tex(){
 void DepthComplexity2D::updateTexture3D(Segment line, unsigned int dc){
      
     vec3d t = _aabb.min;
+    //std::cout << _tex3D.width();
+    //std::cin.get();
     
     for (unsigned int i=0; i < _meshTris->size(); ++i){
         Point pt_inter;
@@ -621,18 +623,19 @@ void DepthComplexity2D::updateTexture3D(Segment line, unsigned int dc){
            
             
             
-            pt_inter -= t;
-            std::cout << pt_inter << std::endl;
-            pt_inter.x = (pt_inter.x/_texSize.x)*_tex3D.width();
-            pt_inter.y = (pt_inter.y/_texSize.y)*_tex3D.height();
-            pt_inter.z = (pt_inter.z/_texSize.z)*_tex3D.depth();
+            pt_inter -= t;            
+            pt_inter.x = (pt_inter.x/_texSize.x)*(_tex3D.width()-1);
+            pt_inter.y = (pt_inter.y/_texSize.y)*(_tex3D.height()-1);
+            pt_inter.z = (pt_inter.z/_texSize.z)*(_tex3D.depth()-1);
             
+            //std::cout << pt_inter << std::endl;
+            //std::cin.get();
             // set texture values
-            
-            //_tex3D(pt_inter.x, pt_inter.y, pt_inter.z, 1) = 1.0f;            
-            //_tex3D(pt_inter.x, pt_inter.y, pt_inter.z, 2) = 0.0f;
+            //_tex3D(71,63,15,2) = 1.0f;
+            _tex3D(pt_inter.x, pt_inter.y, pt_inter.z, 0) = 1.0f;            
+            _tex3D(pt_inter.x, pt_inter.y, pt_inter.z, 1) = 0.0f;
             //std::cout << "teste" << std::endl;
-            //_tex3D(pt_inter.x, pt_inter.y, pt_inter.z, 3) = 0.0f;
+            _tex3D(pt_inter.x, pt_inter.y, pt_inter.z, 2) = 0.0f;
             
             
         }
