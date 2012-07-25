@@ -106,8 +106,8 @@ void DepthComplexity3D::writeRays(std::ostream& out, const std::set<Segment,clas
 void DepthComplexity3D::process(const TriMesh &mesh) {
   this->_mesh = &mesh;
   BoundingBox aabb = _mesh->aabb;
-  aabb.merge(aabb.min - aabb.extents()/10.0);
-  aabb.merge(aabb.max + aabb.extents()/10.0);
+  //aabb.merge(aabb.min - aabb.extents()/10.0);
+  //aabb.merge(aabb.max + aabb.extents()/10.0);
 
   _usedPlanes.clear();
   _goodRays.clear();

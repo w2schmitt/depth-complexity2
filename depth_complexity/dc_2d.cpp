@@ -592,10 +592,28 @@ GLuint createTexture3D(int width, int height, int depth, const float* texels){
 
 void DepthComplexity2D::cimg2Tex(){
     // each layer
+    unsigned int texsize = _tex3D.width()*_tex3D.height()*_tex3D.depth();
     const float *data = _tex3D.data();
+    float *interlaced_data = new float[3*texsize];
     //unsigned int size = _tex3D.size();
+    //cimg_forXYZC(_tex3D,x,y,z,v){
+    //   _tex3D(x,y,z,v) = 1.0f;
+    //}
     
-    _texID = createTexture3D(_tex3D.width(), _tex3D.height(), _tex3D.depth(), data);
+    for (unsigned int i=0; i<texsize; i++){
+        //interlaced_data[i] = 1.0f;
+        //interlaced_data[i+1data] = 0.0f;
+        //interlaced_data[i+2] = 0.0f;
+        //std::cout << i << std::endl;
+
+        interlaced_data[3*i]   = data[i]; 
+        interlaced_data[3*i+1] = data[1*texsize + i]; 
+        interlaced_data[3*i+2] = data[2*texsize + i];
+        //std::cout << data[2*texsize + i] << std::endl;
+
+    }
+    _texID = createTexture3D(_tex3D.width(), _tex3D.height(), _tex3D.depth(), interlaced_data);
+    delete[] interlaced_data;
     //for (int i=0; i<size; ++i){
         
       //  for (int j=0; j<_tex3D.width(); ++j){
@@ -620,22 +638,19 @@ void DepthComplexity2D::updateTexture3D(Segment line, unsigned int dc){
         const Triangle &s = _meshTris->at(i);
         if (intersectTriangleSegment(line, s, &pt_inter)){            
             // compute position in texture
-           
-            
-            
             pt_inter -= t;            
             pt_inter.x = (pt_inter.x/_texSize.x)*(_tex3D.width()-1);
             pt_inter.y = (pt_inter.y/_texSize.y)*(_tex3D.height()-1);
             pt_inter.z = (pt_inter.z/_texSize.z)*(_tex3D.depth()-1);
+            
             
             //std::cout << pt_inter << std::endl;
             //std::cin.get();
             // set texture values
             //_tex3D(71,63,15,2) = 1.0f;
             _tex3D(pt_inter.x, pt_inter.y, pt_inter.z, 0) = 1.0f;            
-            _tex3D(pt_inter.x, pt_inter.y, pt_inter.z, 1) = 0.0f;
-            //std::cout << "teste" << std::endl;
-            _tex3D(pt_inter.x, pt_inter.y, pt_inter.z, 2) = 0.0f;
+            _tex3D(pt_inter.x, pt_inter.y, pt_inter.z, 1) = 1.0f;
+            _tex3D(pt_inter.x, pt_inter.y, pt_inter.z, 2) = 1.0f;
             
             
         }

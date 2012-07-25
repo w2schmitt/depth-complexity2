@@ -165,8 +165,8 @@ void drawMesh(const TriMesh& mesh, const vec3f& dir)
 #ifndef USE_RANDOM_DC3D
     glBindTexture(GL_TEXTURE_3D, dc3d->getTextureID());
 #endif
-    glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
-    glEnable(GL_COLOR_MATERIAL);
+    //glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
+    //glEnable(GL_COLOR_MATERIAL);
     
     //std::clog << "sorting...";
     if (sorted_faces.empty()) {
@@ -186,13 +186,16 @@ void drawMesh(const TriMesh& mesh, const vec3f& dir)
     glEnable(GL_VERTEX_ARRAY);
 
     glEnableClientState(GL_VERTEX_ARRAY);    
-    glVertexPointer(3, GL_DOUBLE, 2*sizeof(vec3d)+sizeof(vec4d), &sorted_faces[0].a.x);
+    glVertexPointer(3, GL_DOUBLE, 3*sizeof(vec3d)+sizeof(vec4d), &sorted_faces[0].a.x);
     
-    glEnableClientState(GL_COLOR_ARRAY);
-    glColorPointer(4, GL_DOUBLE, 2*sizeof(vec3d)+sizeof(vec4d), &sorted_faces[0].ca.x);
+    glEnableClientState (GL_TEXTURE_COORD_ARRAY);
+    glTexCoordPointer(3, GL_FLOAT, 3*sizeof(vec3d)+sizeof(vec4d), &sorted_faces[0].tca.x);
+    
+    //glEnableClientState(GL_COLOR_ARRAY);
+    //glColorPointer(4, GL_DOUBLE, 3*sizeof(vec3d)+sizeof(vec4d), &sorted_faces[0].ca.x);
 
     glEnableClientState(GL_NORMAL_ARRAY);
-    glNormalPointer(GL_DOUBLE, 2*sizeof(vec3d)+sizeof(vec4d), &sorted_faces[0].na.x);
+    glNormalPointer(GL_DOUBLE, 3*sizeof(vec3d)+sizeof(vec4d), &sorted_faces[0].na.x);
 
     glDrawArrays(GL_TRIANGLES, 0, sorted_faces.size()*3);
 
@@ -205,7 +208,7 @@ void drawMesh(const TriMesh& mesh, const vec3f& dir)
 
     glDisable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
-    glDisable(GL_COLOR_MATERIAL);
+    //glDisable(GL_COLOR_MATERIAL);
     
     glDisable(GL_TEXTURE_3D);
     glBindTexture(GL_TEXTURE_3D, 0);
@@ -319,12 +322,8 @@ void recompute(void *data)
       std::clog << "Number of good rays: " << numRays << std::endl;
     }
     
-    // check interception
-    //const std::list<unsigned int>& ilist = dc3d->intersectionTris();
-    //std::list<unsigned int>::const_iterator it = ilist.begin();
-    //for (;it!=ilist.end(); ++it){
-    //    mesh->faces[*it].intercepted = true;
-    //}
+    // generate texure coords
+    //generateTexCoords(*mesh);
 }
 
 void
