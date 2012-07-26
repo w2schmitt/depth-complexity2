@@ -170,38 +170,49 @@ loadOBJMesh(std::istream& in) {
     }
   }
   
-  // update Bounding Box 
-  mesh.aabb.merge(mesh.aabb.min - mesh.aabb.extents()/10.0);
-  mesh.aabb.merge(mesh.aabb.max + mesh.aabb.extents()/10.0);
+         // update Bounding Box 
+    mesh.aabb.merge(mesh.aabb.min - mesh.aabb.extents()/10.0);
+    mesh.aabb.merge(mesh.aabb.max + mesh.aabb.extents()/10.0);
+    
   
   vec3d desloc = mesh.aabb.min;
   vec3d bblen = mesh.aabb.extents();
   vec3d pos;
+  
+
+
   // set up 3d texture coordinates based in the position of the triangle
   for (unsigned int i=0; i < mesh.faces.size(); ++i){
       Triangle &t = mesh.faces[i];
       
       //vertex 1
-      pos = t.a + desloc;
+      pos = t.a - desloc;
       pos.x = pos.x/bblen.x; 
       pos.y = pos.y/bblen.y;
       pos.z = pos.z/bblen.z;
       t.tca = pos;
       
       //vertex 2
-      pos = t.b + desloc;
+      pos = t.b - desloc;
       pos.x = pos.x/bblen.x; 
       pos.y = pos.y/bblen.y;
       pos.z = pos.z/bblen.z;
       t.tcb = pos;
       
       //vertex 3
-      pos = t.c + desloc;
+      pos = t.c - desloc;
       pos.x = pos.x/bblen.x; 
       pos.y = pos.y/bblen.y;
       pos.z = pos.z/bblen.z;
       t.tcc = pos;    
+      
+
+      //std::cout << t.tca << std::endl;
+      //std::cout << t.tcb << std::endl;
+      //std::cout << t.tcc << std::endl;
   }
+
+
   
   std::clog << "Loaded " << mesh.faces.size() << " faces" << std::endl;
 

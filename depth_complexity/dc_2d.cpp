@@ -29,7 +29,7 @@ DepthComplexity2D::DepthComplexity2D(const int fboWidth, const int fboHeight){
   
   // initialize 3d texture (size x, size y, size z, channels, px values)
   //_tex3D = CImg<float>(texSize.x,texSize.y,texSize.z,1,0);
-  _tex3D = CImg<float>(256,256,64,3,0);
+  _tex3D = CImg<float>(64,64,32,3,0);
   
   assert(initFBO());
   
@@ -589,29 +589,93 @@ GLuint createTexture3D(int width, int height, int depth, const float* texels){
     
 }
 
+#define WIDTH 64
+#define HEIGHT 64
+#define DEPTH 32
+#define BYTES_PER_TEXEL 3
+
+#define LAYER(r)	(WIDTH * HEIGHT * r * BYTES_PER_TEXEL)
+// 2->1 dimension mapping function
+#define TEXEL2(s, t)	(BYTES_PER_TEXEL * (s * WIDTH + t))
+// 3->1 dimension mapping function
+#define TEXEL3(s, t, r)	(TEXEL2(s, t) + LAYER(r))
+
 
 void DepthComplexity2D::cimg2Tex(){
     // each layer
-    unsigned int texsize = _tex3D.width()*_tex3D.height()*_tex3D.depth();
-    const float *data = _tex3D.data();
+    unsigned int w = WIDTH;//_tex3D.width();
+    unsigned int h = HEIGHT; //_tex3D.height();
+    unsigned int d = DEPTH; //_tex3D.depth();
+    
+    unsigned int texsize = w*h*d;
+    
     float *interlaced_data = new float[3*texsize];
+    const float *data = _tex3D.data();
     //unsigned int size = _tex3D.size();
     //cimg_forXYZC(_tex3D,x,y,z,v){
     //   _tex3D(x,y,z,v) = 1.0f;
     //}
     
-    for (unsigned int i=0; i<texsize; i++){
-        //interlaced_data[i] = 1.0f;
-        //interlaced_data[i+1data] = 0.0f;
-        //interlaced_data[i+2] = 0.0f;
-        //std::cout << i << std::endl;
-
-        interlaced_data[3*i]   = data[i]; 
-        interlaced_data[3*i+1] = data[1*texsize + i]; 
-        interlaced_data[3*i+2] = data[2*texsize + i];
-        //std::cout << data[2*texsize + i] << std::endl;
-
+    for (unsigned int i=0; i<texsize*3; i++){
+        interlaced_data[i] = 0.0f;
     }
+    
+    for (unsigned int i=0; i< texsize; i++){
+         interlaced_data[3*i]   = data[i]; 
+         interlaced_data[3*i+1] = data[1*texsize + i]; 
+         interlaced_data[3*i+2] = data[2*texsize + i];
+        
+    }
+    
+    //float inc = 0.0f;
+    //for (unsigned int r=0; r<1; r++){
+    /*
+        for (unsigned int s=0; s<w; s++){
+            for (unsigned int t=0; t<h; t++){
+
+            interlaced_data[TEXEL3(s,t,0)  ] = 1.0f;
+            interlaced_data[TEXEL3(s,t,0)+1] = 0.0f;
+            interlaced_data[TEXEL3(s,t,0)+2] = 0.0f;
+
+            }        //std::cout << i << std::endl;
+
+           
+            //std::cout << data[2*texsize + i] << st d::endl;
+            //inc += 1.0f/texsize;
+        }
+        
+        for (unsigned int s=0; s<w; s++){
+            for (unsigned int t=0; t<h; t++){
+
+            interlaced_data[TEXEL3(s,t,1)  ] = 0.0f;
+            interlaced_data[TEXEL3(s,t,1)+1] = 1.0f;
+            interlaced_data[TEXEL3(s,t,1)+2] = 0.0f;
+
+            } 
+        }
+    
+        for (unsigned int s=0; s<w; s++){
+            for (unsigned int t=0; t<h; t++){
+
+            interlaced_data[TEXEL3(s,t,2)  ] = 0.0f;
+            interlaced_data[TEXEL3(s,t,2)+1] = 0.0f;
+            interlaced_data[TEXEL3(s,t,2)+2] = 1.0f;
+
+            } 
+        }
+    
+        for (unsigned int s=0; s<w; s++){
+            for (unsigned int t=0; t<h; t++){
+
+            interlaced_data[TEXEL3(s,t,3)  ] = 1.0f;
+            interlaced_data[TEXEL3(s,t,3)+1] = 1.0f;
+            interlaced_data[TEXEL3(s,t,3)+2] = 1.0f;
+
+            } 
+        }
+    //}
+         */
+    
     _texID = createTexture3D(_tex3D.width(), _tex3D.height(), _tex3D.depth(), interlaced_data);
     delete[] interlaced_data;
     //for (int i=0; i<size; ++i){
