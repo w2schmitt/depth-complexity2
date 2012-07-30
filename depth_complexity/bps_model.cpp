@@ -4,35 +4,7 @@
  *
  * Created on 16 de Maio de 2012, 14:39
  */
-
-#include "flags.h"
-#include "util.h"
-#ifdef USE_RANDOM_DC3D
-#include "dc_3d_random.h"
-#else
-#include "dc_3d.h"
-#endif
-#include "timer.h"
-#include "camera/float3.h"
-#include "camera/Camera.h"
-
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <cstring>
-/*#include <GL/glew.h>
-#ifdef __APPLE__
-#include <GLUT/glut.h>
-#else
-#include <GL/glut.h>
-#endif*/
-void  subDivideModel(const vec4d plane, const TriMesh& model, TriMesh& partA,
-        TriMesh& partB);
-vec4d makePlane(const vec3d& normal, const vec3d& point);
-std::string getExtension(const std::string& filename);
-void writeOFFModel(const TriMesh& model, std::ostream& out);
-std::vector<Segment> loadOFFLines(std::istream& in);
-
+#include "bps_model.h"
 /*
  * 
  */
@@ -77,11 +49,11 @@ int main(int argc, char** argv) {
     
     TriMesh part_a, part_b;
     
-    vec3d planeNormal = lines.at(0).a - lines.at(0).b,
+    /*vec3d planeNormal = lines.at(0).a - lines.at(0).b,
           model_center = ((mesh.aabb.max + mesh.aabb.min)/2.0);
     planeNormal.normalize();
-    cout << model_center << std::endl;
-    vec4d plane = makePlane(planeNormal, model_center);
+    cout << model_center << std::endl;*/
+    vec4d plane = defineCuttingPlane(lines, mesh.aabb);//makePlane(planeNormal, model_center);
     subDivideModel(plane, mesh, part_a, part_b);
     
     //write part_a of the model
@@ -114,6 +86,7 @@ int main(int argc, char** argv) {
   
   return 0;
 }
+
 
 std::vector<Segment> loadOFFLines(std::istream& in){
   
@@ -178,21 +151,6 @@ void writeOFFModel(const TriMesh& model, std::ostream& out){
   }
 }
 
-
-//defines usados por getPlaneTriangleIntersection para comunicar quais pontos do
-//triangulo estão abaixo ou acima do plano
-#define ALL_BELLOW_PLANE      -4
-#define ONLY_C_ABOVE_PLANE    -3
-#define ONLY_B_ABOVE_PLANE    -2
-#define ONLY_A_ABOVE_PLANE    -1
-#define ONLY_A_BELLOW_PLANE   1
-#define ONLY_B_BELLOW_PLANE   2
-#define ONLY_C_BELLOW_PLANE   3
-#define ALL_ABOVE_PLANE       4  
-
-int getPlaneTriangleIntersection(const vec4d& plane, const Triangle& triangle);
-Triangle cutTriangle(const vec4d& plane, const Triangle& triangle);
-
 void mergeTriangleBB ( BoundingBox& aabb, const Triangle t){
   aabb.merge(t.a);
   aabb.merge(t.b);
@@ -214,7 +172,7 @@ void  subDivideModel(const vec4d plane, const TriMesh& model, TriMesh& partA,
   std::vector<Triangle>::const_iterator ite = model.faces.begin();
   std::vector<Triangle>::const_iterator end = model.faces.end();
   
-  for(;ite != end; ++ite){
+  for(;ite != end; ite++){
 
     bool divideTriangle;
     TriMesh *partOne,
@@ -396,35 +354,7 @@ int getPlaneTriangleIntersection(const vec4d& plane, const Triangle& triangle){
 
 vec3d linePlaneIntersection(const Segment& line, const vec4d& plane){
   // intersecção de uma reta e um planos com equaçoes parametricas
-  // formula achada em paulbourke.net/geometry/planeline
-  /*
-  double divisor, dividend;
-  
-  dividend = dot(plane, vec4d(line.a,1));
-  
-  divisor = dot(plane, vec4d(line.a-line.b,0));
-  
-  
-  if(divisor == 0){
-    printf("ERROR: o triangulo não é cortado pelo plano divisor\n");
-    exit(-1);
-  }
-  
-  if(dividend == 0){
-    printf("ERROR - dividend = 0");
-  }
-  
-  double u = dividend/divisor;
-  
-  vec3d pnt_intersect;
-  
-  pnt_intersect = line.a + u*(line.b - line.a);
-//  
-//  cout << "[" << plane.x << ',' << plane.y << ',' << plane.z << ',' << plane.w << ']' 
-//          << pnt_intersect << line.a << line.b << std::endl;
-  
-  return pnt_intersect;
-  */
+  // formula vista em paulbourke.net/geometry/planeline
   vec3d dir = line.a - line.b; dir.normalize();
 	vec3d p0 = plane.xyz() * plane.w; //a point over the plane
 	double d = dot(plane.xyz(),(p0-line.a)) / dot(plane.xyz(),dir);
@@ -434,8 +364,11 @@ vec3d linePlaneIntersection(const Segment& line, const vec4d& plane){
   
 }
 
-// recebe um plano e um triangulo, onde o ponto a do triangulo esta do outro lado
-// do plano em comparação com os ponto b e c.
+/*
+ * Recebe um plano e um triangulo, onde o ponto a do triangulo esta do outro lado
+ * do plano em comparação com os ponto b e c. Esta rotação dos pontos do triangulo deve
+ * ser feita antes da chamada da função
+ */
 Triangle cutTriangle(const vec4d& plane, const Triangle& triangle){
   
   vec3d new_b, new_c;
@@ -451,7 +384,193 @@ Triangle cutTriangle(const vec4d& plane, const Triangle& triangle){
   
   triangleHalf.na = triangleHalf.nb 
           = triangleHalf.nc = triangle.na;
-  //cout << "A:"<< triangle.a << "B:"<< triangle.b << "C:"<< triangle.c << " Half: "
-  //     << "A:"<< triangleHalf.a << "B:"<< triangleHalf.b << "C:"<< triangleHalf.c << std::endl;
   return triangleHalf;
+}
+
+/*
+ * Função que ira definir o plano divisor do modelo a partir das linha que atravesam
+ * o modelo um numero maximo de vezes, a heuristica usada tenta diminuir ao maximo o
+ * número de intersecções nos submodelos.
+ */
+vec4d defineCuttingPlane(const vector<Segment> lines, const BoundingBox aabb){
+  
+  vector<W_Plane> cutting_planes; //planes found that will be interpolated in the end 
+
+  vector<int> retest_seg;// positions of elements with needs to be retested
+  vector<int> idx_segs;// positions of elements to be tested
+  idx_segs.reserve(lines.size());//in the fist pass all elements will be tested
+  
+  for (uint i = 0; i < lines.size(); i++){
+    idx_segs.push_back(i);
+  }
+  
+  //init test
+  while(idx_segs.size() > 1){//in case there is only one line to be tested another heuristic must be used
+    
+    //find a inital plane to be compared with the rest of lines
+    int first_idx = 1;
+    bool plane_found = false;
+    W_Plane cut_plane;
+    
+    //compare two lines to find a plane inside the aabb
+    while(not plane_found){
+      Segment seg_btw = 
+              findSegmentBetweenLines(lines.at(idx_segs.at(0)), 
+                                      lines.at(idx_segs.at(first_idx)));
+      if(seg_btw.active){
+           
+        if(insideAABB(seg_btw.a, aabb) && insideAABB(seg_btw.b, aabb)){
+
+          plane_found = true;
+          cut_plane.p0 = (seg_btw.a + seg_btw.b)/2.0;
+
+          vec3d normA = lines.at(idx_segs.at(0)).b - lines.at(idx_segs.at(0)).a,
+                normB = lines.at(idx_segs.at(first_idx)).b - lines.at(idx_segs.at(first_idx)).a;
+
+          normA = normA/normA.length();
+          normB = normB/normB.length();
+
+          // for the angle betwen the lines a verifications is
+          // needed so the smaller angle betwen then is used
+          if (dot(normA, normB) >= 0){
+            cut_plane.vet_dir = normA + normB;
+          }else{
+            cut_plane.vet_dir = normA - normB;
+          }
+
+        }else{
+          retest_seg.push_back(idx_segs.at(first_idx));
+          first_idx++;
+        }
+      }else{
+        first_idx++;
+      }
+    }
+    
+    double lines_used = 2;// 
+    //start comparing plane with lines to insterpolate a new plane
+    for(uint i = first_idx; i < idx_segs.size(); i++){
+      Segment line_plane = Segment(cut_plane.p0, cut_plane.vet_dir+cut_plane.p0);
+      Segment seg_btw = 
+              findSegmentBetweenLines(line_plane, 
+                                      lines.at(idx_segs.at(first_idx)));
+      if(seg_btw.active){
+           
+        if(insideAABB(seg_btw.a, aabb) && insideAABB(seg_btw.b, aabb)){
+          
+          //weighted mean for the interpolations with the plan and the line
+          cut_plane.p0 = (lines_used*cut_plane.p0 + seg_btw.b)/(++lines_used);
+
+          vec3d norm = lines.at(idx_segs.at(first_idx)).b - lines.at(idx_segs.at(first_idx)).a;
+
+          norm = norm/norm.length();
+
+          // for the angle betwen the lines a verifications is
+          // needed so the smaller angle betwen then is used
+          if (dot(cut_plane.vet_dir, norm) >= 0){
+            cut_plane.vet_dir += norm;
+          }else{
+            cut_plane.vet_dir -= norm;
+          }
+
+        }else{
+          retest_seg.push_back(idx_segs.at(first_idx));
+          first_idx++;
+        }
+      }else{//parallel lines are disconsidered
+        first_idx++;
+      }
+    }
+    
+    cut_plane.weight = lines_used;
+    cutting_planes.push_back(cut_plane);
+    
+    //setup the lined who need to be retested
+    idx_segs.swap(retest_seg);
+    retest_seg.clear();
+  }
+  
+  //use another heuristic to find the cutting plane using one line
+  if(not idx_segs.empty()){
+    //don't do shit
+  }
+  
+  //interpolate all the planes found
+  vec3d ret_p0;
+  vec3d ret_normal;
+  double weights = 0;
+  
+  vector<W_Plane>::const_iterator ite = cutting_planes.begin();
+  vector<W_Plane>::const_iterator end = cutting_planes.end();
+  
+  ret_p0 = ite->p0 * ite->weight;
+  weights = ite->weight;
+  ret_normal = ite->vet_dir;
+  
+  for(;ite != end; ++ite){
+    ret_p0 += ite->p0*ite->weight;
+    weights += ite->weight;
+    
+    if(dot(ret_normal, ite->vet_dir) >= 0){
+      ret_normal += ite->vet_dir;
+    }else{
+      ret_normal -= ite->vet_dir;
+    }
+  }
+  
+  ret_normal.normalize();
+  
+  return makePlane(ret_normal, ret_p0);
+}
+
+/*
+ * Função que acha o menor segmento de reta entre duas linhas não paralelas
+ * a reta será perpendicular as duas linhas passadas,
+ * caso as linhas sejam paralelas o campo active do segmento retorna do será falso.
+ * O ponto inicial do segmento fara parte da primeira linha passada.
+ * 
+ */
+Segment findSegmentBetweenLines(Segment lineA, Segment lineB){
+  vec3d u = lineA.b - lineA.a,
+        v = lineB.b - lineB.a,
+        w0= lineA.a - lineB.a;
+  
+  double a = dot(u,u),
+         b = dot(v,v),
+         c = dot(u,v);
+  
+  double denominator = a*b - c*c;
+  
+  if (denominator == 0){ // the 2 lines are paralels
+    Segment paralel = Segment();
+    paralel.active = false;            
+    
+    return paralel;
+  }
+  
+  double d = dot(u,w0),
+         e = dot(v,w0);
+  
+  double Ap = (c*e-d*b)/denominator,
+         Bp = (a*e-d*c)/denominator;
+  
+  vec3d pnt0 = lineA.a + u*Ap,
+        pnt1 = lineB.a + v*Bp;
+  
+  return Segment(pnt0, pnt1);
+  
+}
+
+/*
+ * Test if point is inside the bounding box aabb 
+ * 
+ */ 
+bool insideAABB(const vec3d point, const BoundingBox aabb){
+  if(point.x > aabb.max.x) return false;  
+  if(point.x < aabb.min.x) return false;
+  if(point.y > aabb.max.y) return false;
+  if(point.y < aabb.min.y) return false;
+  if(point.z > aabb.max.z) return false;
+  if(point.z < aabb.min.z) return false;
+  return true;
 }
