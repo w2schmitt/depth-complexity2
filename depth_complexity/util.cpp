@@ -96,7 +96,7 @@ loadOBJMesh(std::istream& in) {
         vec3d p;
         if (sscanf(line.c_str()+2, "%lf %lf %lf", &p.x, &p.y, &p.z) != 3)
           throw std::string("Error reading vertex at line " + line);
-								//printf("px = (%f) - py = (%f) - pz = (%f)\n", p.x, p.y, p.z); 
+	
         vertices.push_back(p);
         mesh.aabb.merge(p);
       } else if (line[1] == 'n') {
@@ -170,14 +170,13 @@ loadOBJMesh(std::istream& in) {
     }
   }
   
-         // update Bounding Box 
+        // update Bounding Box 
     mesh.aabb.merge(mesh.aabb.min - mesh.aabb.extents()/10.0);
-    mesh.aabb.merge(mesh.aabb.max + mesh.aabb.extents()/10.0);
-    
+    mesh.aabb.merge(mesh.aabb.max + mesh.aabb.extents()/10.0);    
   
-  vec3d desloc = mesh.aabb.min;
-  vec3d bblen = mesh.aabb.extents();
-  vec3d pos;
+    vec3d desloc = mesh.aabb.min;
+    vec3d bblen = mesh.aabb.extents();
+    vec3d pos;
   
 
 
@@ -212,7 +211,8 @@ loadOBJMesh(std::istream& in) {
       //std::cout << t.tcc << std::endl;
   }
 
-
+    //std::cout << mesh.aabb.max << std::endl;
+    //std::cout << mesh.aabb.min << std::endl;
   
   std::clog << "Loaded " << mesh.faces.size() << " faces" << std::endl;
 

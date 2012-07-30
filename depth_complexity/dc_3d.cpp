@@ -131,8 +131,8 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
 
   assert(palign != salign);
   BoundingBox aabb = _mesh->aabb;
-  aabb.merge(aabb.min - aabb.extents()/10.0);
-  aabb.merge(aabb.max + aabb.extents()/10.0);
+  //aabb.merge(aabb.min - aabb.extents()/10.0);
+  //aabb.merge(aabb.max + aabb.extents()/10.0);
 
   vec3d c0 = vec3d(aabb.min.x, aabb.min.y, aabb.min.z);
   vec3d c1 = vec3d(aabb.max.x, aabb.min.y, aabb.min.z);
