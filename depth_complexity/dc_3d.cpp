@@ -213,10 +213,10 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
       saa.b = sb.b;
       sbb.a = sa.b;
       sbb.b = sb.a;
-      _usedPlanes.push_back(sa);
-      _usedPlanes.push_back(saa);
-      _usedPlanes.push_back(sb);
-      _usedPlanes.push_back(sbb);
+     //_usedPlanes.push_back(sa);
+      //_usedPlanes.push_back(saa);
+      //_usedPlanes.push_back(sb);
+      //_usedPlanes.push_back(sbb);
 
       vec4d plane = makePlane(sa.a, sa.b, sb.a);
       std::vector<Segment> segments;
@@ -227,9 +227,14 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
       vec3d dsa = sa.b - sa.a; sa.a -= dsa; sa.b += dsa;
       vec3d dsb = sb.b - sb.a; sb.a -= dsb; sb.b += dsb;
 
+      //Plane p;
+      //p.a = sa.a; p.b = sa.b;
+      //p.c = sb.b; p.d = sb.a;
+      
+      
       _dc2d->setMeshBoundingbox(aabb);
       _dc2d->process(sa, sb, segments, meshTris);
-
+      
       unsigned int tempMaximum = _dc2d->maximum();
       
 

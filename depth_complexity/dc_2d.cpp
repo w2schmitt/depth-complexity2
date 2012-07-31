@@ -935,28 +935,12 @@ void DepthComplexity2D::cimg2Tex(){
         interlaced_data[i] = 0.0f;
     }
     
-    /*
-    for (unsigned int i=0; i< texsize; i++){
-         interlaced_data[3*i]   = data[i]; 
-         interlaced_data[3*i+1] = data[1*texsize + i]; 
-         interlaced_data[3*i+2] = data[2*texsize + i];
-        
-    }
-     */
-    
     for (unsigned int r=0; r<d; r++){
         for (unsigned int s=0; s<w; s++){
             for (unsigned int t=0; t<h; t++){
-                //if (r==d/2){
-                //    interlaced_data[TEXEL3(s,t,r)  ] = 1.0f;
-                //    interlaced_data[TEXEL3(s,t,r)+1] = 1.0f;
-                //    interlaced_data[TEXEL3(s,t,r)+2] = 1.0f;
-                //}
-                //else {
-                    interlaced_data[TEXEL3(s,t,r)  ] = _tex3D(s,t,r,0);
-                    interlaced_data[TEXEL3(s,t,r)+1] = _tex3D(s,t,r,1);
-                    interlaced_data[TEXEL3(s,t,r)+2] = _tex3D(s,t,r,2);
-                //}
+                interlaced_data[TEXEL3(s,t,r)  ] = _tex3D(s,t,r,0);
+                interlaced_data[TEXEL3(s,t,r)+1] = _tex3D(s,t,r,1);
+                interlaced_data[TEXEL3(s,t,r)+2] = _tex3D(s,t,r,2);
             }
         }
     }
