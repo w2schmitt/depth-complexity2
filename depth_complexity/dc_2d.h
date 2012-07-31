@@ -48,7 +48,7 @@ public:
   void setTex3dSize(vec3d size) { this->_texSize = size;}
   void setMeshBoundingbox(BoundingBox aabb) { this->_aabb = aabb; }
   
-  void cimg2Tex();
+  void cimg2Tex(unsigned int maxDC);
   // Compute the maximum depth complexity
   void process(
     const Segment &from, const Segment &to, const std::vector<Segment> &segments, const std::vector<Triangle> &tris);
@@ -75,8 +75,8 @@ private:
   void clipPolygon(const Point &p1, const Point &p2, const Point &p3, std::vector<Point> &polygon);
   void clipPolygon(const Point &p1, const Point &p2, const Point &p3, const Point &p4, std::vector<Point> &polygon);
   
-  void bresenham_line_3D(vec3d &v1, vec3d &v2);
-  void drawPixel(vec3d pos);
+  void bresenham_line_3D(vec3d &v1, vec3d &v2, unsigned int color);
+  void drawPixel(vec3d pos, unsigned int color);
 		
   // Go through the counter buffer to find the maximum value.
   unsigned int findMaxValueInCounterBuffer();

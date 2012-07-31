@@ -122,7 +122,7 @@ void DepthComplexity3D::process(const TriMesh &mesh) {
   processMeshAlign(AlignZ, AlignY);
   processMeshAlign(AlignY, AlignZ);
   
-  _dc2d->cimg2Tex();
+  _dc2d->cimg2Tex(_maximum);
   
 }
 

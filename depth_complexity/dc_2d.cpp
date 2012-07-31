@@ -34,7 +34,7 @@ DepthComplexity2D::DepthComplexity2D(const int fboWidth, const int fboHeight){
   
   // initialize 3d texture (size x, size y, size z, channels, px values)
   //_tex3D = CImg<float>(texSize.x,texSize.y,texSize.z,1,0);
-  _tex3D = CImg<float>(WIDTH,HEIGHT,DEPTH,BYTES_PER_TEXEL,0);
+  _tex3D = CImg<unsigned int>(WIDTH,HEIGHT,DEPTH,1,0);
   
   assert(initFBO());
   
@@ -553,11 +553,11 @@ void DepthComplexity2D::findMaximumRaysAndHistogram() {
 
           if (val == _maximum){
             //if (_maximumRays.size() < 1)
-              _maximumRays.insert(seg);
+              //_maximumRays.insert(seg);
           }
           else if (val >= _threshold){			   
             //if (_goodRays[val].size() < 1)
-		_goodRays[val].insert(seg);            
+		//_goodRays[val].insert(seg);            
           }
         }
      }
@@ -566,33 +566,76 @@ void DepthComplexity2D::findMaximumRaysAndHistogram() {
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 }
 
-void DepthComplexity2D::drawPixel(vec3d pos){
+
+
+const unsigned int colorTableSize=6;
+
+float CTable[colorTableSize][3] = {
+    {0.0, 0.0, 1.0}, // Azul
+    {1.0, 0.0, 1.0}, // Roxo/Rosa
+    {1.0, 0.5, 0.0}, // Laranja
+    {1.0, 1.0, 0.0}, // Amarelo
+    {0.0, 1.0, 0.0}, // Verde
+    {0.0, 1.0, 0.0} // Verde
+};
+
+/* Linear Interpolation between color1 and color2*/
+void lerpColor(float* newColor, const float *color1, const float *color2, float value){
+    
+    if (value<=0){
+        //memcpy(newColor, color1, sizeof(float*)*3);
+        newColor[0] = color1[0];
+        newColor[1] = color1[1];
+        newColor[2] = color1[2];
+    }
+    else if (value>=1){
+        newColor[0] = color2[0];
+        newColor[1] = color2[1];
+        newColor[2] = color2[2];
+        //std::cout << value << " - [" << color2[0] << " " << color2[1] << " " << color2[2] << "]\n";
+        //memcpy(newColor, color2, sizeof(float*)*3);
+    }
+    else {
+        newColor[0] = (1.0-value)*color1[0] + (value)*color2[0];
+        newColor[1] = (1.0-value)*color1[1] + (value)*color2[1];
+        newColor[2] = (1.0-value)*color1[2] + (value)*color2[2];
+    }
+}
+
+
+void findColor(float *pxColor, float normalizedDC){
+    
+    float intensity;
+    float tableIndex = normalizedDC*(float)(colorTableSize-1);
+    
+    int firstColor = (int)tableIndex;
+    
+    if (firstColor==colorTableSize-1){
+        intensity=1.0;
+        firstColor--;
+    }
+    else{
+        intensity = tableIndex - (float)firstColor;
+    }
+    
+    int secondColor = ((int)firstColor)+1;
+    lerpColor(pxColor, CTable[firstColor], CTable[secondColor], intensity);
+}
+
+
+void DepthComplexity2D::drawPixel(vec3d pos, unsigned int color){
     
     unsigned int w = _tex3D.width();
     unsigned int h = _tex3D.height();
     unsigned int d = _tex3D.depth();
     
-    /*
-    std::cout << pos << std::endl;
-    
-    vec3d t = _aabb.min;
-    vec3d size = _aabb.extents(); 
-    pos -= t;
-    pos.x = floor( (pos.x/size.x)*(w-1) + 0.5);
-    pos.y = floor( (pos.y/size.y)*(w-1) + 0.5);
-    pos.z = floor( (pos.z/size.z)*(w-1) + 0.5);
-    */
-    
-    
     if ( (pos.x > 0 && pos.x < w) &&
          (pos.y > 0 && pos.y < h) &&
          (pos.z > 0 && pos.z < d)){
-        
-        //std::cout << pos << std::endl;
          
-         _tex3D(pos.x, pos.y, pos.z, 0) = 1.0f;
-         _tex3D(pos.x, pos.y, pos.z, 1) = 1.0f;
-         _tex3D(pos.x, pos.y, pos.z, 2) = 1.0f;
+         _tex3D(pos.x, pos.y, pos.z) = color; //1.0f;
+         //_tex3D(pos.x, pos.y, pos.z, 1) += color; //1.0f;
+         //_tex3D(pos.x, pos.y, pos.z, 2) += color; //1.0f;
     }
 }
 
@@ -628,7 +671,7 @@ void DepthComplexity2D::drawPixel(vec3d pos){
 
 //}
 
-void DepthComplexity2D::bresenham_line_3D(vec3d &v1, vec3d &v2){
+void DepthComplexity2D::bresenham_line_3D(vec3d &v1, vec3d &v2, unsigned int color){
     int x1, y1, x2, y2, z1, z2;
 
     x1 = v1.x; y1 = v1.y; z1 = v1.z;
@@ -662,7 +705,7 @@ void DepthComplexity2D::bresenham_line_3D(vec3d &v1, vec3d &v2){
         zd = az - (ax >> 1);
         for (;;)
         {
-            drawPixel(vec3d(x, y, z));
+            drawPixel(vec3d(x, y, z), color);
             if (x == x2)
             {
                 return;
@@ -691,7 +734,7 @@ void DepthComplexity2D::bresenham_line_3D(vec3d &v1, vec3d &v2){
         zd = az - (ay >> 1);
         for (;;)
         {
-            drawPixel(vec3d(x, y, z));
+            drawPixel(vec3d(x, y, z),color);
             if (y == y2)
             {
                 return;
@@ -720,7 +763,7 @@ void DepthComplexity2D::bresenham_line_3D(vec3d &v1, vec3d &v2){
         yd = ay - (az >> 1);
         for (;;)
         {
-            drawPixel(vec3d(x, y, z));
+            drawPixel(vec3d(x, y, z),color);
             if (z == z2)
             {
                 return;
@@ -744,143 +787,6 @@ void DepthComplexity2D::bresenham_line_3D(vec3d &v1, vec3d &v2){
         }
     }
 }
-
-
-
-
-/*
-void DepthComplexity2D::bresenham_line_3D(vec3d &v1, vec3d &v2)
-{
-    int i, l, m, n, x_inc, y_inc, z_inc, err_1, err_2;
-    vec3d delta;
-    vec3d delta2;
-    vec3d pixel;
-    
-    pixel = v1;
-    delta = v2-v1;
-    
-    x_inc = (delta.x < 0) ? -1 : 1;
-    l = abs(delta.x);
-    y_inc = (delta.y < 0) ? -1 : 1;
-    m = abs(delta.y);
-    z_inc = (delta.z < 0) ? -1 : 1;
-    n = abs(delta.z);
-    
-    delta2 = vec3d(l << 1, m << 1, n << 1);
-
-    if ((l >= m) && (l >= n)) {
-        err_1 = delta2.y - l;
-        err_2 = delta2.z - l;
-        for (i = 0; i<l; i++) {
-            drawPixel(pixel);
-            if (err_1 > 0) {
-                pixel.y += y_inc;
-                err_1 -= delta2.x;
-            }
-            if (err_2 > 0) {
-                pixel.z += z_inc;
-                err_2 -= delta2.x;
-            }
-            err_1 += delta2.y;
-            err_2 += delta2.z;
-            pixel.x += x_inc;
-        }
-    } else if ((m >= l) && (m >= n)) {
-        err_1 = delta2.x - m;
-        err_2 = delta2.z - m;
-        for (i = 0; i < m; i++) {
-            drawPixel(pixel);
-            if (err_1 > 0) {
-                pixel.x += x_inc;
-                err_1 -= delta2.y;
-            }
-            if (err_2 > 0) {
-                pixel.z += z_inc;
-                err_2 -= delta2.y;
-            }
-            err_1 += delta2.x;
-            err_2 += delta2.z;
-            pixel.y += y_inc;
-        }
-    } else {
-        err_1 = delta2.y - n;
-        err_2 = delta2.x - n;
-        for (i = 0; i < n; i++) {
-            drawPixel(pixel);
-            if (err_1 > 0) {
-                pixel.y += y_inc;
-                err_1 -= delta2.z;
-            }
-            if (err_2 > 0) {
-                pixel.x += x_inc;
-                err_2 -= delta2.z;
-            }
-            err_1 += delta2.y;
-            err_2 += delta2.x;
-            pixel.z += z_inc;
-        }
-    }
-    
-    drawPixel(pixel);
-}
-*/
-
-    
-/*
-void DrawLine(const vec3d &color, vec3d &v1, vec3d &v2, vec3d &v3) {
-        float xdiff = (v2.x - v1.x);
-        float ydiff = (v2.y - v1.y);bresenham_line_3D
-
-        if(xdiff == 0.0f && ydiff == 0.0f) {
-            SetPixel(v1.x, v1.y, color1);
-            return;
-        }
-
-        if(fabs(xdiff) > fabs(ydiff)) {
-            float xmin, xmax;
-
-            // set xmin to the lower x value given
-            // and xmax to the higher value
-            if(v1.x < v2.x) {
-                xmin = v1.x;
-                xmax = v2.x;
-            } else {
-                xmin = v2.x;
-                xmax = v1.x;
-            }
-
-            // draw line in terms of y slope
-            float slope = ydiff / xdiff;
-            for(float x = xmin; x <= xmax; x += 1.0f) {
-                float y = v1.y + ((x - v1.x) * slope);
-                vec3d color = color1 + ((color2 - color1) * ((x - v1.x) / xdiff));
-                SetPixel(x, y, color);
-            }
-        } else {
-            float ymin, ymax;
-
-            // set ymin to the lower y value given
-            // and ymax to the higher value
-            if(v1.y < v2.y) {
-            ymin = v1.y;
-            ymax = v2.y;
-            } else {
-            ymin = v2.y;
-            ymax = v1.y;
-            }
-
-            // draw line in terms of x slope
-            float slope = xdiff / ydiff;
-            for(float y = ymin; y <= ymax; y += 1.0f) {
-                float x = v1.x + ((y - v1.y) * slope);
-                vec3d color = color1 + ((color2 - color1) * ((y - v1.y) / ydiff));
-
-
-                SetPixel(x, y, color);
-            }
-        }
-}
-*/
 
 
 
@@ -909,20 +815,22 @@ GLuint createTexture3D(int width, int height, int depth, const float* texels){
 
 
 
-#define LAYER(r)	(WIDTH * HEIGHT * r * BYTES_PER_TEXEL)
+#define LAYER(r, c)	(WIDTH * HEIGHT * r * c)
 // 2->1 dimension mapping function
-#define TEXEL2(s, t)	(BYTES_PER_TEXEL * (s * WIDTH + t))
+#define TEXEL2(s, t, c)	(c * (s * WIDTH + t))
 // 3->1 dimension mapping function
-#define TEXEL3(s, t, r)	(TEXEL2(s, t) + LAYER(r))
+#define TEXEL3(s, t, r, c)	(TEXEL2(s, t, c) + LAYER(r, c))
 
 
-void DepthComplexity2D::cimg2Tex(){
+void DepthComplexity2D::cimg2Tex(unsigned int maxDC){
     // each layer
     unsigned int w = _tex3D.width();
     unsigned int h = _tex3D.height();
     unsigned int d = _tex3D.depth();
     
     unsigned int texsize = w*h*d;
+    
+    //int teste = *std::max_element(_tex3D.data(), _tex3D.data() + texsize);
     
     float *interlaced_data = new float[3*texsize];
     //const float *data = _tex3D.data();
@@ -938,9 +846,12 @@ void DepthComplexity2D::cimg2Tex(){
     for (unsigned int r=0; r<d; r++){
         for (unsigned int s=0; s<w; s++){
             for (unsigned int t=0; t<h; t++){
-                interlaced_data[TEXEL3(s,t,r)  ] = _tex3D(s,t,r,0);
-                interlaced_data[TEXEL3(s,t,r)+1] = _tex3D(s,t,r,1);
-                interlaced_data[TEXEL3(s,t,r)+2] = _tex3D(s,t,r,2);
+                float pxColor[3] = {0.0, 0.0, 0.0};
+                findColor(pxColor, _tex3D(s,t,r,0)/(float)maxDC);
+                
+                interlaced_data[TEXEL3(s,t,r,3)+0] = pxColor[0];
+                interlaced_data[TEXEL3(s,t,r,3)+1] = pxColor[1];
+                interlaced_data[TEXEL3(s,t,r,3)+2] = pxColor[2];
             }
         }
     }
@@ -974,44 +885,9 @@ void DepthComplexity2D::updateTexture3D(Segment line, unsigned int dc){
     end.x = floor( (end.x/size.x)*(w-1) + 0.5);
     end.y = floor( (end.y/size.y)*(h-1) + 0.5);
     end.z = floor( (end.z/size.z)*(d-1) + 0.5);
-    //vec3d t = _aabb.min;
-    //vec3d size = -_aabb.extents();
-    //vec3d start = line.a - _aabb.min;
-    //vec3d end = line.b - _aabb.min;
-    //return;
-    //std::cout << _aabb.max << std::endl;
-    //std::cout << start << std::endl;
-    //std::cout << end << std::endl << std::endl;
     
-    bresenham_line_3D(start, end);
-    //std::cout << _aabb.min << "   " << _aabb.max << std::endl;
-    //std::cin.get();
-    /*
-    for (unsigned int i=0; i < _meshTris->size(); ++i){
-        Point pt_inter;
-        const Triangle &s = _meshTris->at(i);
-        if (intersectTriangleSegment(line, s, &pt_inter)){            
-            // compute position in texture
-            std::cout << size << std::endl;
-            
-            pt_inter -= t;            
-            pt_inter.x = floor( (pt_inter.x/size.x)*(_tex3D.width()-1) + 0.5f);
-            pt_inter.y = floor( (pt_inter.y/size.y)*(_tex3D.height()-1) + 0.5f);
-            pt_inter.z = floor( (pt_inter.z/size.z)*(_tex3D.depth()-1) + 0.5f);
-            
-            
-            
-            //std::cin.get();
-            // set texture values
-            //_tex3D(71,63,15,2) = 1.0f;
-            _tex3D(pt_inter.x, pt_inter.y, pt_inter.z, 0) = 1.0f;            
-            _tex3D(pt_inter.x, pt_inter.y, pt_inter.z, 1) = 1.0f;
-            _tex3D(pt_inter.x, pt_inter.y, pt_inter.z, 2) = 1.0f;
-            
-            
-        }
-    }
-     */
+    bresenham_line_3D(start, end, dc);
+  
 }
 
 
