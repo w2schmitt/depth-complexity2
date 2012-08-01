@@ -13,10 +13,10 @@ void drawPolygon(const std::vector<Point> &polygon);
 
 bool shrinkSegment(Point &p1, Point &p2, vec3d d1, vec3d d2);
 
-#define WIDTH 128
-#define HEIGHT 128
-#define DEPTH 128
-#define BYTES_PER_TEXEL 3
+#define WIDTH 256
+#define HEIGHT 256
+#define DEPTH 256
+//#define BYTES_PER_TEXEL 3
 
 DepthComplexity2D::DepthComplexity2D(const int fboWidth, const int fboHeight){
   _fboWidth = fboWidth;
@@ -33,8 +33,9 @@ DepthComplexity2D::DepthComplexity2D(const int fboWidth, const int fboHeight){
   //texSize = vec3d(256.,256.,256.);
   
   // initialize 3d texture (size x, size y, size z, channels, px values)
-  //_tex3D = CImg<float>(texSize.x,texSize.y,texSize.z,1,0);
-  _tex3D = CImg<unsigned int>(WIDTH,HEIGHT,DEPTH,1,0);
+  // --> channel 1 -> DC of the ray
+  // --> chanell 2 -> ray counter
+  _tex3D = CImg<unsigned int>(WIDTH,HEIGHT,DEPTH,2,0);
   
   assert(initFBO());
   
@@ -524,6 +525,8 @@ void DepthComplexity2D::findMaximumRaysAndHistogram() {
   _goodRays.resize(_maximum + 1);
   _histogram.clear();
   _histogram.resize(_maximum + 1);
+  
+
 
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _fboId);
     glPushAttrib(GL_VIEWPORT_BIT);
@@ -632,11 +635,18 @@ void DepthComplexity2D::drawPixel(vec3d pos, unsigned int color){
     if ( (pos.x > 0 && pos.x < w) &&
          (pos.y > 0 && pos.y < h) &&
          (pos.z > 0 && pos.z < d)){
-         
-         _tex3D(pos.x, pos.y, pos.z) = color; //1.0f;
-         //_tex3D(pos.x, pos.y, pos.z, 1) += color; //1.0f;
+        //std::cout << _tex3D(pos.x, pos.y, pos.z, 0) << std::endl;
+         _tex3D(pos.x, pos.y, pos.z, 0) += color; //1.0f;
+         _tex3D(pos.x, pos.y, pos.z, 1) += 1; //1.0f;
          //_tex3D(pos.x, pos.y, pos.z, 2) += color; //1.0f;
-    }
+    }//point3d(x, y, z)
+//    int x, y, z;
+//{
+
+    /* output the point as you see fit */
+
+//}
+
 }
 
 
@@ -663,13 +673,6 @@ void DepthComplexity2D::drawPixel(vec3d pos, unsigned int color){
 /* take sign of a, either -1, 0, or 1 */
 #define ZSGN(a) (((a)<0) ? -1 : (a)>0 ? 1 : 0)
 
-//point3d(x, y, z)
-//    int x, y, z;
-//{
-
-    /* output the point as you see fit */
-
-//}
 
 void DepthComplexity2D::bresenham_line_3D(vec3d &v1, vec3d &v2, unsigned int color){
     int x1, y1, x2, y2, z1, z2;
@@ -796,7 +799,7 @@ GLuint createTexture3D(int width, int height, int depth, const float* texels){
     glGenTextures(1, &id);
     glBindTexture(GL_TEXTURE_3D, id);
     
-    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
     glTexParameterf(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameterf(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     
@@ -828,16 +831,8 @@ void DepthComplexity2D::cimg2Tex(unsigned int maxDC){
     unsigned int h = _tex3D.height();
     unsigned int d = _tex3D.depth();
     
-    unsigned int texsize = w*h*d;
-    
-    //int teste = *std::max_element(_tex3D.data(), _tex3D.data() + texsize);
-    
+    unsigned int texsize = w*h*d;    
     float *interlaced_data = new float[3*texsize];
-    //const float *data = _tex3D.data();
-    //unsigned int size = _tex3D.size();
-    //cimg_forXYZC(_tex3D,x,y,z,v){
-    //   _tex3D(x,y,z,v) = 1.0f;
-    //}
     
     for (unsigned int i=0; i<texsize*3; i++){
         interlaced_data[i] = 0.0f;
@@ -847,7 +842,11 @@ void DepthComplexity2D::cimg2Tex(unsigned int maxDC){
         for (unsigned int s=0; s<w; s++){
             for (unsigned int t=0; t<h; t++){
                 float pxColor[3] = {0.0, 0.0, 0.0};
-                findColor(pxColor, _tex3D(s,t,r,0)/(float)maxDC);
+                float Nray = _tex3D(s,t,r,1);
+                if (Nray==0) Nray=1;
+                //float normalizedDC = _tex3D(s,t,r,0)/((float));
+                //std::cout << normalizedDC << std::endl;
+                findColor(pxColor, (_tex3D(s,t,r,0)/Nray)/(float)maxDC);
                 
                 interlaced_data[TEXEL3(s,t,r,3)+0] = pxColor[0];
                 interlaced_data[TEXEL3(s,t,r,3)+1] = pxColor[1];
@@ -886,6 +885,7 @@ void DepthComplexity2D::updateTexture3D(Segment line, unsigned int dc){
     end.y = floor( (end.y/size.y)*(h-1) + 0.5);
     end.z = floor( (end.z/size.z)*(d-1) + 0.5);
     
+    // rasterize ray into a 3D texture, using dc as color
     bresenham_line_3D(start, end, dc);
   
 }

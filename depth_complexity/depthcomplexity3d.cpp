@@ -21,6 +21,9 @@
 #include <GL/glut.h>
 #endif
 
+
+#include "CImg.h"
+
 #include "flags.h"
 #include "vector.hpp"
 #include "camera/float3.h"
@@ -34,11 +37,15 @@
 #endif
 #include "timer.h"
 
+using namespace cimg_library;
+
 float radius = 0.01;
 bool showPlanes = false;
 bool doGoodRays = true;
 vec4f sphereColor(0.0, 1.0, 0.0, 1.0);
 unsigned int showRayIndex = 0;
+
+CImgDisplay main_disp;
 
 #ifdef USE_RANDOM_DC3D
 RDepthComplexity3D *dc3d;
@@ -165,8 +172,8 @@ void drawMesh(const TriMesh& mesh, const vec3f& dir)
 #ifndef USE_RANDOM_DC3D
     glBindTexture(GL_TEXTURE_3D, dc3d->getTextureID());
 #endif
-    //glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
-    //glEnable(GL_COLOR_MATERIAL);
+    glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
+    glEnable(GL_COLOR_MATERIAL);
     
     //std::clog << "sorting...";
     if (sorted_faces.empty()) {
@@ -191,8 +198,8 @@ void drawMesh(const TriMesh& mesh, const vec3f& dir)
     glEnableClientState (GL_TEXTURE_COORD_ARRAY);
     glTexCoordPointer(3, GL_DOUBLE, 3*sizeof(vec3d)+sizeof(vec4d), &sorted_faces[0].tca.x);
     
-    //glEnableClientState(GL_COLOR_ARRAY);
-    //glColorPointer(4, GL_DOUBLE, 3*sizeof(vec3d)+sizeof(vec4d), &sorted_faces[0].ca.x);
+    glEnableClientState(GL_COLOR_ARRAY);
+    glColorPointer(4, GL_DOUBLE, 3*sizeof(vec3d)+sizeof(vec4d), &sorted_faces[0].ca.x);
 
     glEnableClientState(GL_NORMAL_ARRAY);
     glNormalPointer(GL_DOUBLE, 3*sizeof(vec3d)+sizeof(vec4d), &sorted_faces[0].na.x);
@@ -421,6 +428,44 @@ void GLFWCALL mouse_motion(int x, int y){
 	}//end if
 }
 
+const unsigned int colorTableSize=6;
+
+float ColorTable[colorTableSize][3] = {
+    {0.0, 0.0, 1.0}, // Azul
+    {1.0, 0.0, 1.0}, // Roxo/Rosa
+    {1.0, 0.5, 0.0}, // Laranja
+    {1.0, 1.0, 0.0}, // Amarelo
+    {0.0, 1.0, 0.0}, // Verde
+    {0.0, 1.0, 0.0} // Verde
+};
+
+CImg<float> color_scale(int w, int h){
+    
+    float parts = h/(float)(colorTableSize-2);
+   
+ 
+    CImg<float> teste(w,h,1,3,0);
+    
+    for (unsigned int i=1; i<colorTableSize-1; i++){
+        vec3d inc((ColorTable[i][0] - ColorTable[i-1][0])/parts,
+                  (ColorTable[i][1] - ColorTable[i-1][1])/parts,
+                  (ColorTable[i][2] - ColorTable[i-1][2])/parts);
+        float color[3] = {ColorTable[i-1][0], ColorTable[i-1][1], ColorTable[i-1][2]};
+        for (int y=(i-1)*parts; y<(i*parts); y++){            
+            for (int x=0; x<w; x++){
+                teste(x,y,0,0) = color[0];
+                teste(x,y,0,1) = color[1];
+                teste(x,y,0,2) = color[2];
+            }
+            color[0] += inc.x; color[1] += inc.y; color[2] += inc.z;
+        }
+    }
+    //const char *t = "teste";
+    //teste.draw_text(10,10,t,0,0);
+    return teste;
+    
+}
+
 int doInteractive(TriMesh& mesh)
 {
    
@@ -531,6 +576,10 @@ int doInteractive(TriMesh& mesh)
     //cam.target = aabb.center();
     //cam.up = vec3f(0, 1, 0);
     //cam.pos = cam.target + vec3f(0, 0, 2*aabb.extents().z);
+                
+
+    CImg<float> teste = color_scale(80,500); 
+    main_disp.display(teste);
 
     while( glfwGetWindowParam(GLFW_OPENED) && !glfwGetKey(GLFW_KEY_ESC) ) {
         glClear( GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT );
@@ -565,7 +614,7 @@ int doInteractive(TriMesh& mesh)
         t->ca = vec4d(1.0f, 0.0f, 0.0f, 0.7f);
         t->cb = vec4d(1.0f, 0.0f, 0.0f, 0.7f);
         t->cc = vec4d(1.0f, 0.0f, 0.0f, 0.7f);
-
+        
         // Draw tweak bars
         TwDraw();
 
