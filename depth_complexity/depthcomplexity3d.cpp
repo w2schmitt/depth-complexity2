@@ -175,6 +175,7 @@ void drawMesh(const TriMesh& mesh, const vec3f& dir)
     glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
     glEnable(GL_COLOR_MATERIAL);
     
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     //std::clog << "sorting...";
     if (sorted_faces.empty()) {
         sorted_faces = mesh.faces;
@@ -188,7 +189,7 @@ void drawMesh(const TriMesh& mesh, const vec3f& dir)
     //glDisable(GL_DEPTH_TEST);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_LIGHTING);
-    glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 1);    
+    glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 1);
 
     glEnable(GL_VERTEX_ARRAY);
 

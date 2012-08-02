@@ -51,7 +51,7 @@ public:
   void cimg2Tex(unsigned int maxDC);
   // Compute the maximum depth complexity
   void process(
-    const Segment &from, const Segment &to, const std::vector<Segment> &segments, const std::vector<Triangle> &tris);
+    const Segment &from, const Segment &to, const std::vector<Segment> &segments);
 
   // Copy stencil buffer to color buffer.
   // Colors are defined in a table.

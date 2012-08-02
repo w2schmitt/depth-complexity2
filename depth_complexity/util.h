@@ -17,7 +17,13 @@ struct Triangle {
     vec4d cc;
 };
 
+
 typedef vec3d Point;
+
+struct Plane {
+    Point a,b,c,d;
+};
+
 
 struct Segment {
   Segment(const Point &a_, const Point &b_):a(a_), b(b_), active(true) {}

@@ -30,8 +30,6 @@ DepthComplexity2D::DepthComplexity2D(const int fboWidth, const int fboHeight){
   _shaderCountDC = 0;
   _status = false;   
   
-  //texSize = vec3d(256.,256.,256.);
-  
   // initialize 3d texture (size x, size y, size z, channels, px values)
   // --> channel 1 -> DC of the ray
   // --> chanell 2 -> ray counter
@@ -147,12 +145,10 @@ bool checkFramebufferStatus() {
 }
 
 void DepthComplexity2D::process(
-  const Segment &from, const Segment &to, const std::vector<Segment> &segments, const std::vector<Triangle> &tris) {
+  const Segment &from, const Segment &to, const std::vector<Segment> &segments) {
   _from = from;
   _to = to;
   _segments = &segments;
-  _meshTris = &tris;
-  
     
   if (!_status){
 	  std::cerr << "[ERROR] Check FBO or SHADERS." << std::endl;
@@ -433,48 +429,48 @@ void DepthComplexity2D::clipPolygon(const Point &p1, const Point &p2, const Poin
 
 bool shrinkSegment(Point &p1, Point &p2, vec3d d1, vec3d d2){
 			
-double pixelSize = 1.0/512.0;
-double step = 0.5*pixelSize*sqrt(2);
+    double pixelSize = 1.0/512.0;
+    double step = 0.5*pixelSize*sqrt(2);
 
-bool compare_x = p1.x < p2.x;
-bool compare_y = p1.y < p2.y;
+    bool compare_x = p1.x < p2.x;
+    bool compare_y = p1.y < p2.y;
 
-Point cp1, cp2;
+    Point cp1, cp2;
 
-// Shrink segment
-cp1 = p1 + step*d1;
-cp2 = p2 + step*d2;
+    // Shrink segment
+    cp1 = p1 + step*d1;
+    cp2 = p2 + step*d2;
 
-// Check if it is not crossed
-if ( (compare_x != (cp1.x < cp2.x)) || (compare_y != (cp1.y < cp2.y)) ){
-                Point middle = (p1 + p2)*0.5;
-                p1 = p2 = middle;
-                return false;
-}
+    // Check if it is not crossed
+    if ( (compare_x != (cp1.x < cp2.x)) || (compare_y != (cp1.y < cp2.y)) ){
+        Point middle = (p1 + p2)*0.5;
+        p1 = p2 = middle;
+        return false;
+    }
 
-p1 = cp1;
-p2 = cp2;
+    p1 = cp1;
+    p2 = cp2;
 
-return true;
+    return true;
 }
 
 Segment DepthComplexity2D::computeDualSegmentFromPoint(const Point &p) {
-  Segment seg;
-  double t1, t2;
+    Segment seg;
+    double t1, t2;
 
-  // Finding left point
-  bool r1 = lineIntersection3D(_to, Segment(_from.a, p), &t1, &t2);
-		//printf("Point P(%f, %f) - at1 = %f\n",p.x, p.y, t1);
-  assert(r1);
-  seg.a = Point(0.0, t1);
+    // Finding left point
+    bool r1 = lineIntersection3D(_to, Segment(_from.a, p), &t1, &t2);
+                //printf("Point P(%f, %f) - at1 = %f\n",p.x, p.y, t1);
+    assert(r1);
+    seg.a = Point(0.0, t1);
 
-  // Finding right point
-  bool r2 = lineIntersection3D(_to, Segment(_from.b, p), &t1, &t2);
-  //printf("Point P(%f, %f) - at1 = %f\n",p.x, p.y, t1);
-  assert(r2);
-  seg.b = Point(1.0, t1);
+    // Finding right point
+    bool r2 = lineIntersection3D(_to, Segment(_from.b, p), &t1, &t2);
+    //printf("Point P(%f, %f) - at1 = %f\n",p.x, p.y, t1);
+    assert(r2);
+    seg.b = Point(1.0, t1);
 
-  return seg;
+    return seg;
 }
 
 void drawPolygon(const std::vector<Point> &polygon){
@@ -513,9 +509,6 @@ unsigned int DepthComplexity2D::findMaxValueInCounterBuffer() {
   glGetTexImage( GL_TEXTURE_2D, 0 , GL_RED_INTEGER, GL_UNSIGNED_INT, colorBuffer ); 
   glBindTexture(GL_TEXTURE_2D, 0);
   
-  //for (int i=0; i<pixelNumber; i++)
-  //  std::cout << colorBuffer[i]-1 << std::endl;
-  
   return *(std::max_element(colorBuffer, colorBuffer + pixelNumber));
 }
 
@@ -553,15 +546,17 @@ void DepthComplexity2D::findMaximumRaysAndHistogram() {
           seg.sortPoints();
           
           updateTexture3D(seg, val);
-
-          if (val == _maximum){
+          
+          
+          /* 
+          //if (val == _maximum){
             //if (_maximumRays.size() < 1)
               //_maximumRays.insert(seg);
           }
           else if (val >= _threshold){			   
             //if (_goodRays[val].size() < 1)
 		//_goodRays[val].insert(seg);            
-          }
+          }*/
         }
      }
   }
@@ -573,13 +568,13 @@ void DepthComplexity2D::findMaximumRaysAndHistogram() {
 
 const unsigned int colorTableSize=6;
 
-float CTable[colorTableSize][3] = {
-    {0.0, 0.0, 1.0}, // Azul
-    {1.0, 0.0, 1.0}, // Roxo/Rosa
-    {1.0, 0.5, 0.0}, // Laranja
-    {1.0, 1.0, 0.0}, // Amarelo
-    {0.0, 1.0, 0.0}, // Verde
-    {0.0, 1.0, 0.0} // Verde
+float CTable[colorTableSize][4] = {
+    {0.0, 0.0, 1.0, 0.01}, // Azul
+    {1.0, 0.0, 1.0, 1.0}, // Roxo/Rosa
+    {1.0, 0.5, 0.0, 1.0}, // Laranja
+    {1.0, 1.0, 0.0, 1.0}, // Amarelo
+    {0.0, 1.0, 0.0, 1.0}, // Verde
+    {0.0, 1.0, 0.0, 1.0} // Verde
 };
 
 /* Linear Interpolation between color1 and color2*/
@@ -590,11 +585,13 @@ void lerpColor(float* newColor, const float *color1, const float *color2, float 
         newColor[0] = color1[0];
         newColor[1] = color1[1];
         newColor[2] = color1[2];
+        newColor[3] = color1[3];
     }
     else if (value>=1){
         newColor[0] = color2[0];
         newColor[1] = color2[1];
         newColor[2] = color2[2];
+        newColor[3] = color2[3];
         //std::cout << value << " - [" << color2[0] << " " << color2[1] << " " << color2[2] << "]\n";
         //memcpy(newColor, color2, sizeof(float*)*3);
     }
@@ -602,6 +599,7 @@ void lerpColor(float* newColor, const float *color1, const float *color2, float 
         newColor[0] = (1.0-value)*color1[0] + (value)*color2[0];
         newColor[1] = (1.0-value)*color1[1] + (value)*color2[1];
         newColor[2] = (1.0-value)*color1[2] + (value)*color2[2];
+        newColor[3] = (1.0-value)*color1[3] + (value)*color2[3];
     }
 }
 
@@ -635,17 +633,11 @@ void DepthComplexity2D::drawPixel(vec3d pos, unsigned int color){
     if ( (pos.x > 0 && pos.x < w) &&
          (pos.y > 0 && pos.y < h) &&
          (pos.z > 0 && pos.z < d)){
-        //std::cout << _tex3D(pos.x, pos.y, pos.z, 0) << std::endl;
-         _tex3D(pos.x, pos.y, pos.z, 0) += color; //1.0f;
-         _tex3D(pos.x, pos.y, pos.z, 1) += 1; //1.0f;
-         //_tex3D(pos.x, pos.y, pos.z, 2) += color; //1.0f;
-    }//point3d(x, y, z)
-//    int x, y, z;
-//{
 
-    /* output the point as you see fit */
+         _tex3D(pos.x, pos.y, pos.z, 0) += color;
+         _tex3D(pos.x, pos.y, pos.z, 1) += 1; // ray counter
 
-//}
+    }
 
 }
 
@@ -807,8 +799,7 @@ GLuint createTexture3D(int width, int height, int depth, const float* texels){
     glTexParameterf(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameterf(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_REPEAT);
     
-    glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB, width, height, depth, 0, GL_RGB, GL_FLOAT, texels);
-    //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_FLOAT, pixels);
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA, width, height, depth, 0, GL_RGBA, GL_FLOAT, texels);
     
     glBindTexture(GL_TEXTURE_3D, 0);
     
@@ -832,32 +823,30 @@ void DepthComplexity2D::cimg2Tex(unsigned int maxDC){
     unsigned int d = _tex3D.depth();
     
     unsigned int texsize = w*h*d;    
-    float *interlaced_data = new float[3*texsize];
+    float *interlaced_data = new float[4*texsize];
     
-    for (unsigned int i=0; i<texsize*3; i++){
+    for (unsigned int i=0; i<texsize*4; i++){
         interlaced_data[i] = 0.0f;
     }
     
     for (unsigned int r=0; r<d; r++){
         for (unsigned int s=0; s<w; s++){
             for (unsigned int t=0; t<h; t++){
-                float pxColor[3] = {0.0, 0.0, 0.0};
+                float pxColor[4] = {0.0, 0.0, 0.0, 0.0};
                 float Nray = _tex3D(s,t,r,1);
-                if (Nray==0) Nray=1;
-                //float normalizedDC = _tex3D(s,t,r,0)/((float));
-                //std::cout << normalizedDC << std::endl;
+                Nray = (Nray==0)? 1 : Nray; //if (Nray==0) Nray=1;
                 findColor(pxColor, (_tex3D(s,t,r,0)/Nray)/(float)maxDC);
                 
-                interlaced_data[TEXEL3(s,t,r,3)+0] = pxColor[0];
-                interlaced_data[TEXEL3(s,t,r,3)+1] = pxColor[1];
-                interlaced_data[TEXEL3(s,t,r,3)+2] = pxColor[2];
+                interlaced_data[TEXEL3(s,t,r,4)+0] = pxColor[0];
+                interlaced_data[TEXEL3(s,t,r,4)+1] = pxColor[1];
+                interlaced_data[TEXEL3(s,t,r,4)+2] = pxColor[2];
+                interlaced_data[TEXEL3(s,t,r,4)+3] = pxColor[3];
             }
         }
     }
 
-    std::cout << "creating 3D texture." << std::endl;
+    std::cout << "Creating 3D texture..." << std::endl;
     _texID = createTexture3D(_tex3D.width(), _tex3D.height(), _tex3D.depth(), interlaced_data);
-    std::cout << "texture succefull" << std::endl;
     delete[] interlaced_data;
 
 }
@@ -872,7 +861,7 @@ void DepthComplexity2D::updateTexture3D(Segment line, unsigned int dc){
     vec3d t = _aabb.min;
     vec3d size = _aabb.extents(); 
     
-    //std::cout << pos << std::endl;
+    
     vec3d start = line.a;
     start -= t;
     start.x = floor( (start.x/size.x)*(w-1) + 0.5);
@@ -886,8 +875,7 @@ void DepthComplexity2D::updateTexture3D(Segment line, unsigned int dc){
     end.z = floor( (end.z/size.z)*(d-1) + 0.5);
     
     // rasterize ray into a 3D texture, using dc as color
-    bresenham_line_3D(start, end, dc);
-  
+    bresenham_line_3D(start, end, dc);  
 }
 
 
