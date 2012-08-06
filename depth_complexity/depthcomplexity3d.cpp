@@ -270,20 +270,42 @@ void drawRays()
         }
       glEnd();
     }
-    
+#ifndef USE_RANDOM_DC3D
     if(showPlanes) {
-      const std::vector<Segment>& bounds = dc3d->usedPlanes();
+      const std::vector<Plane>& bounds = dc3d->usedPlanes();
       // draw planes
-      glLineWidth(1);
+      glEnable(GL_BLEND);
+      glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+
+      glColor4f(0.5f, 0.45f, 0.3f, 0.34f);
+      for (unsigned int i=0; i<bounds.size(); i++){
+          const Plane &p = bounds[i];
+          glBegin(GL_QUADS);
+                glVertex3f(p.a.x, p.a.y, p.a.z);
+                glVertex3f(p.b.x, p.b.y, p.b.z);
+                glVertex3f(p.c.x, p.c.y, p.c.z);
+                glVertex3f(p.d.x, p.d.y, p.d.z);
+          glEnd();
+      }
+      glDisable(GL_BLEND);
+
+      glLineWidth(4);
+      const std::vector<Segment>& bounds2 = dc3d->usedPlanes2();
+      
       glBegin(GL_LINES);
-      glColor3f(0.5, 0.5, 0.5);
-        for (unsigned i=0; i<bounds.size(); ++i) {
-          const Segment &r = bounds[i];
-          glVertex3f(r.a.x, r.a.y, r.a.z);
+      //glColor3f(0.5, 0.5, 0.5);
+        for (unsigned i=0; i<bounds2.size(); ++i) {
+          const Segment &r = bounds2[i];
+          if (i%2 == 0 )  glColor4f(0.2, 0.9, 0.1, 1.0);
+          else            glColor4f(0.9, 0.3, 0.1, 1.0);
+         
+          glVertex3f(r.a.x, r.a.y, r.a.z);         
           glVertex3f(r.b.x, r.b.y, r.b.z);
         }
       glEnd();
-    }
+
+     }
+#endif
 
     const std::vector<Point>& points = dc3d->intersectionPoints();
     glEnable(GL_LIGHTING);
@@ -309,7 +331,7 @@ void setupCamera(Camera& camera)
     glLoadIdentity();
     //cam.applyTransform();
     camera.update();	
-		camera.lookAt();
+    camera.lookAt();
 }
 
 void recompute(void *data)
@@ -580,6 +602,8 @@ int doInteractive(TriMesh& mesh)
                 
 
     CImg<float> teste = color_scale(80,500); 
+    const char *t = "fuck";
+    //teste.draw_text(0, 0, "teste",NULL, 0, 1.0f, 12u);
     main_disp.display(teste);
 
     while( glfwGetWindowParam(GLFW_OPENED) && !glfwGetKey(GLFW_KEY_ESC) ) {

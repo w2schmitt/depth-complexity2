@@ -539,8 +539,8 @@ void DepthComplexity2D::findMaximumRaysAndHistogram() {
         if ((_computeMaximumRays && val == _maximum) || (_computeGoodRays && val >= _threshold)) {
 		  
           Segment seg;
-          double t1 = c/(double)_fboWidth;
-          double t2 = r/(double)_fboHeight;
+          double t1 = ((double)c+0.5)/(double)_fboWidth;
+          double t2 = ((double)r+0.5)/(double)_fboHeight;
           seg.a = _from.a*(1.f-t1) + _from.b*t1;
           seg.b = _to.a*(1.f-t2) + _to.b*t2;          
           seg.sortPoints();
@@ -548,15 +548,16 @@ void DepthComplexity2D::findMaximumRaysAndHistogram() {
           updateTexture3D(seg, val);
           
           
-          /* 
-          //if (val == _maximum){
+          /*
+          if (val == _maximum){
             //if (_maximumRays.size() < 1)
-              //_maximumRays.insert(seg);
+              _maximumRays.insert(seg);
           }
           else if (val >= _threshold){			   
             //if (_goodRays[val].size() < 1)
-		//_goodRays[val].insert(seg);            
-          }*/
+		_goodRays[val].insert(seg);            
+          }
+          */
         }
      }
   }
@@ -569,7 +570,7 @@ void DepthComplexity2D::findMaximumRaysAndHistogram() {
 const unsigned int colorTableSize=6;
 
 float CTable[colorTableSize][4] = {
-    {0.0, 0.0, 1.0, 0.01}, // Azul
+    {0.0, 0.0, 1.0, 0.85}, // Azul
     {1.0, 0.0, 1.0, 1.0}, // Roxo/Rosa
     {1.0, 0.5, 0.0, 1.0}, // Laranja
     {1.0, 1.0, 0.0, 1.0}, // Amarelo
@@ -837,9 +838,9 @@ void DepthComplexity2D::cimg2Tex(unsigned int maxDC){
                 Nray = (Nray==0)? 1 : Nray; //if (Nray==0) Nray=1;
                 findColor(pxColor, (_tex3D(s,t,r,0)/Nray)/(float)maxDC);
                 
-                interlaced_data[TEXEL3(s,t,r,4)+0] = pxColor[0];
-                interlaced_data[TEXEL3(s,t,r,4)+1] = pxColor[1];
-                interlaced_data[TEXEL3(s,t,r,4)+2] = pxColor[2];
+                interlaced_data[TEXEL3(t,s,r,4)+0] = pxColor[0];
+                interlaced_data[TEXEL3(t,s,r,4)+1] = pxColor[1];
+                interlaced_data[TEXEL3(t,s,r,4)+2] = pxColor[2];
                 interlaced_data[TEXEL3(s,t,r,4)+3] = pxColor[3];
             }
         }
@@ -859,8 +860,7 @@ void DepthComplexity2D::updateTexture3D(Segment line, unsigned int dc){
     unsigned int d = _tex3D.depth();
     
     vec3d t = _aabb.min;
-    vec3d size = _aabb.extents(); 
-    
+    vec3d size = _aabb.extents();     
     
     vec3d start = line.a;
     start -= t;

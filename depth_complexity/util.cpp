@@ -170,7 +170,7 @@ loadOBJMesh(std::istream& in) {
     }
   }
   
-        // update Bounding Box 
+        // e Bounding Box 
     mesh.aabb.merge(mesh.aabb.min - mesh.aabb.extents()/10.0);
     mesh.aabb.merge(mesh.aabb.max + mesh.aabb.extents()/10.0);    
   

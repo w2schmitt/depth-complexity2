@@ -106,8 +106,6 @@ void DepthComplexity3D::writeRays(std::ostream& out, const std::set<Segment,clas
 void DepthComplexity3D::process(const TriMesh &mesh) {
   this->_mesh = &mesh;
   BoundingBox aabb = _mesh->aabb;
-  //aabb.merge(aabb.min - aabb.extents()/10.0);
-  //aabb.merge(aabb.max + aabb.extents()/10.0);
 
   _usedPlanes.clear();
   _goodRays.clear();
@@ -118,18 +116,18 @@ void DepthComplexity3D::process(const TriMesh &mesh) {
   
   //std::cout << _fboWidth << " " << _fboHeight << " " << _discretSteps << " " << _maximum << " " << _threshold << std::endl;
   
-  //processMeshAlign(AlignZ, AlignX);
-  //processMeshAlign(AlignZ, AlignY);
-  //processMeshAlign(AlignY, AlignZ);
-  
   processMeshAlign(AlignZ, AlignX);
   processMeshAlign(AlignZ, AlignY);
-
-  processMeshAlign(AlignY, AlignX);
   processMeshAlign(AlignY, AlignZ);
+  
+  //processMeshAlign(AlignZ, AlignX);
+  //processMeshAlign(AlignZ, AlignY);
 
-  processMeshAlign(AlignX, AlignY);
-  processMeshAlign(AlignX, AlignZ);
+  //processMeshAlign(AlignY, AlignX);
+  //processMeshAlign(AlignY, AlignZ);
+
+  //processMeshAlign(AlignX, AlignY);
+  //processMeshAlign(AlignX, AlignZ);
   
   _dc2d->cimg2Tex(_maximum);
   
@@ -222,19 +220,28 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
       saa.b = sb.b;
       sbb.a = sa.b;
       sbb.b = sb.a;
-      _usedPlanes.push_back(sa);
-      _usedPlanes.push_back(saa);
-      _usedPlanes.push_back(sb);
-      _usedPlanes.push_back(sbb);
+      
+      _usedPlanes2.push_back(sa);
+      //_usedPlanes2.push_back(saa);
+      _usedPlanes2.push_back(sb);
+      //_usedPlanes2.push_back(sbb);
 
       vec4d plane = makePlane(sa.a, sa.b, sb.a);
       std::vector<Segment> segments;
       
       processMeshPlane(plane, &segments);
 
+      Plane p;
+      p.a = sa.a; p.b = sa.b;
+      p.c = sb.b; p.d = sb.a;
+     
+      _usedPlanes.push_back(p);
+      
       // make the segments extra-long
       vec3d dsa = sa.b - sa.a; sa.a -= dsa; sa.b += dsa;
       vec3d dsb = sb.b - sb.a; sb.a -= dsb; sb.b += dsb;     
+      
+       
       
       _dc2d->setMeshBoundingbox(aabb);
       _dc2d->process(sa, sb, segments);
