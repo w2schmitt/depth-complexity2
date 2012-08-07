@@ -474,7 +474,7 @@ CImg<float> color_scale(int w, int h){
                   (ColorTable[i][1] - ColorTable[i-1][1])/parts,
                   (ColorTable[i][2] - ColorTable[i-1][2])/parts);
         float color[3] = {ColorTable[i-1][0], ColorTable[i-1][1], ColorTable[i-1][2]};
-        for (int y=(i-1)*parts; y<(i*parts); y++){            
+        for (int y=(i-1)*parts+1; y<(i*parts); y++){            
             for (int x=0; x<w; x++){
                 teste(x,y,0,0) = color[0];
                 teste(x,y,0,1) = color[1];
@@ -602,8 +602,9 @@ int doInteractive(TriMesh& mesh)
                 
 
     CImg<float> teste = color_scale(80,500); 
-    const char *t = "fuck";
-    //teste.draw_text(0, 0, "teste",NULL, 0, 1.0f, 12u);
+    const char *t = "10";
+    float color[3] = {0.0, 0.0, 0.0};
+    //teste.draw_text(40, 0, t, color, 0, 1, 36u);
     main_disp.display(teste);
 
     while( glfwGetWindowParam(GLFW_OPENED) && !glfwGetKey(GLFW_KEY_ESC) ) {
