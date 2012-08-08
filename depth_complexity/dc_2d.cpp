@@ -13,9 +13,9 @@ void drawPolygon(const std::vector<Point> &polygon);
 
 bool shrinkSegment(Point &p1, Point &p2, vec3d d1, vec3d d2);
 
-#define WIDTH 256
-#define HEIGHT 256
-#define DEPTH 256
+#define WIDTH  512
+#define HEIGHT 512
+#define DEPTH  512
 //#define BYTES_PER_TEXEL 3
 
 DepthComplexity2D::DepthComplexity2D(const int fboWidth, const int fboHeight){

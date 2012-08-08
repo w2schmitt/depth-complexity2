@@ -114,13 +114,17 @@ loadOBJMesh(std::istream& in) {
       boost::tokenizer<boost::char_separator<char> > tok(content, sep);
       int a=-2, b=-2, c=-2, na=-2, nb=-2, nc=-2;
       for (boost::tokenizer<boost::char_separator<char> >::iterator i=tok.begin(); i!=tok.end(); ++i) {
-        int v=-1, n=-1;
+        int v=-1, n=-1;        
         if (sscanf(i->c_str(), "%d//%d", &v, &n) != 2
             &&
             sscanf(i->c_str(), "%d/%*d/%d", &v, &n) != 2
             &&
-            sscanf(i->c_str(), "%d/%*d", &v) != 1 )
-          throw std::string("Error reading face at line " + line);
+            sscanf(i->c_str(), "%d/%*d", &v) != 1
+            &&
+            sscanf(i->c_str(), "%d", &v) != 1 ){
+            continue;
+            //throw std::string("Error reading face at line " + line);
+        }
 
         if (a == -2) {
           // first vertex
