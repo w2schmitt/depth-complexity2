@@ -21,6 +21,7 @@ typedef vec3d Point;
 struct Segment {
   Segment(const Point &a_, const Point &b_):a(a_), b(b_), active(true) {}
   Segment() : active(true){}
+  Segment(bool f) : active(f){}
   void sortPoints()
   {
 	   double sega[3]={this->a.x, this->a.y, this->a.z};

@@ -42,6 +42,10 @@ DepthComplexity3D::~DepthComplexity3D() {
 GLuint DepthComplexity3D::getTextureID(unsigned int i) { return _dc2d->getTextureID(i);}
 
 CImg<float> *DepthComplexity3D::getBufferImg(unsigned int i)  { return _dc2d->getBufferImg(i);}
+
+unsigned int DepthComplexity3D::getPixelDC(unsigned int layer, int x, int y){
+    return _dc2d->getPixelDC(layer, x, y);
+}
   
 
 void DepthComplexity3D::setComputeHistogram(bool computeHistogram) {
@@ -127,6 +131,14 @@ void DepthComplexity3D::process(const TriMesh &mesh) {
   
   _dc2d->counterBufferToColor(_maximum);
 
+}
+
+Segment DepthComplexity3D::getFromSeg(unsigned int layer){
+    return (_fromAr[layer]);
+}
+
+Segment DepthComplexity3D::getToSeg(unsigned int layer){
+    return (_toAr[layer]);
 }
 
 void DepthComplexity3D::computeBoundingBox(){
@@ -253,6 +265,10 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
       vec3d dsa = sa.b - sa.a; sa.a -= dsa; sa.b += dsa;
       vec3d dsb = sb.b - sb.a; sb.a -= dsb; sb.b += dsb;     
 
+      //Segment s1 = {sa,sb};
+      _fromAr.push_back(sa);
+      _toAr.push_back(sb);
+      
       //std::cout << "t3este " << segments.size() <<  std::endl;
       _dc2d->process(sa, sb, segments);
       

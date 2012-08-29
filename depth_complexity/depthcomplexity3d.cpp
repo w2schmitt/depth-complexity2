@@ -54,6 +54,8 @@ bool filterDCChanged = true;
 bool colorTable=false;
 bool colorTableChanged = true;
 
+Segment curRay(false);
+
 cimg_library::CImgDisplay dualDisplay;
 
 #ifdef USE_RANDOM_DC3D
@@ -269,6 +271,17 @@ void drawRays()
         }
       glEnd();
     }
+    
+    
+    if (curRay.active){
+            glLineWidth(2);
+            glBegin(GL_LINES);
+            glVertex3f(curRay.a.x, curRay.a.y, curRay.a.z);
+            glVertex3f(curRay.b.x, curRay.b.y, curRay.b.z);
+            glEnd();
+    }
+     
+    
 #ifndef USE_RANDOM_DC3D
     glEnable(GL_BLEND);
     //glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
@@ -403,8 +416,23 @@ void drawDualSpace(){
     
     CImg<float> *curImg = dc3d->getBufferImg(planeSelected);
     if (curImg){
+        int y = dualDisplay.mouse_y();
+        int x = dualDisplay.mouse_x();
+        int dc = -1;
+                if (x>=0 && y>=0)
+                    dc = dc3d->getPixelDC(planeSelected,x,y)-1;
+        
+        if (dualDisplay.button() && dualDisplay.mouse_y()>=0 && dualDisplay.mouse_x()>=0){
+            double t1 = (x+0.5)/(double)512.0;
+            double t2 = (y+0.5)/(double)512.0;
+            curRay.a = dc3d->getFromSeg(planeSelected).a*(1.f-t1) + dc3d->getFromSeg(planeSelected).b*t1;
+            curRay.b = dc3d->getToSeg(planeSelected).a*(1.f-t2) + dc3d->getToSeg(planeSelected).b*t2;    
+          
+            curRay.active = true;
+        }
+        //else
         dualDisplay.display(*curImg);
-        dualDisplay.set_title("Dual Space to Color");
+        dualDisplay.set_title("Dual Space to Color (%d,%d) - DC = %d", x,y, dc);
     }
    
 #endif

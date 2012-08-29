@@ -65,8 +65,12 @@ public:
   
   GLuint                           getTextureID(unsigned int i) { return _texIDs[i]; }
   CImg<float>                      *getBufferImg(unsigned int i) { 
-      if (i >= _colorGfx.size()) return NULL;
-      return &_colorGfx[i];}
+                                                                    if (i >= _colorGfx.size()) return NULL;
+                                                                    return &_colorGfx[i];}
+  unsigned int                     getPixelDC(unsigned int layer, int x, int y){
+                                                    if (layer >= _dualSpace.size()) return 0;
+                                                    return _dualSpace[layer][y*_fboWidth+x];
+                                                }
   //unsigned int*                    getDuallSpace(unsigned i) { 
   //    if (i >= _dualSpace.size()) return NULL;
   //    return _dualSpace[i];}
@@ -96,13 +100,13 @@ private:
 private:
   //buffers 
   GLuint                                		_cboTexId;
-  GLuint										                _counterBuffId;
+  GLuint						_counterBuffId;
   GLuint                                		_fboId;
   GLuint                                		_rboId;
   
   // Shaders
-  GLuint 										                _shaderclearBuffer;
-  GLuint                                    _shaderCountDC;
+  GLuint 						_shaderclearBuffer;
+  GLuint                                                _shaderCountDC;
 
   // State
   bool                                  		_status;

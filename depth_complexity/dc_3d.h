@@ -49,6 +49,9 @@ public:
   //unsigned int* getDualSpace(unsigned i);
   GLuint getTextureID(unsigned int i);
   CImg<float> *getBufferImg(unsigned int i);
+  unsigned int getPixelDC(unsigned int layer, int x, int y);
+  Segment getFromSeg(unsigned int layer);
+  Segment getToSeg(unsigned int layer);
   
   void writeHistogram(std::ostream& out);
   void writeRays(std::ostream& out);
@@ -58,6 +61,7 @@ private:
   enum PlaneAlign{
       AlignZ, AlignY, AlignX
   };
+  
 
   void processMeshAlign(const PlaneAlign &palign, const PlaneAlign &salign);
   void processMeshPlane(const vec4d& plane, std::vector<Segment> *segments);
@@ -92,6 +96,8 @@ private:
   std::vector<Point> _intersectionPoints;
   std::map<int, std::list<unsigned int>* > _intersectionTriList;
   BoundingBox _aabb;
+  std::vector<Segment> _fromAr;
+  std::vector<Segment> _toAr;
   //  std::vector<Segment> _intersectionSegments;
 
   friend int doInteractive(TriMesh& mesh);
