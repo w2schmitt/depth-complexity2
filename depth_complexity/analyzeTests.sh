@@ -19,9 +19,9 @@ TMP="temporary_genPlot_toRem.gp"
 
 for t in 0 1
 do
-				SUM = 10
+
 	#You can set the size of the plot in this line (inches):
-	   echo "awk '{ $SUM += 10} END { print SUM }'"
+
     echo "set terminal pdf size 10, 6" > ${TMP}
     echo "set output \"${DIR}_${TERM[t]}.pdf\"" >> ${TMP}
     if [ $# -eq 2 ]; then
@@ -57,9 +57,7 @@ do
         	fi
         done
         COR="#${VALUE[1]}${VALUE[2]}${VALUE[3]}"
-        #echo "${COR}"
-								
-        echo -n "${DIV_CAR} \"Tests/${DIR}/${TYPE[t]}/$d/hist.txt\" using (\$1):(sum(\$2)) every ::1 w lines lt rgb \"${COR}\" title '$d'" >> ${TMP}
+        echo -n "${DIV_CAR} \"Tests/${DIR}/${TYPE[t]}/$d/hist.txt\" using (\$1):(\$2) every ::1 w lines lt rgb \"${COR}\" title '$d'" >> ${TMP}
 	    DIV_CAR=","
     done
     echo "" >> ${TMP}
