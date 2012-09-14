@@ -274,7 +274,8 @@ void drawRays()
     
     
     if (curRay.active){
-            glLineWidth(2);
+            glLineWidth(3);
+            glColor3f(1.0, 0, 0);
             glBegin(GL_LINES);
             glVertex3f(curRay.a.x, curRay.a.y, curRay.a.z);
             glVertex3f(curRay.b.x, curRay.b.y, curRay.b.z);

@@ -20,7 +20,9 @@ TMP="temporary_genPlot_toRem.gp"
 for t in 0 1
 do
 	#You can set the size of the plot in this line (inches):
-    echo "set terminal pdf size 10, 6" > ${TMP}
+				#casa=$(awk 'BEGIN{FS=" ";sum=0} {sum+=$2;} END {print sum;}' hist.txt) 
+    #echo $casa 
+			 echo "set terminal pdf size 10, 6" > ${TMP}
     echo "set output \"${DIR}_${TERM[t]}.pdf\"" >> ${TMP}
     if [ $# -eq 2 ]; then
         echo "set key off" >> ${TMP}

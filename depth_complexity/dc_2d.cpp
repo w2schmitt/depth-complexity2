@@ -174,8 +174,8 @@ void DepthComplexity2D::findDepthComplexity2D() {
     glPushMatrix();
     glLoadIdentity();
     gluOrtho2D(0.0, 1.0, 0.0, 1.0);
-        Segment                               		_from;
-  Segment                               		_to;
+    Segment     _from;
+    Segment     _to;
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glLoadIdentity();
@@ -271,8 +271,8 @@ void DepthComplexity2D::clipPolygon(const Point &p1, const Point &p2, const Poin
       
       else {
         np1 = Point(t1, 1.0f); 
-								np2 = Point(0.0f, 1.0f);
-								np4 = p4;
+	np2 = Point(0.0f, 1.0f);
+	np4 = p4;
         
         bool ok1 = shrinkSegment( np4, np2, vec3d::up()  , vec3d::zero() ),
              ok2 = shrinkSegment( np1, np2, vec3d::left(), vec3d::zero() );
@@ -663,13 +663,52 @@ void findColor(float *pxColor, float normalizedDC){
     lerpColor(pxColor, CTable[firstColor], CTable[secondColor], intensity);
 }
 
+CImg<float> h(3,3,1,1);
+
 
 void DepthComplexity2D::counterBufferToColor(unsigned int dcMax){
     
+//    h(3,3,1,1);
+    h.atXY(0,0) = 1;
+    h.atXY(1,0) = 1;
+    h.atXY(2,0) = 0;
+//    h.atXY(3,0) = 4;
+//    h.atXY(4,0) = 1;
+//
+    h.atXY(0,1) = 1;
+    h.atXY(1,1) = 0;
+    h.atXY(2,1) = 0;
+//    h.atXY(3,1) = 16;
+//    h.atXY(4,1) = 4;
+//
+    h.atXY(0,2) = 0;
+    h.atXY(1,2) = 0;
+    h.atXY(2,2) = 0;
+    
+    h/=3;
+//    h.atXY(3,2) = 26;
+//    h.atXY(4,2) = 7;
+//    
+//    h.atXY(0,3) = 4;
+//    h.atXY(1,3) = 16;
+//    h.atXY(2,3) = 26;
+//    h.atXY(3,3) = 16;
+//    h.atXY(4,3) = 4;
+//    
+//    h.atXY(0,4) = 1;
+//    h.atXY(1,4) = 4;
+//    h.atXY(2,4) = 7;
+//    h.atXY(3,4) = 4;
+//    h.atXY(4,4) = 1;
+       
+    //h/=273;
+    h.print("img");
     unsigned int *dsImg = NULL;
     unsigned int cbSize = _fboWidth*_fboHeight;
     unsigned int channels = 3;  // color img channels
     float pxColor[3] = {0.0, 0.0, 0.0};
+    
+    
     
     assert(dcMax>0);
     //std::cout << _dualSpace[0][0] << std::endl;
@@ -696,6 +735,7 @@ void DepthComplexity2D::counterBufferToColor(unsigned int dcMax){
         _texIDs.push_back( createTexture(_fboWidth, _fboHeight, imgInterleavedColor) );
         
         CImg<float> out(imgColor, _fboWidth, _fboHeight, 1, channels);
+        out.convolve(h);
         _colorGfx.push_back(out);
         
         delete[] imgInterleavedColor;
