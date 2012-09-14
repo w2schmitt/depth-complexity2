@@ -2,6 +2,7 @@
 #define DC_3D_RANDOM_H
 
 #include "util.h"
+#include "Texture3D.h"
 
 #include <map>
 #include <set>
@@ -9,6 +10,8 @@
 #include <fstream>
 #include <sstream>
 #include <cstring>
+
+#include <GL/glew.h>
 
 // Usage:
 //   TriMesh mesh = ...;
@@ -23,7 +26,7 @@
 class RDepthComplexity3D {
 public:
   RDepthComplexity3D(int fboWidth, int fboHeight, int discretSteps);
-	RDepthComplexity3D(int fboWidith, int fboHeight, int discretSteps, const char* filenameRays);
+  RDepthComplexity3D(int fboWidith, int fboHeight, int discretSteps, const char* filenameRays);
 
   virtual ~RDepthComplexity3D();
 
@@ -44,6 +47,10 @@ public:
   void writeHistogram(std::ostream& out);
   void writeRays(std::ostream& out);
   void writeRays(std::ostream& out, const std::set<Segment,classcomp> & _rays);
+  
+  //texture3D
+  Texture3D _texture3D;
+  GLuint getTextureID();
 
 private:
   enum PlaneAlign{

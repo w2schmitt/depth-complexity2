@@ -29,6 +29,7 @@ RDepthComplexity3D::RDepthComplexity3D(int fboWidth, int fboHeight, int discretS
 	_computeGoodRays(false),
 	_computeRaysFromFile(false){
 	
+        _texture3D.CreateTexture3D(64,64,64,2,0);
 	_goodRays.resize(1);
 }
 
@@ -57,6 +58,9 @@ RDepthComplexity3D::RDepthComplexity3D(int fboWidth, int fboHeight, int discretS
 		}
 	}
 }
+
+GLuint RDepthComplexity3D::getTextureID() { return _texture3D.texture3DId();}
+
 
 bool RDepthComplexity3D::readRaysFromFile(std::istream& in){
 	std::string line;
@@ -165,14 +169,15 @@ void RDepthComplexity3D::process(const TriMesh &mesh) {
 	tri.c = Point(-1,3,5);
 	assert(intersectTriangleSegment(seg,tri,&p));
 	
-	//std::cout << _fboWidth << " " << _fboHeight << " " << _discretSteps << " " << _maximum << " " << _threshold << std::endl;
-
 	BoundingBox aabb = _mesh->aabb;
 	aabb.merge(aabb.min - aabb.extents()/10.0);
 	aabb.merge(aabb.max + aabb.extents()/10.0);
 	
 	double r = aabb.extents().length()/2.0;
 	vec3d center = aabb.center();
+        
+        _texture3D.setTex3dSize(aabb.extents());
+        _texture3D.setMeshBoundingbox(aabb);
 	
 	srand(time(0));
 
@@ -200,9 +205,13 @@ void RDepthComplexity3D::process(const TriMesh &mesh) {
 		}
 
 		std::vector<Point> points;
+               
 		processMeshSegment(randomSegment, &points);
-
 		unsigned tempMaximum = points.size();
+                points.clear();
+                //if (tempMaximum!=0)
+                _texture3D.updateTexture3D(randomSegment, tempMaximum);
+                 
 		if (tempMaximum >= _maximum) {
 			if (tempMaximum > _maximum) {
 				_maximumRays.clear();
@@ -224,6 +233,9 @@ void RDepthComplexity3D::process(const TriMesh &mesh) {
 		if(_computeGoodRays && points.size() >= _threshold)
 			_goodRays[points.size()].insert(randomSegment);
 	}
+        
+        //std::cout << "teste" << _maximum << std::endl;
+        _texture3D.cimg2Tex(_maximum);
 }
 
 void RDepthComplexity3D::processMeshSegment(const Segment& segment, std::vector<Point> *points) {

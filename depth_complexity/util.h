@@ -49,6 +49,11 @@ bool operator<(const Segment &s1, const Segment &s2);
   int intersect;
 };*/
 
+struct Ray{
+    Segment s;
+    unsigned int dc;
+};
+
 
 struct BoundingBox {
     vec3d min, max;
@@ -104,6 +109,20 @@ struct classcomp {
 		return std::lexicographical_compare(seg1,seg1+6,seg2,seg2+6);	
 	}
 };
+
+struct classcomp2 {
+	bool operator() (const Ray& lhs, const Ray& rhs) const
+	{
+		float seg1[6] = { lhs.s.a.x, lhs.s.a.y, lhs.s.a.z, 
+						  lhs.s.b.x, lhs.s.b.y, lhs.s.b.z};
+						  
+		float seg2[6] = { rhs.s.a.x, rhs.s.a.y, rhs.s.a.z, 
+						  rhs.s.b.x, rhs.s.b.y, rhs.s.b.z}; 
+		
+		return std::lexicographical_compare(seg1,seg1+6,seg2,seg2+6);	
+	}
+};
+
 
 TriMesh loadOFFMesh(std::istream& in);
 TriMesh loadOBJMesh(std::istream& in);

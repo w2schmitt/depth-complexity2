@@ -20,7 +20,7 @@ T mix(const T& a, const T& b, double x) {
   return p + q;
 }
 
-GLuint DepthComplexity3D::getTextureID() { return _dc2d->texture3DId();}
+GLuint DepthComplexity3D::getTextureID() { return _texture3D.texture3DId();}
 
 DepthComplexity3D::DepthComplexity3D(int fboWidth, int fboHeight, int discretSteps):
   _fboWidth(fboWidth),
@@ -30,15 +30,18 @@ DepthComplexity3D::DepthComplexity3D(int fboWidth, int fboHeight, int discretSte
   _computeHistogram(false),
   _computeMaximumRays(false),
   _computeGoodRays(false) {
-
+    
+   
+  _texture3D.CreateTexture3D(64u,64u,64u,2u,0u);
+  
   _goodRays.resize(1);
   _dc2d = new DepthComplexity2D(_fboWidth, _fboHeight);
 }
 
 DepthComplexity3D::~DepthComplexity3D() {
-	std::map<int, std::list<unsigned int>* >::iterator it = _intersectionTriList.begin();
-	for (; it != _intersectionTriList.end(); ++it)
-		delete it->second;
+	//std::map<int, std::list<unsigned int>* >::iterator it = _intersectionTriList.begin();
+	//for (; it != _intersectionTriList.end(); ++it)
+	//	delete it->second;
 }
 
 void DepthComplexity3D::setComputeHistogram(bool computeHistogram) {
@@ -103,6 +106,7 @@ void DepthComplexity3D::writeRays(std::ostream& out, const std::set<Segment,clas
     out << "2 " << i << " " << (i+1) << "\n";
 }
 
+
 void DepthComplexity3D::process(const TriMesh &mesh) {
   this->_mesh = &mesh;
   BoundingBox aabb = _mesh->aabb;
@@ -111,8 +115,9 @@ void DepthComplexity3D::process(const TriMesh &mesh) {
   _goodRays.clear();
   _goodRays.resize(1);
   _dc2d->setThreshold(_threshold);
-  _dc2d->setTex3dSize(aabb.extents());
+  _texture3D.setTex3dSize(aabb.extents());
   _maximum = 0;
+  //std::cout << "testando1" << std::endl;
   
   //std::cout << _fboWidth << " " << _fboHeight << " " << _discretSteps << " " << _maximum << " " << _threshold << std::endl;
   
@@ -129,7 +134,9 @@ void DepthComplexity3D::process(const TriMesh &mesh) {
   //processMeshAlign(AlignX, AlignY);
   //processMeshAlign(AlignX, AlignZ);
   
-  _dc2d->cimg2Tex(_maximum);
+  //std::cout << _maximum << std::endl;
+  _texture3D.cimg2Tex(_maximum);
+  //std::cout << "terminou" << std::endl;
   
 }
 
@@ -243,7 +250,7 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
       
        
       
-      _dc2d->setMeshBoundingbox(aabb);
+      _texture3D.setMeshBoundingbox(aabb);
       _dc2d->process(sa, sb, segments);
       
       unsigned int tempMaximum = _dc2d->maximum();
@@ -259,6 +266,11 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
         }
         _maximum = tempMaximum;
         std::set<Segment, classcomp> tempRays = _dc2d->maximumRays();
+        std::set<Ray, classcomp2> tr = _dc2d->allRays();
+        
+        for (std::set<Ray, classcomp2>::iterator i = tr.begin(); i!=tr.end(); i++){
+                _texture3D.updateTexture3D(i->s,i->dc);
+        }
        // std::set<Segment, classcomp>::iterator it = tempRays.begin();
 
         // Testing rays and saving intersectin points.
@@ -285,12 +297,12 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
       for(unsigned i=0; i< tempHist.size(); ++i)
         _histogram[i] += tempHist[i];
       
-#ifdef DEBUG_SAVE_HIST_EACH_FRAME
+//#ifdef DEBUG_SAVE_HIST_EACH_FRAME
       char filename[100]; sprintf(filename,"hist/hist%d%d.txt",az,bz);
       std::ofstream fhist ( filename );
       writeHistogram(fhist);
       fhist.close();
-#endif
+//#endif
       if(_computeGoodRays) {
         //std::cout << "size of goodRays: " << _goodRays.size() << " and _threshold = " << _threshold << std::endl;
         for(unsigned int i = _threshold ; i <= tempMaximum ; ++i) {
@@ -299,6 +311,7 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
           _goodRays[i].insert(tempRays.begin(), tempRays.end());
         }
       }
+      
     }
   }
 }
@@ -320,6 +333,7 @@ void DepthComplexity3D::processMeshPlane(const vec4d& plane, std::vector<Segment
 
 // INPUT: A Line Segment to test for a collision with the 
 // INPUT: The index that represents this segment in the hashmap
+/*
 void DepthComplexity3D::processMeshSegment(const Segment& segment, int rayIndex) {
 	//assert(points);
   std::list<unsigned int> *triIndex = new std::list<unsigned int>;
@@ -331,6 +345,7 @@ void DepthComplexity3D::processMeshSegment(const Segment& segment, int rayIndex)
 	}
 	_intersectionTriList.insert ( std::pair<int,std::list<unsigned int>* >(rayIndex,triIndex) );;
 }
+ */
 
 bool DepthComplexity3D::intersectTriangleSegment(const Segment& segment, const Triangle& tri, Point *pnt) {
 	assert(pnt);

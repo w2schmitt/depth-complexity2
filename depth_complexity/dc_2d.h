@@ -14,6 +14,7 @@
 
 #include "util.h"
 #include "ShaderMgr.h"
+//#include "Texture3D.h"
 //#include "clip_polygon.h"
 #include <map>
 #include <set>
@@ -25,6 +26,8 @@
 #include "CImg.h"
 using namespace cimg_library;
 
+
+  
 // Compute the Depth complexity in 2D
 //
 // Usage:
@@ -45,8 +48,8 @@ public:
   void setComputeMaximumRays(bool computeMaximumRays) {this->_computeMaximumRays = computeMaximumRays; }
   void setComputeGoodRays(bool computeGoodRays) {this->_computeGoodRays = computeGoodRays; }
   void setThreshold(unsigned threshold) {this->_threshold = threshold; }
-  void setTex3dSize(vec3d size) { this->_texSize = size;}
-  void setMeshBoundingbox(BoundingBox aabb) { this->_aabb = aabb; }
+
+  //void setMeshBoundingbox(BoundingBox aabb) { this->_aabb = aabb; }
   
   void cimg2Tex(unsigned int maxDC);
   // Compute the maximum depth complexity
@@ -62,9 +65,10 @@ public:
   std::vector<unsigned long long>  histogram()               { return _histogram; }
   std::set<Segment,classcomp>      maximumRays()             { return _maximumRays; }
   std::set<Segment,classcomp>      goodRays(unsigned i)      { return _goodRays[i]; }
+  std::set<Ray,classcomp2>     allRays()                 { return _rays; }
   std::vector<Point>               points()                  { return _points; }
   GLuint                           textureId() const         { return _cboTexId; }
-  GLuint                           texture3DId() const       { return _texID; }
+  
 private:
   // Create framebuffer objects
   bool initFBO();
@@ -89,7 +93,7 @@ private:
   void findMaximumRaysAndHistogram();
   
   // functions for 3d texturing
-  void updateTexture3D(Segment line, unsigned int dc);
+  //void updateTexture3D(Segment line, unsigned int dc);
   //void computeIntersectionPoints(std::list<Point> &pts);
   
 private:
@@ -125,10 +129,9 @@ private:
   std::vector< std::set<Segment,classcomp> >            _goodRays;
   std::vector<Point>                                    _points;
   
-  CImg<float>                                           _tex3D;
-  vec3d                                                 _texSize;
-  BoundingBox                                           _aabb;
-  GLuint                                                _texID;
+  std::set<Ray, classcomp2>                             _rays;
+  
+  
   
 };
 

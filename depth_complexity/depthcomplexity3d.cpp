@@ -170,9 +170,8 @@ void drawMesh(const TriMesh& mesh, const vec3f& dir)
 {
     
     glEnable(GL_TEXTURE_3D);
-#ifndef USE_RANDOM_DC3D
+    //std::cout << dc3d->getTextureID() << std::endl;
     glBindTexture(GL_TEXTURE_3D, dc3d->getTextureID());
-#endif
     glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
     glEnable(GL_COLOR_MATERIAL);
     
