@@ -36,6 +36,10 @@ loadOFFMesh(std::istream& in){
     t.a = vertices.at(a);
     t.b = vertices.at(b);
     t.c = vertices.at(c);
+    
+    t.ca = vec4d(0.057f, 0.25f, 0.42f, 1.f);
+    t.cb = vec4d(0.057f, 0.25f, 0.42f, 1.f);
+    t.cc = vec4d(0.057f, 0.25f, 0.42f, 1.f);
     mesh.faces.push_back(t);
 
     for (int j=3; j<sz; ++j) {
@@ -146,9 +150,9 @@ loadOBJMesh(std::istream& in) {
           t.nb = normals.at(nb-1);
           t.nc = normals.at(nc-1);
 
-          t.ca = vec4d(0.057f, 0.25f, 0.42f, 0.35f);
-          t.cb = vec4d(0.057f, 0.25f, 0.42f, 0.35f);
-          t.cc = vec4d(0.057f, 0.25f, 0.42f, 0.35f);
+          t.ca = vec4d(0.057f, 0.25f, 0.42f, 1.f);
+          t.cb = vec4d(0.057f, 0.25f, 0.42f, 1.f);
+          t.cc = vec4d(0.057f, 0.25f, 0.42f, 1.f);
 
           mesh.faces.push_back(t);			
 

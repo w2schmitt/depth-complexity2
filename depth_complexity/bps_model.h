@@ -8,27 +8,29 @@
 #ifndef BPS_MODEL_H
 #define	BPS_MODEL_H
 
-#include "flags.h"
 #include "util.h"
-#ifdef USE_RANDOM_DC3D
-#include "dc_3d_random.h"
-#else
-#include "dc_3d.h"
-#endif
+
 #include "timer.h"
 #include "camera/float3.h"
-#include "camera/Camera.h"
 
 #include <iostream>
 #include <fstream>
 #include <sstream>
 #include <cstring>
-/*#include <GL/glew.h>
-#ifdef __APPLE__
-#include <GLUT/glut.h>
-#else
-#include <GL/glut.h>
-#endif*/
+
+#ifndef BPS_OFFLINE
+# include "dc_3d_random.h"
+# include "dc_3d.h"
+# include "camera/Camera.h"
+# include <GL/glew.h>
+# include <GL/glfw.h>
+# include <AntTweakBar.h>
+# ifdef __APPLE__
+#   include <GLUT/glut.h>
+# else
+#   include <GL/glut.h>
+# endif
+#endif
 //defines usados por getPlaneTriangleIntersection para comunicar quais pontos do
 //triangulo estão abaixo ou acima do plano
 #define ALL_BELLOW_PLANE      -4

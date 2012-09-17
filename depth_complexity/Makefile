@@ -28,12 +28,13 @@ LDFLAGS = $(ATB_LDFLAGS) $(GLEW_LDFLAGS) -Wall -Werror
 .PHONY: all clean
 
 all : test main_joao depthcomplexity2d depthcomplexity3d_offline depthcomplexity3d \
-	  randomdepthcomplexity3d randomdepthcomplexity3d_offline mergeOFF
+	  randomdepthcomplexity3d randomdepthcomplexity3d_offline mergeOFF bps_view\
+	  bps_offline
 
 clean:
 	rm -f *.o camera/*.o depthcomplexity3d depthcomplexity2d main_joao \
 	test_intersection test depthcomplexity3d_offline randomdepthcomplexity3d \
-	randomdepthcomplexity3d_offline mergeOFF
+	randomdepthcomplexity3d_offline mergeOFF bps_view bps_offline
 	
 hard_clean: clean
 	rm -f *.off hist*.txt *.svg toPlot.txt
@@ -63,7 +64,10 @@ randomdepthcomplexity3d_offline: dc_3d_random.o flags.o util.o timer.o flags.o
 	g++ -g -o $@ depthcomplexity3d_offline.cpp -D "USE_RANDOM_DC3D" $^ \
 	$(LDFLAGS) $(GLFW_LDFLAGS) $(GLUT_LDFLAGS) $(GLEW_CFLAGS)
 
-bps_model: bps_model.o flags.o util.o timer.o
+bps_view: bps_view.o dc_3d.o dc_3d_random.o randombps_model.o flags.o util.o timer.o 
+	g++ -g -o $@ $^ $(LDFLAGS) $(GLFW_LDFLAGS) $(GLUT_LDFLAGS) $(GLEW_CFLAGS)
+
+bps_offline: bps_offline.o bps_model.o flags.o util.o timer.o
 	g++ -g -o $@ $^ -Wall -Werror
 
 mergeOFF: mergeOFF.o

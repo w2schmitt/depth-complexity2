@@ -28,7 +28,7 @@ DepthComplexity3D::DepthComplexity3D(int fboWidth, int fboHeight, int discretSte
   _computeHistogram(false),
   _computeMaximumRays(false),
   _computeGoodRays(false) {
-
+  
   _goodRays.resize(1);
   _dc2d = new DepthComplexity2D(_fboWidth, _fboHeight);
 }

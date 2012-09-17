@@ -75,7 +75,7 @@ bool DepthComplexity2D::initFBO() {
   glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, _rboId);
   glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT, _fboWidth, _fboHeight);
   glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, 0);
-
+  
   // Create framebuffer object -----------------------------------------
   glGenFramebuffersEXT(1, &_fboId);
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _fboId);

@@ -4,7 +4,11 @@
  *
  * Created on 16 de Maio de 2012, 14:39
  */
+#include <stdexcept>
+
 #include "bps_model.h"
+
+#ifdef BPS_OFFLINE
 /*
  * 
  */
@@ -124,14 +128,6 @@ std::vector<Segment> loadOFFLines(std::istream& in){
   return lines;
 }
 
-std::string getExtension(const std::string& filename) {
-  std::string::size_type dotpos = filename.rfind(".");
-  if (dotpos != std::string::npos)
-    return filename.substr(dotpos+1);
-  return "";
-}
-
-
 void writeOFFModel(const TriMesh& model, std::ostream& out){
   out << "OFF" << std::endl;
   int m_size= model.faces.size();
@@ -151,6 +147,297 @@ void writeOFFModel(const TriMesh& model, std::ostream& out){
   }
 }
 
+#else
+bool input_model = true; // se um modelo foi fornecido na chamada do programa
+bool normal_dc3d = false; // depth complexity normal ou random
+TriMesh originalMesh; // modelo fornecido para ser particionado
+
+DepthComplexity3D *dc3d = NULL;
+RDepthComplexity3D *dc3dr = NULL;
+//________________________________________________ CAMERA
+Camera camera;
+//______________ MOUSE
+int mDx = 0;
+int mDy = 0;
+bool mclicked;
+int mbutton;
+int mwhell;
+//______________ WINDOW
+static int winWidth, winHeight;
+
+//subroutines
+int doInteractive();
+void draw();
+void GLFWCALL mouse_motion(int x, int y);
+void GLFWCALL mouse_click(int button, int action);
+void GLFWCALL mouse_whell(int pos);
+void GLFWCALL WindowSizeCB(int width, int height);
+
+int main(int argc, char** argv) {
+  if (argc == 1) {
+        std::cerr << "[ERROR] Missing Input File!" << std::endl;
+        return 1;
+  }
+ 
+  glutInit(&argc,argv);
+    
+  try {
+    std::ifstream file(argv[1]);
+    std::string ext = getExtension(argv[1]);
+
+    TriMesh mesh;
+
+      if (ext == "off" || ext == "OFF")
+          mesh = loadOFFMesh(file);
+      else if (ext == "obj" || ext == "OBJ")
+          mesh = loadOBJMesh(file);
+      else
+          throw "Unknown file type!";
+
+      if (doInteractive(mesh))
+          return 1;
+
+  }
+  catch (const char* msg)  {
+      std::cerr << "Failed: " << msg << std::endl;
+      return 1;
+  }
+  catch (std::string msg) {
+      std::cerr << "Failed: " << msg << std::endl;
+  }    
+}
+
+//_______________________________________________________________ Called when a mouse button is pressed or released
+void GLFWCALL mouse_click(int button, int action){
+	if(TwEventMouseButtonGLFW(button,action))
+		return;
+	glfwGetMousePos(&mDx,&mDy);
+	mclicked=action==GLFW_PRESS;
+	mbutton=button;
+}
+
+//_______________________________________________________________ Called when the mouse whell move
+void GLFWCALL mouse_whell(int pos){
+  if(TwEventMouseWheelGLFW(pos)){
+    mwhell = pos;
+    return;
+  }
+  float Dw = pos - mwhell;
+  float delta = 0.1;
+  
+  camera.MoveFrente(Dw * delta);
+  
+  mwhell = pos;
+}
+//_______________________________________________________________ Called when a mouse move and a button is pressed
+void GLFWCALL mouse_motion(int x, int y){
+	if(TwEventMousePosGLFW(x,y))
+		return;
+	if( mclicked ){
+		float dx = mDx - x;
+		float dy = mDy - y;
+		float d = sqrt(dx*dx + dy*dy);
+		float delta = 0.001;
+
+		switch(mbutton){
+			case GLFW_MOUSE_BUTTON_LEFT : //look
+				//if( glutGetModifiers() == GLUT_ACTIVE_SHIFT){
+					camera.lookLefRigObj(dx * delta );
+					camera.lookUpDownObj(dy * delta);
+				/*} else { 
+					camera.lookLefRig(dx * delta);
+					camera.lookUpDown(dy * delta);
+				}*/
+			break;
+			case GLFW_MOUSE_BUTTON_RIGHT:			
+				//if( glutGetModifiers() != GLUT_ACTIVE_SHIFT){
+					camera.MoveLado(dx*delta);
+					camera.MoveCimaBaixo(-dy*delta);
+				/*}else{
+					camera.MoveLadoObj(dx*delta);
+					camera.MoveCimaBaixoObj(-dy*delta);				
+				//}*/
+			break;
+			case GLFW_MOUSE_BUTTON_MIDDLE: 
+				if( dy>0) d = -d;
+				//if( glutGetModifiers() != GLUT_ACTIVE_SHIFT)
+					camera.MoveFrente(d*delta);
+				/*else
+					camera.MoveFrenteObj(d*delta);*/
+			break;
+		}//end switch
+		mDx = x;	mDy = y;
+	}//end if
+}
+
+// Callback function called by GLFW when window size changes
+void GLFWCALL WindowSizeCB(int width, int height)
+{
+    winWidth = width;
+    winHeight = height;
+    // Send the new window size to AntTweakBar
+    TwWindowSize(width, height);
+}
+
+int doInteractive(TriMesh& mesh)
+{
+   
+    glfwInit();
+    std::atexit(glfwTerminate);
+    
+    GLFWvidmode mode;
+    
+    glfwGetDesktopMode(&mode);
+    if( !glfwOpenWindow(1024, 768, mode.RedBits, mode.GreenBits, mode.BlueBits, 
+                        0, 16, 0, GLFW_WINDOW) )
+    {
+        std::cerr << "failed to open window!" << std::endl;
+        return -1;
+    }
+    
+    // initialize GLEW
+    GLenum glewStatus = glewInit();
+    if (glewStatus != GLEW_OK){
+      std::cerr << "[ERROR] "<< glewGetErrorString(glewStatus)<<std::endl;
+    }
+    
+    // Print OPENGL, SHADER and GLEW versions
+    std::clog << "----- << VERSION >>\n";
+    std::clog << "OPENGL VERSION: " << glGetString(GL_VERSION) << std::endl;
+    std::clog << "SHADER VERSION: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
+    std::cerr << "GLEW VERSION: "<<glewGetString(GLEW_VERSION)<<std::endl;
+    std::clog << "---------------- \n";
+ 
+
+    glfwEnable(GLFW_MOUSE_CURSOR);
+    glfwEnable(GLFW_KEY_REPEAT);
+    glfwSetWindowTitle("Plane-Triangle intersection test");
+
+	
+    // Initialize AntTweakBar
+    if( !TwInit(TW_OPENGL, NULL) )
+    {
+        std::cerr << "AntTweakBar initialization failed: " << TwGetLastError() << std::endl;
+        return 1;
+    }
+    // Set GLFW event callbacks
+    glfwSetWindowSizeCallback(WindowSizeCB);
+
+    glfwSetMouseButtonCallback(mouse_click);
+    glfwSetMousePosCallback(mouse_motion);
+    glfwSetMouseWheelCallback(mouse_whell);
+    glfwSetKeyCallback((GLFWkeyfun)TwEventKeyGLFW);
+    glfwSetCharCallback((GLFWcharfun)TwEventCharGLFW);
+
+    mwhell = glfwGetMouseWheel();
+    
+    TwBar *bar = TwNewBar("Controls");
+    TwDefine(" GLOBAL ");
+	
+    vec3f top(0.25, 0.25, .5), mid(0.75, 0.75, .85), bot(1, 1, 1);
+
+    vec4f objdiff(0.55, 0.5, 0, 0.5), objspec(.75, .75, .75, .2);
+    GLfloat shine = 50;
+    bool showObj = true;
+    
+    #ifdef USE_RANDOM_DC3D
+		if (strcmp(filenameRays, "")!=0)
+			dc3d = new RDepthComplexity3D(512, 512, 2, filenameRays);
+		else
+			dc3d = new RDepthComplexity3D(512, 512, 2);
+    #else
+    dc3d = new DepthComplexity3D(512, 512, 2);
+    cout << "dc3d loaded" << endl;
+    #endif
+    dc3d->setComputeMaximumRays(true);
+    dc3d->setComputeHistogram(true);
+    dc3d->setThreshold(10);
+    
+    TwAddVarRW(bar, "showPlanes", TW_TYPE_BOOLCPP, &showPlanes, " label='show discret. planes' ");
+
+    TwAddVarRW(bar, "goodRays", TW_TYPE_BOOLCPP, &doGoodRays, " label='show more rays' ");
+
+    TwAddVarRW(bar, "goodThreshold", TW_TYPE_UINT32, &dc3d->_threshold, " label='intersection threshold' min=0 ");
+
+    TwAddVarRW(bar, "discretSteps", TW_TYPE_UINT32, &dc3d->_discretSteps, " label='discret. steps' min=2 ");
+
+    TwAddButton(bar, "recompute", recompute, (void*)&mesh, " label='Recompute' ");
+
+    TwAddVarRO(bar, "maxDepth", TW_TYPE_UINT32, &dc3d->_maximum, " label='Max. depth' ");
+
+    TwAddVarRW(bar, "top", TW_TYPE_COLOR3F, &top.x, " group='background' ");
+    TwAddVarRW(bar, "mid", TW_TYPE_COLOR3F, &mid.x, " group='background' ");
+    TwAddVarRW(bar, "bot", TW_TYPE_COLOR3F, &bot.x, " group='background' ");
+
+    TwAddVarRW(bar, "Diff", TW_TYPE_COLOR4F, &objdiff.x, " group='Object' ");
+    TwAddVarRW(bar, "Spec", TW_TYPE_COLOR4F, &objspec.x, " group='Object' ");
+    TwAddVarRW(bar, "Shin", TW_TYPE_FLOAT, &shine, " group='Object' min='1' max='128' ");
+    TwAddVarRW(bar, "Show", TW_TYPE_BOOLCPP, &showObj, " group='Object' ");
+		
+    TwAddVarRW(bar, "radius", TW_TYPE_FLOAT, &radius, "  group='Sphere' label='radius' min=0.0 step=0.001 max=2.0");
+    TwAddVarRW(bar, "Color", TW_TYPE_COLOR4F, &sphereColor.x, " group='Sphere' ");
+    //TwAddVarRW(bar, "Show Ray", TW_TYPE_UINT32, &showRayIndex, " group='rays' min=0");
+
+    glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHT0);
+    glDisable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
+
+    //Camera cam;
+    BoundingBox aabb = mesh.aabb;
+    
+    camera.bbox(float3(aabb.min.x,aabb.min.y,aabb.min.z), float3(aabb.max.x,aabb.max.y,aabb.max.z), true );
+		camera.front();
+    
+    //cam.target = aabb.center();
+    //cam.up = vec3f(0, 1, 0);
+    //cam.pos = cam.target + vec3f(0, 0, 2*aabb.extents().z);
+
+    while( glfwGetWindowParam(GLFW_OPENED) && !glfwGetKey(GLFW_KEY_ESC) ) {
+        glClear( GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT );
+
+        drawBackground(top, mid, bot);
+
+        setupCamera(camera);
+        
+        /*camera.update();	
+	    camera.lookAt();*/
+
+        /*GLfloat lpos[4] = { camera.GetEye().x, camera.GetEye().y, camera.GetEye().z, 1 };
+        glLightfv(GL_LIGHT0, GL_POSITION, lpos);*/
+       
+
+        //drawPlaneIntersection(intersectionVectors);
+        drawRays();
+
+
+				
+        //glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, &objdiff.x);
+        glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, &objspec.x);
+        glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, shine);
+        if (showObj) drawMesh(mesh, vec3f(camera.GetDir().x,camera.GetDir().y,camera.GetDir().z));
+
+        Triangle *t = &mesh.faces[550];
+        t->ca = vec4d(1.0f, 0.0f, 0.0f, 0.7f);
+        t->cb = vec4d(1.0f, 0.0f, 0.0f, 0.7f);
+        t->cc = vec4d(1.0f, 0.0f, 0.0f, 0.7f);
+
+        t = &mesh.faces[608];
+        t->ca = vec4d(1.0f, 0.0f, 0.0f, 0.7f);
+        t->cb = vec4d(1.0f, 0.0f, 0.0f, 0.7f);
+        t->cc = vec4d(1.0f, 0.0f, 0.0f, 0.7f);
+
+        // Draw tweak bars
+        TwDraw();
+
+        // Present frame buffer
+        glfwSwapBuffers();
+    }
+
+    return 0;
+}
+#endif
+
 void mergeTriangleBB ( BoundingBox& aabb, const Triangle t){
   aabb.merge(t.a);
   aabb.merge(t.b);
@@ -159,11 +446,11 @@ void mergeTriangleBB ( BoundingBox& aabb, const Triangle t){
 
 void  subDivideModel(const vec4d plane, const TriMesh& model, TriMesh& partA,
         TriMesh& partB){
-  vec3d model_center = ((model.aabb.max + model.aabb.min)/2.0);
-  
-  cout << plane << std::endl << model_center << std::endl;
-  cout << dot(plane, vec4d(model_center,1))<<endl;
-  
+  //vec3d model_center = ((model.aabb.max + model.aabb.min)/2.0);
+  /*
+  cout << plane << std::endl << plane.xyz()*(-plane.w) << std::endl;
+  cout << dot(plane, vec4d(plane.xyz()*plane.w,1))<<endl;
+  */
   std::size_t numModelTrian = model.faces.size();
   
   partA.faces.reserve(numModelTrian/2);
@@ -181,19 +468,16 @@ void  subDivideModel(const vec4d plane, const TriMesh& model, TriMesh& partA,
     
     switch(getPlaneTriangleIntersection(plane, *ite)){
       case ALL_ABOVE_PLANE:
-        //cout << "ALL_ABOVE_PLANE" << std::endl;
         divideTriangle = false;
         partOne = &partA;
         t = *ite;
         break;
       case ALL_BELLOW_PLANE:
-        //cout << "ALL_BELLOW_PLANE" << std::endl;
         divideTriangle = false;
         partOne = &partB;
         t = *ite;
         break;
       case ONLY_A_ABOVE_PLANE:
-        //cout << "ONLY_A_ABOVE_PLANE" << std::endl;
         divideTriangle = true;
         partOne = &partA;
         partTwo = &partB;
@@ -204,7 +488,6 @@ void  subDivideModel(const vec4d plane, const TriMesh& model, TriMesh& partA,
         t.nc = ite->nc;
         break;
       case ONLY_A_BELLOW_PLANE:
-        //cout << "ONLY_A_BELLOW_PLANE" << std::endl;
         divideTriangle = true;
         partOne = &partB;
         partTwo = &partA;
@@ -215,7 +498,6 @@ void  subDivideModel(const vec4d plane, const TriMesh& model, TriMesh& partA,
         t.nc = ite->nc;
         break;
       case ONLY_B_ABOVE_PLANE:
-        //cout << "ONLY_B_ABOVE_PLANE" << std::endl;
         divideTriangle = true;
         partOne = &partA;
         partTwo = &partB;
@@ -226,7 +508,6 @@ void  subDivideModel(const vec4d plane, const TriMesh& model, TriMesh& partA,
         t.nc = ite->na;
         break;
       case ONLY_B_BELLOW_PLANE:
-        //cout << "ONLY_B_BELLOW_PLANE" << std::endl;
         divideTriangle = true;
         partOne = &partB;
         partTwo = &partA;
@@ -237,7 +518,6 @@ void  subDivideModel(const vec4d plane, const TriMesh& model, TriMesh& partA,
         t.nc = ite->na;
         break;
       case ONLY_C_ABOVE_PLANE:
-        //cout << "ONLY_C_ABOVE_PLANE" << std::endl;
         divideTriangle = true;
         partOne = &partA;
         partTwo = &partB;
@@ -248,7 +528,6 @@ void  subDivideModel(const vec4d plane, const TriMesh& model, TriMesh& partA,
         t.nc = ite->nb;
         break;
       case ONLY_C_BELLOW_PLANE:
-        //cout << "ONLY_C_BELLOW_PLANE" << std::endl;
         divideTriangle = true;
         partOne = &partB;
         partTwo = &partA;
@@ -262,8 +541,6 @@ void  subDivideModel(const vec4d plane, const TriMesh& model, TriMesh& partA,
         cout << "ERROR: Não foi possivel determinar a possição do triangulo em relação ao plano" << std::endl;
         exit(-1);
     }
-    
-    //divideTriangle = false;
     
     if(!divideTriangle){
       partOne->faces.push_back(t);
@@ -394,6 +671,7 @@ Triangle cutTriangle(const vec4d& plane, const Triangle& triangle){
  */
 vec4d defineCuttingPlane(const vector<Segment> lines, const BoundingBox aabb){
   
+  //cout << "max:" << aabb.max << ";min:" << aabb.min << endl;
   vector<W_Plane> cutting_planes; //planes found that will be interpolated in the end 
 
   vector<int> retest_seg;// positions of elements with needs to be retested
@@ -414,18 +692,34 @@ vec4d defineCuttingPlane(const vector<Segment> lines, const BoundingBox aabb){
     
     //compare two lines to find a plane inside the aabb
     while(not plane_found){
-      Segment seg_btw = 
+      Segment seg_btw;
+              
+      try{
+        seg_btw = 
               findSegmentBetweenLines(lines.at(idx_segs.at(0)), 
                                       lines.at(idx_segs.at(first_idx)));
+      }catch(std::out_of_range){
+        //cout << first_idx << ":" << plane_found << endl;
+        
+        break;
+      }
       if(seg_btw.active){
-           
+        
         if(insideAABB(seg_btw.a, aabb) && insideAABB(seg_btw.b, aabb)){
 
           plane_found = true;
           cut_plane.p0 = (seg_btw.a + seg_btw.b)/2.0;
-
-          vec3d normA = lines.at(idx_segs.at(0)).b - lines.at(idx_segs.at(0)).a,
-                normB = lines.at(idx_segs.at(first_idx)).b - lines.at(idx_segs.at(first_idx)).a;
+          
+          vec3d normA, normB;
+          
+          try{
+            normA = lines.at(idx_segs.at(0)).b - lines.at(idx_segs.at(0)).a;
+            normB = lines.at(idx_segs.at(first_idx)).b - lines.at(idx_segs.at(first_idx)).a;
+          }catch(std::out_of_range){
+            cout << first_idx << ";" << plane_found << endl;
+            
+            break;
+          }
 
           normA = normA/normA.length();
           normB = normB/normB.length();
@@ -440,13 +734,13 @@ vec4d defineCuttingPlane(const vector<Segment> lines, const BoundingBox aabb){
 
         }else{
           retest_seg.push_back(idx_segs.at(first_idx));
-          first_idx++;
         }
-      }else{
-        first_idx++;
       }
+      first_idx++;
+      
     }
     
+    //cout << "pass" <<endl;
     double lines_used = 2;// 
     //start comparing plane with lines to insterpolate a new plane
     for(uint i = first_idx; i < idx_segs.size(); i++){
@@ -485,6 +779,7 @@ vec4d defineCuttingPlane(const vector<Segment> lines, const BoundingBox aabb){
     cut_plane.weight = lines_used;
     cutting_planes.push_back(cut_plane);
     
+    //cout << lines_used<< ":" << retest_seg.size()  << endl;
     //setup the lined who need to be retested
     idx_segs.swap(retest_seg);
     retest_seg.clear();
@@ -492,9 +787,22 @@ vec4d defineCuttingPlane(const vector<Segment> lines, const BoundingBox aabb){
   
   //use another heuristic to find the cutting plane using one line
   if(not idx_segs.empty()){
-    //don't do shit
+    vector<int>::const_iterator ite = idx_segs.begin();
+    vector<int>::const_iterator end = idx_segs.end();
+    
+    for(; ite != end; ite++){
+      W_Plane S_lineP;
+      
+      S_lineP.p0 = (lines.at(*ite).a + lines.at(*ite).b)/2.0;
+      
+      S_lineP.vet_dir = lines.at(*ite).b - lines.at(*ite).a;
+      S_lineP.vet_dir.normalize();
+      
+      S_lineP.weight = 1;
+      
+      cutting_planes.push_back(S_lineP);
+    }
   }
-  
   //interpolate all the planes found
   vec3d ret_p0;
   vec3d ret_normal;
@@ -518,6 +826,7 @@ vec4d defineCuttingPlane(const vector<Segment> lines, const BoundingBox aabb){
     }
   }
   
+  ret_p0 = ret_p0/weights;
   ret_normal.normalize();
   
   return makePlane(ret_normal, ret_p0);
@@ -556,8 +865,9 @@ Segment findSegmentBetweenLines(Segment lineA, Segment lineB){
   
   vec3d pnt0 = lineA.a + u*Ap,
         pnt1 = lineB.a + v*Bp;
-  
-  return Segment(pnt0, pnt1);
+  Segment ret(pnt0, pnt1);
+  ret.active = true;
+  return ret;
   
 }
 

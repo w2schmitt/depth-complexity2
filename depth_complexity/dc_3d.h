@@ -31,6 +31,8 @@ public:
   void setComputeMaximumRays(bool computeMaximumRays);
   void setComputeGoodRays(bool computeGoodRays);
   void setThreshold(unsigned threshold);
+  void setDiscretSteps(int discretSteps){ this->_discretSteps = discretSteps;}
+  void setMaximum(unsigned int maximum){ this->_maximum = maximum; }
 
   unsigned int maximum() const { return _maximum; }
   const std::set<Segment, classcomp> &maximumRays() const { return _maximumRays; }

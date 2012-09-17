@@ -172,8 +172,8 @@ void drawMesh(const TriMesh& mesh, const vec3f& dir)
     std::sort(sorted_faces.begin(), sorted_faces.end(), ByDist(dir));
     //std::clog << "done" << std::endl;
     
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    //glEnable(GL_BLEND);
+    //glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     //glDisable(GL_DEPTH_TEST);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_LIGHTING);
@@ -497,6 +497,7 @@ int doInteractive(TriMesh& mesh)
 			dc3d = new RDepthComplexity3D(512, 512, 2);
     #else
     dc3d = new DepthComplexity3D(512, 512, 2);
+    cout << "dc3d loaded" << endl;
     #endif
     dc3d->setComputeMaximumRays(true);
     dc3d->setComputeHistogram(true);

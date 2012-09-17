@@ -21,10 +21,12 @@
       </df>
       <df name="shader">
       </df>
-      <df name="Tests">
-      </df>
       <in>ShaderMgr.cpp</in>
       <in>ShaderMgr.h</in>
+      <in>bps_model.cpp</in>
+      <in>bps_model.h</in>
+      <in>bps_offline.cpp</in>
+      <in>bps_view.cpp</in>
       <in>camera.cpp</in>
       <in>camera.hpp</in>
       <in>dc_2d.cpp</in>
@@ -79,6 +81,13 @@
       <item path="camera.hpp" ex="true" tool="3" flavor="0">
       </item>
       <item path="camera/opengl.cpp" ex="true" tool="1" flavor="0">
+      </item>
+      <item path="depthcomplexity3d_offline.cpp" ex="false" tool="1" flavor="0">
+        <ccTool>
+          <preprocessorList>
+            <Elem>USE_RANDOM_DC3D</Elem>
+          </preprocessorList>
+        </ccTool>
       </item>
       <folder path="depth_complexity/camera">
         <ccTool>
