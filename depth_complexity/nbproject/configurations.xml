@@ -21,6 +21,8 @@
       </df>
       <df name="shader">
       </df>
+      <in>MeshTree.cpp</in>
+      <in>MeshTree.h</in>
       <in>ShaderMgr.cpp</in>
       <in>ShaderMgr.h</in>
       <in>bps_model.cpp</in>
@@ -43,6 +45,7 @@
       <in>main.cpp</in>
       <in>main_joao.cpp</in>
       <in>mergeOFF.cpp</in>
+      <in>subDivisionGraph.cpp</in>
       <in>test.cpp</in>
       <in>timer.cpp</in>
       <in>timer.h</in>

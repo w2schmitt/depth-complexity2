@@ -18,19 +18,6 @@
 #include <sstream>
 #include <cstring>
 
-#ifndef BPS_OFFLINE
-# include "dc_3d_random.h"
-# include "dc_3d.h"
-# include "camera/Camera.h"
-# include <GL/glew.h>
-# include <GL/glfw.h>
-# include <AntTweakBar.h>
-# ifdef __APPLE__
-#   include <GLUT/glut.h>
-# else
-#   include <GL/glut.h>
-# endif
-#endif
 //defines usados por getPlaneTriangleIntersection para comunicar quais pontos do
 //triangulo estão abaixo ou acima do plano
 #define ALL_BELLOW_PLANE      -4

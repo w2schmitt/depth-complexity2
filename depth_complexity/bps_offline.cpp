@@ -9,6 +9,10 @@
 #include "bps_model.h"
 #include "flags.h"
 
+std::vector<Segment> loadOFFLines(std::istream& in);
+void writeOFFModel(const TriMesh& model, std::ostream& out);
+std::string getExtension(const std::string& filename);
+
 /*
  * 
  */
@@ -147,3 +151,10 @@ void writeOFFModel(const TriMesh& model, std::ostream& out){
   }
 }
 
+std::string getExtension(const std::string& filename)
+{
+    std::string::size_type dotpos = filename.rfind(".");
+    if (dotpos != std::string::npos)
+        return filename.substr(dotpos+1);
+    return "";
+}

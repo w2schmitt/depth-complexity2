@@ -28,13 +28,13 @@ LDFLAGS = $(ATB_LDFLAGS) $(GLEW_LDFLAGS) -Wall -Werror
 .PHONY: all clean
 
 all : test main_joao depthcomplexity2d depthcomplexity3d_offline depthcomplexity3d \
-	  randomdepthcomplexity3d randomdepthcomplexity3d_offline mergeOFF bps_view\
+	  randomdepthcomplexity3d randomdepthcomplexity3d_offline mergeOFF \
 	  bps_offline
 
 clean:
 	rm -f *.o camera/*.o depthcomplexity3d depthcomplexity2d main_joao \
 	test_intersection test depthcomplexity3d_offline randomdepthcomplexity3d \
-	randomdepthcomplexity3d_offline mergeOFF bps_view bps_offline
+	randomdepthcomplexity3d_offline mergeOFF bps_offline
 	
 hard_clean: clean
 	rm -f *.off hist*.txt *.svg toPlot.txt
@@ -69,7 +69,11 @@ bps_view: bps_view.o dc_3d.o dc_3d_random.o randombps_model.o flags.o util.o tim
 
 bps_offline: bps_offline.o bps_model.o flags.o util.o timer.o
 	g++ -g -o $@ $^ -Wall -Werror
-
+	
+subDivisionGraph: subDivisionGraph.o MeshTree.o bps_model.o dc_3d.o dc_2d.o\
+	          dc_3d_random.o flags.o util.o ShaderMgr.o timer.o 
+	g++ -g -o $@ $^  $(LDFLAGS) $(GLFW_LDFLAGS) $(GLUT_LDFLAGS)
+	
 mergeOFF: mergeOFF.o
 	g++ -g -o $@ $^
 	
