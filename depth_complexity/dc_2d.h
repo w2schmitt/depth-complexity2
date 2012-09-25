@@ -14,20 +14,13 @@
 
 #include "util.h"
 #include "ShaderMgr.h"
-//#include "Texture3D.h"
 //#include "clip_polygon.h"
 #include <map>
 #include <set>
-#include <list>
 #include <cstdlib>
 #include <stdio.h>
 #include <iomanip>
 
-#include "CImg.h"
-using namespace cimg_library;
-
-
-  
 // Compute the Depth complexity in 2D
 //
 // Usage:
@@ -49,9 +42,6 @@ public:
   void setComputeGoodRays(bool computeGoodRays) {this->_computeGoodRays = computeGoodRays; }
   void setThreshold(unsigned threshold) {this->_threshold = threshold; }
 
-  //void setMeshBoundingbox(BoundingBox aabb) { this->_aabb = aabb; }
-  
-  void cimg2Tex(unsigned int maxDC);
   // Compute the maximum depth complexity
   void process(
     const Segment &from, const Segment &to, const std::vector<Segment> &segments);
@@ -65,10 +55,8 @@ public:
   std::vector<unsigned long long>  histogram()               { return _histogram; }
   std::set<Segment,classcomp>      maximumRays()             { return _maximumRays; }
   std::set<Segment,classcomp>      goodRays(unsigned i)      { return _goodRays[i]; }
-  std::set<Ray,classcomp2>     allRays()                 { return _rays; }
-  std::vector<Point>               points()                  { return _points; }
   GLuint                           textureId() const         { return _cboTexId; }
-  
+
 private:
   // Create framebuffer objects
   bool initFBO();
@@ -78,9 +66,6 @@ private:
 		
   void clipPolygon(const Point &p1, const Point &p2, const Point &p3, std::vector<Point> &polygon);
   void clipPolygon(const Point &p1, const Point &p2, const Point &p3, const Point &p4, std::vector<Point> &polygon);
-  
-  void bresenham_line_3D(vec3d &v1, vec3d &v2, unsigned int color);
-  void drawPixel(vec3d pos, unsigned int color);
 		
   // Go through the counter buffer to find the maximum value.
   unsigned int findMaxValueInCounterBuffer();
@@ -92,20 +77,16 @@ private:
 
   void findMaximumRaysAndHistogram();
   
-  // functions for 3d texturing
-  //void updateTexture3D(Segment line, unsigned int dc);
-  //void computeIntersectionPoints(std::list<Point> &pts);
-  
 private:
   //buffers 
   GLuint                                		_cboTexId;
-  GLuint						_counterBuffId;
+  GLuint										                _counterBuffId;
   GLuint                                		_fboId;
   GLuint                                		_rboId;
   
   // Shaders
-  GLuint 						_shaderclearBuffer;
-  GLuint                                                _shaderCountDC;
+  GLuint 										                _shaderclearBuffer;
+  GLuint                                    _shaderCountDC;
 
   // State
   bool                                  		_status;
@@ -119,19 +100,13 @@ private:
   Segment                               		_from;
   Segment                               		_to;
   const std::vector<Segment>*           		_segments;
-  const std::vector<Triangle>*                          _meshTris;
   unsigned                              		_threshold;
 
   // Outputs
-  unsigned int                                          _maximum;
+  unsigned int                              _maximum;
   std::vector<unsigned long long>       		_histogram;
-  std::set<Segment, classcomp>                          _maximumRays;
-  std::vector< std::set<Segment,classcomp> >            _goodRays;
-  std::vector<Point>                                    _points;
-  
-  std::set<Ray, classcomp2>                             _rays;
-  
-  
+  std::set<Segment, classcomp>              _maximumRays;
+  std::vector< std::set<Segment,classcomp> >_goodRays;
   
 };
 

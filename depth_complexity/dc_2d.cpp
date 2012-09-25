@@ -13,8 +13,6 @@ void drawPolygon(const std::vector<Point> &polygon);
 
 bool shrinkSegment(Point &p1, Point &p2, vec3d d1, vec3d d2);
 
-
-
 DepthComplexity2D::DepthComplexity2D(const int fboWidth, const int fboHeight){
   _fboWidth = fboWidth;
   _fboHeight = fboHeight;
@@ -25,13 +23,7 @@ DepthComplexity2D::DepthComplexity2D(const int fboWidth, const int fboHeight){
   _threshold = 0;
   _shaderclearBuffer = 0;
   _shaderCountDC = 0;
-  _status = false;  
-  
-  // initialize 3d texture (size x, size y, size z, channels, px values)
-  // --> channel 1 -> DC of the ray
-  // --> chanell 2 -> ray counter
-  //_texture3D = Texture3D(64,64,64,2,0);
-  
+  _status = false;   
   
   assert(initFBO());
   
@@ -83,7 +75,7 @@ bool DepthComplexity2D::initFBO() {
   glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, _rboId);
   glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT, _fboWidth, _fboHeight);
   glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, 0);
-
+  
   // Create framebuffer object -----------------------------------------
   glGenFramebuffersEXT(1, &_fboId);
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _fboId);
@@ -152,7 +144,7 @@ void DepthComplexity2D::process(
 	  std::cerr << "[ERROR] Check FBO or SHADERS." << std::endl;
 	  return;
   }
-   
+    
   findDepthComplexity2D();
   
   if (_computeHistogram or _computeMaximumRays or _computeGoodRays)
@@ -161,7 +153,7 @@ void DepthComplexity2D::process(
 
 
 void DepthComplexity2D::findDepthComplexity2D() {
-  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _fboId);
+  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _fboId);  
   
   glPushAttrib(GL_VIEWPORT_BIT | GL_ENABLE_BIT);
     glViewport(0, 0, _fboWidth, _fboHeight);
@@ -275,8 +267,8 @@ void DepthComplexity2D::clipPolygon(const Point &p1, const Point &p2, const Poin
       
       else {
         np1 = Point(t1, 1.0f); 
-	np2 = Point(0.0f, 1.0f);
-	np4 = p4;
+								np2 = Point(0.0f, 1.0f);
+								np4 = p4;
         
         bool ok1 = shrinkSegment( np4, np2, vec3d::up()  , vec3d::zero() ),
              ok2 = shrinkSegment( np1, np2, vec3d::left(), vec3d::zero() );
@@ -427,56 +419,56 @@ void DepthComplexity2D::clipPolygon(const Point &p1, const Point &p2, const Poin
 
 bool shrinkSegment(Point &p1, Point &p2, vec3d d1, vec3d d2){
 			
-    double pixelSize = 1.0/512.0;
-    double step = 0.5*pixelSize*sqrt(2);
+		double pixelSize = 1.0/512.0;
+		double step = 0.5*pixelSize*sqrt(2);
 
-    bool compare_x = p1.x < p2.x;
-    bool compare_y = p1.y < p2.y;
+		bool compare_x = p1.x < p2.x;
+		bool compare_y = p1.y < p2.y;
+		
+		Point cp1, cp2;
+		
+		// Shrink segment
+		cp1 = p1 + step*d1;
+		cp2 = p2 + step*d2;
 
-    Point cp1, cp2;
+		// Check if it is not crossed
+		if ( (compare_x != (cp1.x < cp2.x)) || (compare_y != (cp1.y < cp2.y)) ){
+				Point middle = (p1 + p2)*0.5;
+				p1 = p2 = middle;
+				return false;
+		}
 
-    // Shrink segment
-    cp1 = p1 + step*d1;
-    cp2 = p2 + step*d2;
+		p1 = cp1;
+		p2 = cp2;
 
-    // Check if it is not crossed
-    if ( (compare_x != (cp1.x < cp2.x)) || (compare_y != (cp1.y < cp2.y)) ){
-        Point middle = (p1 + p2)*0.5;
-        p1 = p2 = middle;
-        return false;
-    }
-
-    p1 = cp1;
-    p2 = cp2;
-
-    return true;
+		return true;
 }
 
 Segment DepthComplexity2D::computeDualSegmentFromPoint(const Point &p) {
-    Segment seg;
-    double t1, t2;
+  Segment seg;
+  double t1, t2;
 
-    // Finding left point
-    bool r1 = lineIntersection3D(_to, Segment(_from.a, p), &t1, &t2);
-                //printf("Point P(%f, %f) - at1 = %f\n",p.x, p.y, t1);
-    assert(r1);
-    seg.a = Point(0.0, t1);
+  // Finding left point
+  bool r1 = lineIntersection3D(_to, Segment(_from.a, p), &t1, &t2);
+		//printf("Point P(%f, %f) - at1 = %f\n",p.x, p.y, t1);
+  assert(r1);
+  seg.a = Point(0.0, t1);
 
-    // Finding right point
-    bool r2 = lineIntersection3D(_to, Segment(_from.b, p), &t1, &t2);
-    //printf("Point P(%f, %f) - at1 = %f\n",p.x, p.y, t1);
-    assert(r2);
-    seg.b = Point(1.0, t1);
+  // Finding right point
+  bool r2 = lineIntersection3D(_to, Segment(_from.b, p), &t1, &t2);
+  //printf("Point P(%f, %f) - at1 = %f\n",p.x, p.y, t1);
+  assert(r2);
+  seg.b = Point(1.0, t1);
 
-    return seg;
+  return seg;
 }
 
 void drawPolygon(const std::vector<Point> &polygon){
-    glBegin(GL_POLYGON);
-        for (unsigned i=0; i< polygon.size(); ++i){
-                glVertex2f(polygon[i].x,polygon[i].y);
-        }
-    glEnd();
+	glBegin(GL_POLYGON);
+            for (unsigned i=0; i< polygon.size(); ++i){
+                    glVertex2f(polygon[i].x,polygon[i].y);
+            }
+	glEnd();
 }
 
 
@@ -507,6 +499,9 @@ unsigned int DepthComplexity2D::findMaxValueInCounterBuffer() {
   glGetTexImage( GL_TEXTURE_2D, 0 , GL_RED_INTEGER, GL_UNSIGNED_INT, colorBuffer ); 
   glBindTexture(GL_TEXTURE_2D, 0);
   
+  //for (int i=0; i<pixelNumber; i++)
+  //  std::cout << colorBuffer[i]-1 << std::endl;
+  
   return *(std::max_element(colorBuffer, colorBuffer + pixelNumber));
 }
 
@@ -516,8 +511,6 @@ void DepthComplexity2D::findMaximumRaysAndHistogram() {
   _goodRays.resize(_maximum + 1);
   _histogram.clear();
   _histogram.resize(_maximum + 1);
-  
-
 
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _fboId);
     glPushAttrib(GL_VIEWPORT_BIT);
@@ -537,47 +530,26 @@ void DepthComplexity2D::findMaximumRaysAndHistogram() {
         if ((_computeMaximumRays && val == _maximum) || (_computeGoodRays && val >= _threshold)) {
 		  
           Segment seg;
-          double t1 = ((double)c+0.5)/(double)_fboWidth;
-          double t2 = ((double)r+0.5)/(double)_fboHeight;
+          double t1 = c/(double)_fboWidth;
+          double t2 = r/(double)_fboHeight;
           seg.a = _from.a*(1.f-t1) + _from.b*t1;
           seg.b = _to.a*(1.f-t2) + _to.b*t2;          
           seg.sortPoints();
-                    
-          //_maximumRays.insert(seg);
-          Ray s; 
-          s.s  = seg; 
-          s.dc = val;
-          _rays.insert(s);
-          //updateTexture3D(seg, val);
-          
-          
-          /*
+
           if (val == _maximum){
-            //if (_maximumRays.size() < 1)
+            if (_maximumRays.size() < 1)
               _maximumRays.insert(seg);
           }
           else if (val >= _threshold){			   
-            //if (_goodRays[val].size() < 1)
+            if (_goodRays[val].size() < 1)
 		_goodRays[val].insert(seg);            
           }
-          */
         }
      }
   }
   glPopAttrib();
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 }
-
-
-
-
-
-
-//void DepthComplexity2D::computeIntersectionPoints(std::list<Point> &pts){
-    
-    
-    
-//}
 
 float colors[10][3] = {
   {1.0f, 1.0f, 1.0f},

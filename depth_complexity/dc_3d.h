@@ -2,14 +2,11 @@
 #define DC_3D_H
 
 #include "util.h"
-#include "Texture3D.h"
 
 #include <map>
 #include <vector>
 #include <set>
 #include <list>
-#include <GL/glew.h>
-
 
 class DepthComplexity2D;
 
@@ -34,16 +31,16 @@ public:
   void setComputeMaximumRays(bool computeMaximumRays);
   void setComputeGoodRays(bool computeGoodRays);
   void setThreshold(unsigned threshold);
+  void setDiscretSteps(int discretSteps){ this->_discretSteps = discretSteps;}
+  void setMaximum(unsigned int maximum){ this->_maximum = maximum; }
 
   unsigned int maximum() const { return _maximum; }
   const std::set<Segment, classcomp> &maximumRays() const { return _maximumRays; }
   const std::set<Segment, classcomp> &goodRays(int intersect) const { return _goodRays[intersect]; }
-  const std::vector<Plane> &usedPlanes() const { return _usedPlanes; }
-  const std::vector<Segment> &usedPlanes2() const { return _usedPlanes2; }
+  const std::vector<Segment> &usedPlanes() const { return _usedPlanes; }
   const std::vector<Point> &intersectionPoints() const { return _intersectionPoints; }
   unsigned int getThreshold() { return _threshold; }
-  //const std::list<unsigned int> &intersectionTris(int rayIndex){return *_intersectionTriList.find(rayIndex)->second;}
-  GLuint getTextureID();
+  const std::list<unsigned int> &intersectionTris(int rayIndex){return *_intersectionTriList.find(rayIndex)->second;}
 
   void writeHistogram(std::ostream& out);
   void writeRays(std::ostream& out);
@@ -81,13 +78,10 @@ private:
   // Output
   std::set<Segment,classcomp> _maximumRays;
   std::vector< std::set<Segment, classcomp> > _goodRays;
-  std::vector<Plane> _usedPlanes;
-  std::vector<Segment> _usedPlanes2;
+  std::vector<Segment> _usedPlanes;
   std::vector<unsigned long long> _histogram;
   std::vector<Point> _intersectionPoints;
-  
-  Texture3D  _texture3D;
-  //std::map<int, std::list<unsigned int>* > _intersectionTriList;
+  std::map<int, std::list<unsigned int>* > _intersectionTriList;
   //  std::vector<Segment> _intersectionSegments;
 
   friend int doInteractive(TriMesh& mesh);

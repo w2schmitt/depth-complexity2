@@ -6,24 +6,19 @@
 
 #include "vector.hpp"
 
-
-
 struct Triangle {
-    vec3d tca, a, na; 
-    vec4d ca;
-    vec3d tcb, b, nb;
-    vec4d cb;
-    vec3d tcc, c, nc;
-    vec4d cc;
+    vec3d a, na; 
+		vec4d ca;
+		vec3d b, nb;
+		vec4d cb;
+		vec3d c, nc;
+		vec4d cc;
+    
+    //bool intercepted;
+    //Triangle() : intercepted(false){}
 };
-
 
 typedef vec3d Point;
-
-struct Plane {
-    Point a,b,c,d;
-};
-
 
 struct Segment {
   Segment(const Point &a_, const Point &b_):a(a_), b(b_), active(true) {}
@@ -48,11 +43,6 @@ bool operator<(const Segment &s1, const Segment &s2);
   CuttingSegment(const Segment &s, const int intersect_ = 0):intersect(intersect_) {}
   int intersect;
 };*/
-
-struct Ray{
-    Segment s;
-    unsigned int dc;
-};
 
 
 struct BoundingBox {
@@ -110,20 +100,6 @@ struct classcomp {
 	}
 };
 
-struct classcomp2 {
-	bool operator() (const Ray& lhs, const Ray& rhs) const
-	{
-		float seg1[6] = { lhs.s.a.x, lhs.s.a.y, lhs.s.a.z, 
-						  lhs.s.b.x, lhs.s.b.y, lhs.s.b.z};
-						  
-		float seg2[6] = { rhs.s.a.x, rhs.s.a.y, rhs.s.a.z, 
-						  rhs.s.b.x, rhs.s.b.y, rhs.s.b.z}; 
-		
-		return std::lexicographical_compare(seg1,seg1+6,seg2,seg2+6);	
-	}
-};
-
-
 TriMesh loadOFFMesh(std::istream& in);
 TriMesh loadOBJMesh(std::istream& in);
 
@@ -132,10 +108,5 @@ bool lineIntersection3D(const Segment &line1, const Segment &line2, double *t1, 
 bool lineIntersection2D(const Segment &line1, const Segment &line2, double *t1, double *t2);
 bool segmentIntersection2D(const Segment &seg1, const Segment &seg2, double *t1, double *t2);
 bool segmentIntersection3D(const Segment &seg1, const Segment &seg2, double *t1, double *t2);
-
-
-bool intersectPlaneSegment(const vec4d& plane, const vec3d& p0, const vec3d& p1, vec3d *pt);
-vec4d makePlane(const vec3d& a, const vec3d& b, const vec3d& c);
-bool intersectTriangleSegment(const Segment& segment, const Triangle& tri, Point *pnt);
 
 #endif

@@ -6,14 +6,6 @@
 
 const double EPS = 1.0E-5;
 
-template<class T>
-T mix(const T& a, const T& b, double x) {
-  const T& p = (1-x)*a;
-  const T& q = x*b;
-  return p + q;
-}
-
-
 TriMesh
 loadOFFMesh(std::istream& in){
   std::clog << "Loading OFF file" << std::endl;
@@ -44,6 +36,10 @@ loadOFFMesh(std::istream& in){
     t.a = vertices.at(a);
     t.b = vertices.at(b);
     t.c = vertices.at(c);
+    
+    t.ca = vec4d(0.057f, 0.25f, 0.42f, 1.f);
+    t.cb = vec4d(0.057f, 0.25f, 0.42f, 1.f);
+    t.cc = vec4d(0.057f, 0.25f, 0.42f, 1.f);
     mesh.faces.push_back(t);
 
     for (int j=3; j<sz; ++j) {
@@ -96,7 +92,7 @@ loadOBJMesh(std::istream& in) {
         vec3d p;
         if (sscanf(line.c_str()+2, "%lf %lf %lf", &p.x, &p.y, &p.z) != 3)
           throw std::string("Error reading vertex at line " + line);
-	
+								//printf("px = (%f) - py = (%f) - pz = (%f)\n", p.x, p.y, p.z); 
         vertices.push_back(p);
         mesh.aabb.merge(p);
       } else if (line[1] == 'n') {
@@ -114,17 +110,13 @@ loadOBJMesh(std::istream& in) {
       boost::tokenizer<boost::char_separator<char> > tok(content, sep);
       int a=-2, b=-2, c=-2, na=-2, nb=-2, nc=-2;
       for (boost::tokenizer<boost::char_separator<char> >::iterator i=tok.begin(); i!=tok.end(); ++i) {
-        int v=-1, n=-1;        
+        int v=-1, n=-1;
         if (sscanf(i->c_str(), "%d//%d", &v, &n) != 2
             &&
             sscanf(i->c_str(), "%d/%*d/%d", &v, &n) != 2
             &&
-            sscanf(i->c_str(), "%d/%*d", &v) != 1
-            &&
-            sscanf(i->c_str(), "%d", &v) != 1 ){
-            continue;
-            //throw std::string("Error reading face at line " + line);
-        }
+            sscanf(i->c_str(), "%d/%*d", &v) != 1 )
+          throw std::string("Error reading face at line " + line);
 
         if (a == -2) {
           // first vertex
@@ -144,6 +136,8 @@ loadOBJMesh(std::istream& in) {
           t.b = vertices.at(b-1);
           t.c = vertices.at(c-1);
 
+										//printf("ta = (%f,%f) - tb = (%f,%f) - tc = (%f,%f)\n", t.a.x, t.a.y, t.b.x, t.b.y, t.c.x, t.c.y); 
+
           // if we don't have a normal, make one
           if (na <= 0) {
             vec3d normal = cross(t.b - t.a, t.c - t.a);
@@ -156,9 +150,9 @@ loadOBJMesh(std::istream& in) {
           t.nb = normals.at(nb-1);
           t.nc = normals.at(nc-1);
 
-          t.ca = vec4d(0.457f, 0.45f, 0.42f, 0.85f);
-          t.cb = vec4d(0.457f, 0.45f, 0.42f, 0.85f);
-          t.cc = vec4d(0.457f, 0.45f, 0.42f, 0.85f);
+          t.ca = vec4d(0.057f, 0.25f, 0.42f, 1.f);
+          t.cb = vec4d(0.057f, 0.25f, 0.42f, 1.f);
+          t.cc = vec4d(0.057f, 0.25f, 0.42f, 1.f);
 
           mesh.faces.push_back(t);			
 
@@ -173,51 +167,7 @@ loadOBJMesh(std::istream& in) {
     }
     }
   }
-  
-        // e Bounding Box 
-    mesh.aabb.merge(mesh.aabb.min - mesh.aabb.extents()/10.0);
-    mesh.aabb.merge(mesh.aabb.max + mesh.aabb.extents()/10.0);    
-  
-    vec3d desloc = mesh.aabb.min;
-    vec3d bblen = mesh.aabb.extents();
-    vec3d pos;
-  
 
-
-  // set up 3d texture coordinates based in the position of the triangle
-  for (unsigned int i=0; i < mesh.faces.size(); ++i){
-      Triangle &t = mesh.faces[i];
-      
-      //vertex 1
-      pos = t.a - desloc;
-      pos.x = pos.x/bblen.x; 
-      pos.y = pos.y/bblen.y;
-      pos.z = pos.z/bblen.z;
-      t.tca = pos;
-      
-      //vertex 2
-      pos = t.b - desloc;
-      pos.x = pos.x/bblen.x; 
-      pos.y = pos.y/bblen.y;
-      pos.z = pos.z/bblen.z;
-      t.tcb = pos;
-      
-      //vertex 3
-      pos = t.c - desloc;
-      pos.x = pos.x/bblen.x; 
-      pos.y = pos.y/bblen.y;
-      pos.z = pos.z/bblen.z;
-      t.tcc = pos;    
-      
-
-      //std::cout << t.tca << std::endl;
-      //std::cout << t.tcb << std::endl;
-      //std::cout << t.tcc << std::endl;
-  }
-
-    //std::cout << mesh.aabb.max << std::endl;
-    //std::cout << mesh.aabb.min << std::endl;
-  
   std::clog << "Loaded " << mesh.faces.size() << " faces" << std::endl;
 
   return mesh;
@@ -287,54 +237,4 @@ bool segmentIntersection2D(const Segment &seg1, const Segment &seg2, double *t1,
       (0.0 < *t2 && *t2 < 1.0))
     return true;
   return false;
-}
-
-bool intersectPlaneSegment(const vec4d& plane, const vec3d& p0, const vec3d& p1, vec3d *pt) {
-  double num = -plane.w - dot(plane.xyz(), p0);
-  double den = dot(plane.xyz(), p1 - p0);
-  double r = num / den;
-  *pt = mix(p0, p1, r);
-  if (0 <= r && r <= 1)
-      return true;
-  return false;
-}
-
-
-// GIVEN 3 POINTS --> RETURN A 4D VECTOR NORMAL (PLANE EQUATION): 
-vec4d makePlane(const vec3d& a, const vec3d& b, const vec3d& c) {
-    vec3d normal = cross(b-a, c-a);
-    normal.normalize();
-    double d = dot(a, normal);
-    return vec4d(normal, -d);
-}
-
-
-bool intersectTriangleSegment(const Segment& segment, const Triangle& tri, Point *pnt) {
-	assert(pnt);
-
-	if(!intersectPlaneSegment(makePlane(tri.a, tri.b, tri.c),segment.a,segment.b,pnt))
-		return false;
-
-	vec3d u = tri.b - tri.a;
-	vec3d v = tri.c - tri.a;
-	vec3d w =	*pnt - tri.a;
-
-	double uu = dot(u,u);
-	double uv = dot(u,v);
-	double vv = dot(v,v);
-	double wu = dot(w,u);
-	double wv = dot(w,v);
-	
-	double den = uv*uv - uu*vv;
-
-	double s = (uv*wv - vv*wu)/den;
-	//std::cout << "s=" << s << std::endl;
-	if(s<0. || s>1.)
-		return false;
-	double t = (uv*wu - uu*wv)/den;
-	//std::cout << "t=" << t << std::endl;
-	if(t<0. || s+t>1.)
-		return false;
-	
-	return true;
 }
