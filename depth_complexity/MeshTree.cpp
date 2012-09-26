@@ -90,14 +90,7 @@ void MeshTree::MakeTree(TriMesh &mesh, int minDepth){
 }
 
 void MeshTree::MakeCompleteTree(TriMesh &mesh, int maxHeight){
-  
-  if(maxHeight == 0){
-    this->mesh = new TriMesh;
-    this->mesh->faces.assign(mesh.faces.begin(), mesh.faces.end());
-    this->mesh->aabb = mesh.aabb;
-    return;
-  }
-  
+   
   std::vector<Segment> segList;
   if(MeshTree::normalDepth){
     MeshTree::dc_3d->process(mesh);
@@ -110,6 +103,12 @@ void MeshTree::MakeCompleteTree(TriMesh &mesh, int maxHeight){
     depthComplexity = MeshTree::dcr_3d->maximum();
   }
   
+  if(maxHeight == 0){
+    this->mesh = new TriMesh;
+    this->mesh->faces.assign(mesh.faces.begin(), mesh.faces.end());
+    this->mesh->aabb = mesh.aabb;
+    return;
+  }
   
   vec4d cutPlane = defineCuttingPlane(segList, mesh.aabb);
   segList.clear();

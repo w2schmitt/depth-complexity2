@@ -815,7 +815,7 @@ vec4d defineCuttingPlane(const vector<Segment> lines, const BoundingBox aabb){
   ret_normal = ite->vet_dir;
   
   for(;ite != end; ++ite){
-    ret_p0 += ite->p0*ite->weight;
+    ret_p0 = ret_p0 + (weights/weights+ite->weight)*(ite->p0-ret_p0);
     weights += ite->weight;
     
     if(dot(ret_normal, ite->vet_dir) >= 0){
@@ -825,14 +825,14 @@ vec4d defineCuttingPlane(const vector<Segment> lines, const BoundingBox aabb){
     }
   }
   
-  ret_p0 = ret_p0/weights;
+  //ret_p0 = ret_p0/weights;
   ret_normal.normalize();
   
   if(insideAABB(ret_p0, aabb)){
-      std::cout << ret_p0<<endl;
+      std::cout << "in " << ret_p0<<endl;
      return makePlane(ret_normal, ret_p0); 
   }else{
-      std::cout << "out" << std::endl;
+      std::cout << "out" << ret_p0 << aabb.min << aabb.max << std::endl;
       return makePlane(ret_normal, (aabb.max+aabb.min)/2.0);
   }
 }
