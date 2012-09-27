@@ -79,7 +79,7 @@ void MeshTree::MakeTree(TriMesh &mesh, int minDepth){
   
   subDivideModel(cutPlane, mesh, meshFront, meshBack);
   
-  cout << meshFront.faces.size() << " " << cutPlane << endl;
+  //cout << meshFront.faces.size() << " " << cutPlane << endl;
   front = new MeshTree();
   front->MakeTree(meshFront, minDepth);
   
@@ -116,7 +116,7 @@ void MeshTree::MakeCompleteTree(TriMesh &mesh, int maxHeight){
   
   subDivideModel(cutPlane, mesh, meshFront, meshBack);
   
-  cout << meshFront.faces.size() << " " << cutPlane << endl;
+  //cout << meshFront.faces.size() << " " << cutPlane << endl;
   front = new MeshTree();
   front->MakeCompleteTree(meshFront, maxHeight-1);
   

@@ -698,8 +698,8 @@ vec4d defineCuttingPlane(const vector<Segment> lines, const BoundingBox aabb){
               findSegmentBetweenLines(lines.at(idx_segs.at(0)), 
                                       lines.at(idx_segs.at(first_idx)));
       }catch(std::out_of_range){
-        std::cout << first_idx << ":" << plane_found << endl;
-        
+        //std::cout << first_idx << ":" << plane_found << endl;
+        first_idx = 0;
         break;
       }
       if(seg_btw.active){
@@ -739,8 +739,11 @@ vec4d defineCuttingPlane(const vector<Segment> lines, const BoundingBox aabb){
       
     }
     
+    if(not plane_found){
+      break;
+    }
+    double lines_used = 2.0;// 
     //cout << "pass" <<endl;
-    double lines_used = 2;// 
     //start comparing plane with lines to insterpolate a new plane
     for(uint i = first_idx; i < idx_segs.size(); i++){
       Segment line_plane = Segment(cut_plane.p0, cut_plane.vet_dir+cut_plane.p0);
@@ -752,8 +755,13 @@ vec4d defineCuttingPlane(const vector<Segment> lines, const BoundingBox aabb){
         if(insideAABB(seg_btw.a, aabb) && insideAABB(seg_btw.b, aabb)){
           
           //weighted mean for the interpolations with the plan and the line
-          cut_plane.p0 = (lines_used*cut_plane.p0 + seg_btw.b)/(++lines_used);
-
+          double percentWei = 1/(1+lines_used);
+          ++lines_used;
+          vec3d segBtwMid = (seg_btw.a + seg_btw.b)/2.0;
+          cut_plane.p0 = cut_plane.p0 + (percentWei)*(segBtwMid-cut_plane.p0);
+          //if(!insideAABB(cut_plane.p0, aabb)){
+          //  cout << "midout "<< endl;
+          //}
           vec3d norm = lines.at(idx_segs.at(first_idx)).b - lines.at(idx_segs.at(first_idx)).a;
 
           norm = norm/norm.length();
@@ -810,12 +818,12 @@ vec4d defineCuttingPlane(const vector<Segment> lines, const BoundingBox aabb){
   vector<W_Plane>::const_iterator ite = cutting_planes.begin();
   vector<W_Plane>::const_iterator end = cutting_planes.end();
   
-  ret_p0 = ite->p0 * ite->weight;
+  ret_p0 = ite->p0;
   weights = ite->weight;
   ret_normal = ite->vet_dir;
   
   for(;ite != end; ++ite){
-    ret_p0 = ret_p0 + (weights/weights+ite->weight)*(ite->p0-ret_p0);
+    ret_p0 = ret_p0 + (ite->weight/(weights+ite->weight))*(ite->p0-ret_p0);
     weights += ite->weight;
     
     if(dot(ret_normal, ite->vet_dir) >= 0){
@@ -829,7 +837,7 @@ vec4d defineCuttingPlane(const vector<Segment> lines, const BoundingBox aabb){
   ret_normal.normalize();
   
   if(insideAABB(ret_p0, aabb)){
-      std::cout << "in " << ret_p0<<endl;
+     //std::cout << "in " << ret_p0<<endl;
      return makePlane(ret_normal, ret_p0); 
   }else{
       std::cout << "out" << ret_p0 << aabb.min << aabb.max << std::endl;
