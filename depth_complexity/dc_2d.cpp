@@ -30,7 +30,7 @@ DepthComplexity2D::DepthComplexity2D(const int fboWidth, const int fboHeight){
   _shaderCountDC = 0;
   _status = false;  
   
-  CImg casa;
+  //CImg casa;
   
   // initialize 3d texture (size x, size y, size z, channels, px values)
   // --> channel 1 -> DC of the ray
