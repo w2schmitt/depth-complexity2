@@ -556,11 +556,11 @@ void DepthComplexity2D::findMaximumRaysAndHistogram() {
           seg.sortPoints();
 
           if (val == _maximum){
-            if (_maximumRays.size() < 1)
+            if (_maximumRays.size() < 100)
               _maximumRays.insert(seg);
           }
           else if (val >= _threshold){			   
-            if (_goodRays[val].size() < 1)
+            if (_goodRays[val].size() < 100)
 		_goodRays[val].insert(seg);            
           }
         }
