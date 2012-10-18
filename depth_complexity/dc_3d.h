@@ -37,7 +37,8 @@ public:
   unsigned int maximum() const { return _maximum; }
   const std::set<Segment, classcomp> &maximumRays() const { return _maximumRays; }
   const std::set<Segment, classcomp> &goodRays(int intersect) const { return _goodRays[intersect]; }
-  const std::vector<Segment> &usedPlanes() const { return _usedPlanes; }
+  const std::vector<Plane> &usedPlanes() const { return _usedPlanes; }
+  const std::vector<Segment> &usedPlanes2() const { return _usedPlanes2; }
   const std::vector<Point> &intersectionPoints() const { return _intersectionPoints; }
   unsigned int getThreshold() { return _threshold; }
   const std::list<unsigned int> &intersectionTris(int rayIndex){return *_intersectionTriList.find(rayIndex)->second;}
@@ -53,7 +54,7 @@ private:
   };
 
   void processMeshAlign(const PlaneAlign &palign, const PlaneAlign &salign);
-  void processMeshPlane(const vec4d& plane, std::vector<Segment> *segments, std::vector<Triangle> *meshTris);
+  void processMeshPlane(const vec4d& plane, std::vector<Segment> *segments);
   void processMeshSegment(const Segment& segment, int index);
   bool intersectTriangleSegment(const Segment& segment, const Triangle& tri, Point *pnt);
   bool intersectPlaneTriangle(const vec4d& plane, const Triangle& tri, Segment *seg);
@@ -79,7 +80,8 @@ private:
   // Output
   std::set<Segment,classcomp> _maximumRays;
   std::vector< std::set<Segment, classcomp> > _goodRays;
-  std::vector<Segment> _usedPlanes;
+  std::vector<Plane> _usedPlanes;
+  std::vector<Segment> _usedPlanes2;
   std::vector<unsigned long long> _histogram;
   std::vector<Point> _intersectionPoints;
   std::map<int, std::list<unsigned int>* > _intersectionTriList;

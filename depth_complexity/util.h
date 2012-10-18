@@ -9,18 +9,21 @@
 
 
 struct Triangle {
-    vec3d a, na; 
-		vec4d ca;
-		vec3d b, nb;
-		vec4d cb;
-		vec3d c, nc;
-		vec4d cc;
-    
-    //bool intercepted;
-    //Triangle() : intercepted(false){}
+    vec3d tca, a, na; 
+    vec4d ca;
+    vec3d tcb, b, nb;
+    vec4d cb;
+    vec3d tcc, c, nc;
+    vec4d cc;
 };
 
+
 typedef vec3d Point;
+
+struct Plane {
+    Point a,b,c,d;
+};
+
 
 struct Segment {
   Segment(const Point &a_, const Point &b_):a(a_), b(b_), active(true) {}

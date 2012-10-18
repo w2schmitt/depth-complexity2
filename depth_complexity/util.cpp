@@ -96,7 +96,7 @@ loadOBJMesh(std::istream& in) {
         vec3d p;
         if (sscanf(line.c_str()+2, "%lf %lf %lf", &p.x, &p.y, &p.z) != 3)
           throw std::string("Error reading vertex at line " + line);
-								//printf("px = (%f) - py = (%f) - pz = (%f)\n", p.x, p.y, p.z); 
+	
         vertices.push_back(p);
         mesh.aabb.merge(p);
       } else if (line[1] == 'n') {
@@ -114,13 +114,17 @@ loadOBJMesh(std::istream& in) {
       boost::tokenizer<boost::char_separator<char> > tok(content, sep);
       int a=-2, b=-2, c=-2, na=-2, nb=-2, nc=-2;
       for (boost::tokenizer<boost::char_separator<char> >::iterator i=tok.begin(); i!=tok.end(); ++i) {
-        int v=-1, n=-1;
+        int v=-1, n=-1;        
         if (sscanf(i->c_str(), "%d//%d", &v, &n) != 2
             &&
             sscanf(i->c_str(), "%d/%*d/%d", &v, &n) != 2
             &&
-            sscanf(i->c_str(), "%d/%*d", &v) != 1 )
-          throw std::string("Error reading face at line " + line);
+            sscanf(i->c_str(), "%d/%*d", &v) != 1
+            &&
+            sscanf(i->c_str(), "%d", &v) != 1 ){
+            continue;
+            //throw std::string("Error reading face at line " + line);
+        }
 
         if (a == -2) {
           // first vertex
@@ -140,8 +144,6 @@ loadOBJMesh(std::istream& in) {
           t.b = vertices.at(b-1);
           t.c = vertices.at(c-1);
 
-										//printf("ta = (%f,%f) - tb = (%f,%f) - tc = (%f,%f)\n", t.a.x, t.a.y, t.b.x, t.b.y, t.c.x, t.c.y); 
-
           // if we don't have a normal, make one
           if (na <= 0) {
             vec3d normal = cross(t.b - t.a, t.c - t.a);
@@ -154,9 +156,9 @@ loadOBJMesh(std::istream& in) {
           t.nb = normals.at(nb-1);
           t.nc = normals.at(nc-1);
 
-          t.ca = vec4d(0.057f, 0.25f, 0.42f, 0.35f);
-          t.cb = vec4d(0.057f, 0.25f, 0.42f, 0.35f);
-          t.cc = vec4d(0.057f, 0.25f, 0.42f, 0.35f);
+          t.ca = vec4d(0.457f, 0.45f, 0.42f, 0.85f);
+          t.cb = vec4d(0.457f, 0.45f, 0.42f, 0.85f);
+          t.cc = vec4d(0.457f, 0.45f, 0.42f, 0.85f);
 
           mesh.faces.push_back(t);			
 
@@ -171,7 +173,51 @@ loadOBJMesh(std::istream& in) {
     }
     }
   }
+  
+        // e Bounding Box 
+    mesh.aabb.merge(mesh.aabb.min - mesh.aabb.extents()/10.0);
+    mesh.aabb.merge(mesh.aabb.max + mesh.aabb.extents()/10.0);    
+  
+    vec3d desloc = mesh.aabb.min;
+    vec3d bblen = mesh.aabb.extents();
+    vec3d pos;
+  
 
+
+  // set up 3d texture coordinates based in the position of the triangle
+  for (unsigned int i=0; i < mesh.faces.size(); ++i){
+      Triangle &t = mesh.faces[i];
+      
+      //vertex 1
+      pos = t.a - desloc;
+      pos.x = pos.x/bblen.x; 
+      pos.y = pos.y/bblen.y;
+      pos.z = pos.z/bblen.z;
+      t.tca = pos;
+      
+      //vertex 2
+      pos = t.b - desloc;
+      pos.x = pos.x/bblen.x; 
+      pos.y = pos.y/bblen.y;
+      pos.z = pos.z/bblen.z;
+      t.tcb = pos;
+      
+      //vertex 3
+      pos = t.c - desloc;
+      pos.x = pos.x/bblen.x; 
+      pos.y = pos.y/bblen.y;
+      pos.z = pos.z/bblen.z;
+      t.tcc = pos;    
+      
+
+      //std::cout << t.tca << std::endl;
+      //std::cout << t.tcb << std::endl;
+      //std::cout << t.tcc << std::endl;
+  }
+
+    //std::cout << mesh.aabb.max << std::endl;
+    //std::cout << mesh.aabb.min << std::endl;
+  
   std::clog << "Loaded " << mesh.faces.size() << " faces" << std::endl;
 
   return mesh;

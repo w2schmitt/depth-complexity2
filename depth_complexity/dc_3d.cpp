@@ -106,8 +106,6 @@ void DepthComplexity3D::writeRays(std::ostream& out, const std::set<Segment,clas
 void DepthComplexity3D::process(const TriMesh &mesh) {
   this->_mesh = &mesh;
   BoundingBox aabb = _mesh->aabb;
-  aabb.merge(aabb.min - aabb.extents()/10.0);
-  aabb.merge(aabb.max + aabb.extents()/10.0);
 
   _usedPlanes.clear();
   _goodRays.clear();
@@ -122,7 +120,16 @@ void DepthComplexity3D::process(const TriMesh &mesh) {
   processMeshAlign(AlignZ, AlignY);
   processMeshAlign(AlignY, AlignZ);
   
-  _dc2d->cimg2Tex();
+  //processMeshAlign(AlignZ, AlignX);
+  //processMeshAlign(AlignZ, AlignY);
+
+  //processMeshAlign(AlignY, AlignX);
+  //processMeshAlign(AlignY, AlignZ);
+
+  //processMeshAlign(AlignX, AlignY);
+  //processMeshAlign(AlignX, AlignZ);
+  
+  _dc2d->cimg2Tex(_maximum);
   
 }
 
@@ -131,8 +138,8 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
 
   assert(palign != salign);
   BoundingBox aabb = _mesh->aabb;
-  aabb.merge(aabb.min - aabb.extents()/10.0);
-  aabb.merge(aabb.max + aabb.extents()/10.0);
+  //aabb.merge(aabb.min - aabb.extents()/10.0);
+  //aabb.merge(aabb.max + aabb.extents()/10.0);
 
   vec3d c0 = vec3d(aabb.min.x, aabb.min.y, aabb.min.z);
   vec3d c1 = vec3d(aabb.max.x, aabb.min.y, aabb.min.z);
@@ -213,23 +220,32 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
       saa.b = sb.b;
       sbb.a = sa.b;
       sbb.b = sb.a;
-      _usedPlanes.push_back(sa);
-      _usedPlanes.push_back(saa);
-      _usedPlanes.push_back(sb);
-      _usedPlanes.push_back(sbb);
+      
+      _usedPlanes2.push_back(sa);
+      //_usedPlanes2.push_back(saa);
+      _usedPlanes2.push_back(sb);
+      //_usedPlanes2.push_back(sbb);
 
       vec4d plane = makePlane(sa.a, sa.b, sb.a);
       std::vector<Segment> segments;
-      std::vector<Triangle> meshTris;
-      processMeshPlane(plane, &segments, &meshTris);
+      
+      processMeshPlane(plane, &segments);
 
+      Plane p;
+      p.a = sa.a; p.b = sa.b;
+      p.c = sb.b; p.d = sb.a;
+     
+      _usedPlanes.push_back(p);
+      
       // make the segments extra-long
       vec3d dsa = sa.b - sa.a; sa.a -= dsa; sa.b += dsa;
-      vec3d dsb = sb.b - sb.a; sb.a -= dsb; sb.b += dsb;
-
+      vec3d dsb = sb.b - sb.a; sb.a -= dsb; sb.b += dsb;     
+      
+       
+      
       _dc2d->setMeshBoundingbox(aabb);
-      _dc2d->process(sa, sb, segments, meshTris);
-
+      _dc2d->process(sa, sb, segments);
+      
       unsigned int tempMaximum = _dc2d->maximum();
       
 
@@ -285,24 +301,19 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
       }
     }
   }
-    //int index=0;
-    // check which mesh triangles intersect with each rays
-    //std::set<Segment,classcomp>::iterator it = _maximumRays.begin();
-    //for (; it!=_maximumRays.end(); ++it)
-    //        processMeshSegment(*it,index++);
 }
 
 //INPUT: plane -> The normal vector of the plane which we will check overlaps;
 //OUTPUT: segments -> A vector containing the segments of the mesh that intersect the plane.
-void DepthComplexity3D::processMeshPlane(const vec4d& plane, std::vector<Segment> *segments, std::vector<Triangle> *meshTris) {
+void DepthComplexity3D::processMeshPlane(const vec4d& plane, std::vector<Segment> *segments) {
   assert(segments);
-  assert(meshTris);
+  //assert(meshTris);
 
   for (unsigned i=0; i<_mesh->faces.size(); ++i) {
     Segment s;
     if (intersectPlaneTriangle(plane, _mesh->faces[i], &s)){
       segments->push_back(s);
-      meshTris->push_back(_mesh->faces[i]);
+      //meshTris->push_back(_mesh->faces[i]);
     }
   }
 }

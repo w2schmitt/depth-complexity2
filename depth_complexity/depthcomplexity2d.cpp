@@ -118,8 +118,8 @@ void display() {
   Segment to(Point(0.0, 1.0), Point(1.0, 1.0));
 
   tic();
-  std::vector<Triangle> tris;
-  dc2d->process(from, to, segments,tris);
+  //std::vector<Triangle> tris;
+  dc2d->process(from, to, segments);
   toc("Computing Depth Complexity");
 
   int max = dc2d->maximum();

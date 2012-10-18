@@ -48,10 +48,10 @@ public:
   void setTex3dSize(vec3d size) { this->_texSize = size;}
   void setMeshBoundingbox(BoundingBox aabb) { this->_aabb = aabb; }
   
-  void cimg2Tex();
+  void cimg2Tex(unsigned int maxDC);
   // Compute the maximum depth complexity
   void process(
-    const Segment &from, const Segment &to, const std::vector<Segment> &segments, const std::vector<Triangle> &tris);
+    const Segment &from, const Segment &to, const std::vector<Segment> &segments);
 
   // Copy stencil buffer to color buffer.
   // Colors are defined in a table.
@@ -62,6 +62,7 @@ public:
   std::vector<unsigned long long>  histogram()               { return _histogram; }
   std::set<Segment,classcomp>      maximumRays()             { return _maximumRays; }
   std::set<Segment,classcomp>      goodRays(unsigned i)      { return _goodRays[i]; }
+  std::vector<Point>               points()                  { return _points; }
   GLuint                           textureId() const         { return _cboTexId; }
   GLuint                           texture3DId() const       { return _texID; }
 private:
@@ -73,6 +74,9 @@ private:
 		
   void clipPolygon(const Point &p1, const Point &p2, const Point &p3, std::vector<Point> &polygon);
   void clipPolygon(const Point &p1, const Point &p2, const Point &p3, const Point &p4, std::vector<Point> &polygon);
+  
+  void bresenham_line_3D(vec3d &v1, vec3d &v2, unsigned int color);
+  void drawPixel(vec3d pos, unsigned int color);
 		
   // Go through the counter buffer to find the maximum value.
   unsigned int findMaxValueInCounterBuffer();
@@ -119,6 +123,7 @@ private:
   std::vector<unsigned long long>       		_histogram;
   std::set<Segment, classcomp>                          _maximumRays;
   std::vector< std::set<Segment,classcomp> >            _goodRays;
+  std::vector<Point>                                    _points;
   
   CImg<float>                                           _tex3D;
   vec3d                                                 _texSize;

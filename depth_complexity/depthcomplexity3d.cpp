@@ -21,6 +21,9 @@
 #include <GL/glut.h>
 #endif
 
+
+#include "CImg.h"
+
 #include "flags.h"
 #include "vector.hpp"
 #include "camera/float3.h"
@@ -34,11 +37,16 @@
 #endif
 #include "timer.h"
 
+using namespace cimg_library;
+
 float radius = 0.01;
 bool showPlanes = false;
 bool doGoodRays = true;
 vec4f sphereColor(0.0, 1.0, 0.0, 1.0);
 unsigned int showRayIndex = 0;
+
+CImgDisplay main_disp;
+CImg<float> cscale;//color_scale(40,500); 
 
 #ifdef USE_RANDOM_DC3D
 RDepthComplexity3D *dc3d;
@@ -168,6 +176,7 @@ void drawMesh(const TriMesh& mesh, const vec3f& dir)
     glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
     glEnable(GL_COLOR_MATERIAL);
     
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     //std::clog << "sorting...";
     if (sorted_faces.empty()) {
         sorted_faces = mesh.faces;
@@ -181,18 +190,21 @@ void drawMesh(const TriMesh& mesh, const vec3f& dir)
     //glDisable(GL_DEPTH_TEST);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_LIGHTING);
-    glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 1);    
+    glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 1);
 
     glEnable(GL_VERTEX_ARRAY);
 
     glEnableClientState(GL_VERTEX_ARRAY);    
-    glVertexPointer(3, GL_DOUBLE, 2*sizeof(vec3d)+sizeof(vec4d), &sorted_faces[0].a.x);
+    glVertexPointer(3, GL_DOUBLE, 3*sizeof(vec3d)+sizeof(vec4d), &sorted_faces[0].a.x);
+    
+    glEnableClientState (GL_TEXTURE_COORD_ARRAY);
+    glTexCoordPointer(3, GL_DOUBLE, 3*sizeof(vec3d)+sizeof(vec4d), &sorted_faces[0].tca.x);
     
     glEnableClientState(GL_COLOR_ARRAY);
-    glColorPointer(4, GL_DOUBLE, 2*sizeof(vec3d)+sizeof(vec4d), &sorted_faces[0].ca.x);
+    glColorPointer(4, GL_DOUBLE, 3*sizeof(vec3d)+sizeof(vec4d), &sorted_faces[0].ca.x);
 
     glEnableClientState(GL_NORMAL_ARRAY);
-    glNormalPointer(GL_DOUBLE, 2*sizeof(vec3d)+sizeof(vec4d), &sorted_faces[0].na.x);
+    glNormalPointer(GL_DOUBLE, 3*sizeof(vec3d)+sizeof(vec4d), &sorted_faces[0].na.x);
 
     glDrawArrays(GL_TRIANGLES, 0, sorted_faces.size()*3);
 
@@ -205,7 +217,7 @@ void drawMesh(const TriMesh& mesh, const vec3f& dir)
 
     glDisable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
-    glDisable(GL_COLOR_MATERIAL);
+    //glDisable(GL_COLOR_MATERIAL);
     
     glDisable(GL_TEXTURE_3D);
     glBindTexture(GL_TEXTURE_3D, 0);
@@ -259,20 +271,42 @@ void drawRays()
         }
       glEnd();
     }
-    
+#ifndef USE_RANDOM_DC3D
     if(showPlanes) {
-      const std::vector<Segment>& bounds = dc3d->usedPlanes();
+      const std::vector<Plane>& bounds = dc3d->usedPlanes();
       // draw planes
-      glLineWidth(1);
+      glEnable(GL_BLEND);
+      glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+
+      glColor4f(0.5f, 0.45f, 0.3f, 0.34f);
+      for (unsigned int i=0; i<bounds.size(); i++){
+          const Plane &p = bounds[i];
+          glBegin(GL_QUADS);
+                glVertex3f(p.a.x, p.a.y, p.a.z);
+                glVertex3f(p.b.x, p.b.y, p.b.z);
+                glVertex3f(p.c.x, p.c.y, p.c.z);
+                glVertex3f(p.d.x, p.d.y, p.d.z);
+          glEnd();
+      }
+      glDisable(GL_BLEND);
+
+      glLineWidth(4);
+      const std::vector<Segment>& bounds2 = dc3d->usedPlanes2();
+      
       glBegin(GL_LINES);
-      glColor3f(0.5, 0.5, 0.5);
-        for (unsigned i=0; i<bounds.size(); ++i) {
-          const Segment &r = bounds[i];
-          glVertex3f(r.a.x, r.a.y, r.a.z);
+      //glColor3f(0.5, 0.5, 0.5);
+        for (unsigned i=0; i<bounds2.size(); ++i) {
+          const Segment &r = bounds2[i];
+          if (i%2 == 0 )  glColor4f(0.2, 0.9, 0.1, 1.0);
+          else            glColor4f(0.9, 0.3, 0.1, 1.0);
+         
+          glVertex3f(r.a.x, r.a.y, r.a.z);         
           glVertex3f(r.b.x, r.b.y, r.b.z);
         }
       glEnd();
-    }
+
+     }
+#endif
 
     const std::vector<Point>& points = dc3d->intersectionPoints();
     glEnable(GL_LIGHTING);
@@ -298,7 +332,63 @@ void setupCamera(Camera& camera)
     glLoadIdentity();
     //cam.applyTransform();
     camera.update();	
-		camera.lookAt();
+    camera.lookAt();
+}
+
+
+const unsigned int colorTableSize=6;
+
+float ColorTable[colorTableSize][3] = {
+    {0.0, 0.0, 1.0}, // Azul
+    {1.0, 0.0, 1.0}, // Roxo/Rosa
+    {1.0, 0.5, 0.0}, // Laranja
+    {1.0, 1.0, 0.0}, // Amarelo
+    {0.0, 1.0, 0.0}, // Verde
+    {0.0, 1.0, 0.0} // Verde
+};
+
+CImg<float> color_scale(int w, int h){
+    
+    float parts = h/(float)(colorTableSize-2);
+   
+ 
+    CImg<float> teste(w+30,h+3,1,3, 0.5);
+    
+    for (unsigned int i=1; i<colorTableSize-1; i++){
+        vec3d inc((ColorTable[i][0] - ColorTable[i-1][0])/parts,
+                  (ColorTable[i][1] - ColorTable[i-1][1])/parts,
+                  (ColorTable[i][2] - ColorTable[i-1][2])/parts);
+        float color[3] = {ColorTable[i-1][0], ColorTable[i-1][1], ColorTable[i-1][2]};
+        
+        for (int y=(i-1)*parts; y<(i-1)*parts+2; y++){
+         for (int x=0; x<w+30; x++){
+                teste(x,y,0,0) = 0.2;
+                teste(x,y,0,1) = 0.2;
+                teste(x,y,0,2) = 0.2;
+            }
+        }
+        
+        for (int y=(i-1)*parts+2; y<(i*parts); y++){            
+            for (int x=0; x<w+30; x++){
+                teste(x,y,0,0) = color[0];
+                teste(x,y,0,1) = color[1];
+                teste(x,y,0,2) = color[2];
+            }
+            color[0] += inc.x; color[1] += inc.y; color[2] += inc.z;
+        }
+    }
+    
+    for (int y=h; y<h+2; y++){
+        for (int x=0; x<w+30; x++){
+            teste(x,y,0,0) = 0.2;
+            teste(x,y,0,1) = 0.2;
+            teste(x,y,0,2) = 0.2;
+        }
+    }
+    //const char *t = "teste";
+    //teste.draw_text(10,10,t,0,0);
+    return teste;
+    
 }
 
 void recompute(void *data)
@@ -319,12 +409,18 @@ void recompute(void *data)
       std::clog << "Number of good rays: " << numRays << std::endl;
     }
     
-    // check interception
-    //const std::list<unsigned int>& ilist = dc3d->intersectionTris();
-    //std::list<unsigned int>::const_iterator it = ilist.begin();
-    //for (;it!=ilist.end(); ++it){
-    //    mesh->faces[*it].intercepted = true;
-    //}
+    // create color scale
+    unsigned int val = dc3d->maximum();
+    cscale = color_scale(40,500); 
+
+    float color[3] = {0.0, 0.0, 0.0};
+    cscale.draw_text(3, 2  , "%d", color, 0, 1, 18, val*0/4);
+    cscale.draw_text(3, 127, "%d", color, 0, 1, 18, val*1/4);
+    cscale.draw_text(3, 252, "%d", color, 0, 1, 18, val*2/4);
+    cscale.draw_text(3, 377, "%d", color, 0, 1, 18, val*3/4);
+    cscale.draw_text(3, 482, "%d", color, 0, 1, 18, val*4/4);
+    
+    main_disp.display(cscale);
 }
 
 void
@@ -421,6 +517,9 @@ void GLFWCALL mouse_motion(int x, int y){
 		mDx = x;	mDy = y;
 	}//end if
 }
+
+
+
 
 int doInteractive(TriMesh& mesh)
 {
@@ -532,6 +631,10 @@ int doInteractive(TriMesh& mesh)
     //cam.target = aabb.center();
     //cam.up = vec3f(0, 1, 0);
     //cam.pos = cam.target + vec3f(0, 0, 2*aabb.extents().z);
+                
+
+    
+
 
     while( glfwGetWindowParam(GLFW_OPENED) && !glfwGetKey(GLFW_KEY_ESC) ) {
         glClear( GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT );
@@ -566,7 +669,7 @@ int doInteractive(TriMesh& mesh)
         t->ca = vec4d(1.0f, 0.0f, 0.0f, 0.7f);
         t->cb = vec4d(1.0f, 0.0f, 0.0f, 0.7f);
         t->cc = vec4d(1.0f, 0.0f, 0.0f, 0.7f);
-
+        
         // Draw tweak bars
         TwDraw();
 
