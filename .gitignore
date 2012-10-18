@@ -5,6 +5,9 @@ hist*.txt
 *.svg
 toPlot.txt
 Tests/
-Tests.tar.gz
 
-/depth_complexity/nbproject/private/
+nbproject/
+Tests.tar.gz
+DualImages/
+models/
+histogram/
