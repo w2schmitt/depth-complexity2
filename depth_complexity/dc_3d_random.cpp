@@ -99,6 +99,31 @@ void RDepthComplexity3D::setComputeGoodRays(bool computeGoodRays) {
 	this->_computeGoodRays = computeGoodRays;
 }
 
+void RDepthComplexity3D::writeRaysSpherical(std::ostream& out, int k) {
+  assert(_computeGoodRays);
+  long long unsigned int total = 0;
+  for(int i = 0 ; i <= k ; ++i) {
+    const std::set<Segment,classcomp> & _rays = goodRays(maximum()-i);
+    total += _rays.size();
+  }
+  out << total << "\n";
+
+  for(int i = 0 ; i <= k ; ++i) {
+    const std::set<Segment,classcomp> & _rays = goodRays(maximum()-i);
+    std::set<Segment,classcomp>::const_iterator ite = _rays.begin();
+    std::set<Segment,classcomp>::const_iterator end = _rays.end();
+    for (; ite != end; ++ite) {
+      double a, b, c, d;
+      double x1 = ite->a.x, x2 = ite->b.x, y1 = ite->a.y, y2 = ite->b.y, z1 = ite->a.z, z2 = ite->b.z;
+      a = atan2(y1, x1);
+      b = atan2(z1, sqrt(x1*x1 + y1*y1));
+      c = atan2(y2, x2);
+      d = atan2(z2, sqrt(x2*x2 + y2*y2));
+      out << a << " " << b << " " << c << " " << d << " " << maximum()-i << "\n";
+    }
+  }
+}
+
 void RDepthComplexity3D::setThreshold(unsigned threshold) {
 	this->_threshold = threshold;
 }

@@ -36,6 +36,11 @@ loadOFFMesh(std::istream& in){
     t.a = vertices.at(a);
     t.b = vertices.at(b);
     t.c = vertices.at(c);
+    
+    t.ca = vec4d(0.057f, 0.25f, 0.42f, 0.35f);
+    t.cb = vec4d(0.057f, 0.25f, 0.42f, 0.35f);
+    t.cc = vec4d(0.057f, 0.25f, 0.42f, 0.35f);
+    
     mesh.faces.push_back(t);
 
     for (int j=3; j<sz; ++j) {
@@ -48,8 +53,13 @@ loadOFFMesh(std::istream& in){
       mesh.faces.push_back(t);
     }
   }
+  
 
-  std::clog << "Loaded " << mesh.faces.size() << " faces" << std::endl;
+   std::clog << "Loaded " << mesh.faces.size() << " faces" << std::endl;
+  
+
+
+    			
 
   // now build the normals
   for (unsigned i=0; i<mesh.faces.size(); ++i) {

@@ -28,10 +28,10 @@ do
     echo "set terminal pdf size 10, 6" > ${TMP}
     echo "set output \"${DIR}_${TERM[t]}.pdf\"" >> ${TMP}
     echo "set style fill solid 1" >> ${TMP}
-    echo "set boxwidth 0.8 relative" >> ${TMP}
-    echo "set xtics 1" >> ${TMP}
-    echo "set ytics 1" >> ${TMP}
+    echo "set boxwidth 0.8 relative" >> ${TMP}    
+    echo "set ytics int(${DC_MAX}/20 + 1)" >> ${TMP}
     echo "set yrange [0:${DC_MAX}]" >> ${TMP}
+				#echo "set term pbm medium color" >> ${TMP}
     #echo "set ydata int" >> ${TMP}
 
     #if [ $# -eq 2 ]; then
@@ -51,6 +51,8 @@ do
     MAX=$( ls Tests/${DIR}/${TYPE[t]} | sort -nr | head -n 1 )
     MIN=$( ls Tests/${DIR}/${TYPE[t]} | sort -n | head -n 1 )
     let MAX=MAX-MIN
+
+	echo "set xtics int((${MAX}/30)+1)" >> ${TMP}
     echo "" > ${DATA_TMP}
     for d in $( ls Tests/${DIR}/${TYPE[t]} | sort -n );
     do

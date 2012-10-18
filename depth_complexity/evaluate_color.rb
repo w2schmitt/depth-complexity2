@@ -10,7 +10,7 @@ $colorTable[0] = [0,0,255];
 $colorTable[1] = [255,0,255];
 $colorTable[2] = [255,127,0];
 $colorTable[3] = [255,255,0];
-$colorTable[4] = [0,255,0];
+$colorTable[4] = [127,255,0];
 $colorTable[5] = [0,255,0];
 
 def findColor(normalizedDC)

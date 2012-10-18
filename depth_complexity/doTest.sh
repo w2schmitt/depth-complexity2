@@ -28,7 +28,7 @@ do
 		BEST[i]=0
 		until [ $EXIT -eq 1 ]; do
 			echo "Current DSTEPS is ${DSTEPS}"
-			timeout ${TIME_LIMIT} ./${EXEC_NAME[i]} -f ${MODEL_DIR}/${NAME} -dsteps ${DSTEPS} -fh "hist.txt" -fr "bestRays.off" -cmr true -it ${ITH}
+			timeout ${TIME_LIMIT} ./${EXEC_NAME[i]} -f ${MODEL_DIR}/${NAME} -dsteps ${DSTEPS} -fh "hist.txt" -fr "bestRays.off" -frs "sphericalRays.txt" -k 0 -cmr true -it ${ITH}
 			TIMEOUT=$?
 			if [ $TIMEOUT -eq 124 ]; then
 				EXIT=1
@@ -45,6 +45,6 @@ do
 		done
 	done
 	echo "BEST USUAL: ${BEST[0]}" > ${TEST_DIR}/${NAME}_${TIME_LIMIT}/comp.txt
-	echo "BEST RANDOM: ${BEST[1]}" >> ${TEST_DIR}/${NAME}_${TIME_LIMIT}/comp.txt
+	echo "BEST RANDOM:${BEST[1]}" >> ${TEST_DIR}/${NAME}_${TIME_LIMIT}/comp.txt
 done
 
