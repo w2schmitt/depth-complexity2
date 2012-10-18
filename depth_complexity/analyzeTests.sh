@@ -19,7 +19,9 @@ TMP="temporary_genPlot_toRem.gp"
 
 for t in 0 1
 do
+
 	#You can set the size of the plot in this line (inches):
+
     echo "set terminal pdf size 10, 6" > ${TMP}
     echo "set output \"${DIR}_${TERM[t]}.pdf\"" >> ${TMP}
     if [ $# -eq 2 ]; then
@@ -30,7 +32,8 @@ do
     fi
     echo "set title \"${DIR}_${TERM[t]} Histogram\"" >> ${TMP}
     echo "set xlabel \"Depth Complexity\" " >> ${TMP}
-    echo "set ylabel \"Frequency (in log_10 scale)\"" >> ${TMP}
+				echo "set logscale y" >> ${TMP}
+    echo "set ylabel \"Number of Rays (in log_10 scale)\"" >> ${TMP}
     DIV_CAR="plot"
     COUNT=0
     MAX=$( ls Tests/${DIR}/${TYPE[t]} | sort -nr | head -n 1 )
@@ -54,8 +57,7 @@ do
         	fi
         done
         COR="#${VALUE[1]}${VALUE[2]}${VALUE[3]}"
-        #echo "${COR}"
-        echo -n "${DIV_CAR} \"Tests/${DIR}/${TYPE[t]}/$d/hist.txt\" using 1:(log10(\$2+1)+1) every ::1 w lines lt rgb \"${COR}\" title '$d'" >> ${TMP}
+        echo -n "${DIV_CAR} \"Tests/${DIR}/${TYPE[t]}/$d/hist.txt\" using (\$1):(\$2) every ::1 w lines lt rgb \"${COR}\" title '$d'" >> ${TMP}
 	    DIV_CAR=","
     done
     echo "" >> ${TMP}
