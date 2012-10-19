@@ -6,8 +6,10 @@ hist*.txt
 toPlot.txt
 Tests/
 Tests.tar.gz
+*.data
 
 nbproject/
 DualImages/
 models/
 histogram/
+Data/

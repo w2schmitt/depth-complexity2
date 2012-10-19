@@ -78,7 +78,7 @@ RGB=(0 0 0)
 DIV_CAR=","
 echo -n "${d} " >> ${DATA_TMP}
 MDC=`tail -1 Tests/${DIR}/${TYPE[t]}/$d/hist.txt | awk '{ print $1 }'`
-echo -n "${MDC} " >> ${DATA_TMP}
+echo "${MDC}" >> ${DATA_TMP}
 INTENSITY=$(echo "scale=7; (${MDC}/${DC_MAX})" | bc -l)
 COMMAND="evaluate_color.rb ${INTENSITY}"
 #echo $INTENSITY
@@ -109,17 +109,18 @@ COR=$(echo "scale=0; (${RGB[0]}*65536+${RGB[1]}*256+${RGB[2]})" | bc -l)
 #COR="#${VALUE[1]}${VALUE[2]}${VALUE[3]}"
 #echo $COR
 #echo $COR
-echo "${COR} " >> ${DATA_TMP}
+#echo "${COR} " >> ${DATA_TMP}
 #echo "${RGB[1]} " >> ${DATA_TMP}
 #echo "${RGB[2]}" >> ${DATA_TMP}
 #echo $DATA_TMP
 done 
-echo "plot \"${DATA_TMP}\" using 1:2:(\$3) with boxes lc rgb variable notitle" >> ${TMP}
+echo ${DATA_TMP}
+#echo "plot \"${DATA_TMP}\" using 1:2:(\$3) with boxes lc rgb variable notitle" >> ${TMP}
 
-    echo "set output \"trash.pdf\"" >> ${TMP}
+#    echo "set output \"trash.pdf\"" >> ${TMP}
     
-    gnuplot ${TMP}
-    rm ${TMP}
-    rm ${DATA_TMP}
-    rm trash.pdf
+    #gnuplot ${TMP}
+    #rm ${TMP}
+    #rm ${DATA_TMP}
+    #rm trash.pdf
 done
