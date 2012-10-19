@@ -102,6 +102,7 @@ struct classcomp {
 
 TriMesh loadOFFMesh(std::istream& in);
 TriMesh loadOBJMesh(std::istream& in);
+TriMesh loadOBJMesh(std::istream& in, vec3d rotation);
 
 // help functions
 bool lineIntersection3D(const Segment &line1, const Segment &line2, double *t1, double *t2);
