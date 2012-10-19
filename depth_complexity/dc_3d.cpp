@@ -20,7 +20,7 @@ T mix(const T& a, const T& b, double x) {
   return p + q;
 }
 
-GLuint DepthComplexity3D::getTextureID() { return _dc2d->texture3DId();}
+GLuint DepthComplexity3D::getTextureID() { return tex3d.texture3DId();}
 
 DepthComplexity3D::DepthComplexity3D(int fboWidth, int fboHeight, int discretSteps):
   _fboWidth(fboWidth),
@@ -33,12 +33,17 @@ DepthComplexity3D::DepthComplexity3D(int fboWidth, int fboHeight, int discretSte
 
   _goodRays.resize(1);
   _dc2d = new DepthComplexity2D(_fboWidth, _fboHeight);
+ 
 }
 
 DepthComplexity3D::~DepthComplexity3D() {
 	std::map<int, std::list<unsigned int>* >::iterator it = _intersectionTriList.begin();
 	for (; it != _intersectionTriList.end(); ++it)
 		delete it->second;
+}
+
+void DepthComplexity3D::setDCType(bool type){
+    _dc_type = type;
 }
 
 void DepthComplexity3D::setComputeHistogram(bool computeHistogram) {
@@ -106,12 +111,14 @@ void DepthComplexity3D::writeRays(std::ostream& out, const std::set<Segment,clas
 void DepthComplexity3D::process(const TriMesh &mesh) {
   this->_mesh = &mesh;
   BoundingBox aabb = _mesh->aabb;
-
+ 
   _usedPlanes.clear();
   _goodRays.clear();
   _goodRays.resize(1);
   _dc2d->setThreshold(_threshold);
-  _dc2d->setTex3dSize(aabb.extents());
+  //_dc2d->setTex3dSize(aabb.extents());
+  tex3d.CreateTexture3D(512,512,1,3,0);
+  tex3d.setMeshBoundingbox(aabb);
   _maximum = 0;
   
   //std::cout << _fboWidth << " " << _fboHeight << " " << _discretSteps << " " << _maximum << " " << _threshold << std::endl;
@@ -129,7 +136,7 @@ void DepthComplexity3D::process(const TriMesh &mesh) {
   //processMeshAlign(AlignX, AlignY);
   //processMeshAlign(AlignX, AlignZ);
   
-  _dc2d->cimg2Tex(_maximum);
+  tex3d.cimg2Tex(_maximum);
   
 }
 
@@ -259,46 +266,30 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
         }
         _maximum = tempMaximum;
         std::set<Segment, classcomp> tempRays = _dc2d->maximumRays();
-       // std::set<Segment, classcomp>::iterator it = tempRays.begin();
-
-        // Testing rays and saving intersectin points.
-        /*
-        for (; it!=tempRays.end(); ++it) {
-          for (unsigned s=0; s<segments.size(); ++s) {
-            double t1, t2;
-            if(segmentIntersection3D(*it, segments[s], &t1, &t2)) {
-              _intersectionPoints.push_back(it->a + t1*(it->b-it->a));
-            }
+   
+        _maximumRays.insert(tempRays.begin(), tempRays.end()); 
+         for (std::set<Segment,classcomp>::iterator it = tempRays.begin(); it!=tempRays.end(); ++it){
+              tex3d.updateTexture3D(*it,_maximum);
           }
-        }
-        */
-        
-
-//        _intersectionSegments.insert(_intersectionSegments.end(), segments.begin(), segments.end());
-//        _intersectionPoints.insert(_intersectionPoints.end(), points.begin(), points.end());
-
-        _maximumRays.insert(tempRays.begin(), tempRays.end());
-        // Shouldn't the histogram be used without regard to the current tempMaximum? (changed it)
       }
       
       std::vector<unsigned long long> tempHist = _dc2d->histogram();
       for(unsigned i=0; i< tempHist.size(); ++i)
         _histogram[i] += tempHist[i];
-      
-#ifdef DEBUG_SAVE_HIST_EACH_FRAME
-      char filename[100]; sprintf(filename,"hist/hist%d%d.txt",az,bz);
-      std::ofstream fhist ( filename );
-      writeHistogram(fhist);
-      fhist.close();
-#endif
-      if(_computeGoodRays) {
-        //std::cout << "size of goodRays: " << _goodRays.size() << " and _threshold = " << _threshold << std::endl;
-        for(unsigned int i = _threshold ; i <= tempMaximum ; ++i) {
-          //std::cout << "i = " << i << " and size(i) = " << _dc2d->goodRays(i).size() << std::endl;
+
+      if(_computeGoodRays) {       
+        for(unsigned int i = _threshold ; i <= tempMaximum ; ++i) {         
           std::set<Segment,classcomp> tempRays = _dc2d->goodRays(i);
           _goodRays[i].insert(tempRays.begin(), tempRays.end());
+          
+          for (std::set<Segment,classcomp>::iterator it = tempRays.begin(); it!=tempRays.end(); ++it){
+              tex3d.updateTexture3D(*it,i);
+          }
+          
         }
       }
+      
+      
     }
   }
 }

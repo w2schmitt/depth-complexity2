@@ -1,6 +1,7 @@
 #include "dc_3d_random.h"
 #include "util.h"
 #include "timer.h"
+#include "Texture3D.h"
 
 #include <cassert>
 #include <iostream>
@@ -141,6 +142,8 @@ void RDepthComplexity3D::writeRays(std::ostream& out, const std::set<Segment,cla
 		out << "2 " << i << " " << (i+1) << "\n";
 }
 
+GLuint RDepthComplexity3D::getTextureID() { return tex3d.texture3DId();}
+
 double uniformRandom() { return rand()/double(RAND_MAX); }
 
 #define CONSTANT_FACTOR 500
@@ -168,7 +171,11 @@ void RDepthComplexity3D::process(const TriMesh &mesh) {
 	//std::cout << _fboWidth << " " << _fboHeight << " " << _discretSteps << " " << _maximum << " " << _threshold << std::endl;
 
 	BoundingBox aabb = _mesh->aabb;
-	aabb.merge(aabb.min - aabb.extents()/10.0);
+        
+        tex3d.CreateTexture3D(64,64,1,3,0);
+        tex3d.setMeshBoundingbox(aabb);
+        
+        aabb.merge(aabb.min - aabb.extents()/10.0);
 	aabb.merge(aabb.max + aabb.extents()/10.0);
 	
 	double r = aabb.extents().length()/2.0;
@@ -194,6 +201,7 @@ void RDepthComplexity3D::process(const TriMesh &mesh) {
 			vec3d randomVector2(cos(theta)*sinPhi*r,sin(theta)*sinPhi*r,cosPhi*r);
 			
 			randomSegment = Segment(center+randomVector1,center+randomVector2);
+                        
 		}
 		else {
 			randomSegment = _raysFromFile[tn];
@@ -203,6 +211,8 @@ void RDepthComplexity3D::process(const TriMesh &mesh) {
 		processMeshSegment(randomSegment, &points);
 
 		unsigned tempMaximum = points.size();
+                tex3d.updateTexture3D(randomSegment,tempMaximum);
+                
 		if (tempMaximum >= _maximum) {
 			if (tempMaximum > _maximum) {
 				_maximumRays.clear();
@@ -212,7 +222,7 @@ void RDepthComplexity3D::process(const TriMesh &mesh) {
 			}
 			_maximum = tempMaximum;
 
-			_intersectionPoints.insert(_intersectionPoints.end(), points.begin(), points.end());
+			//_intersectionPoints.insert(_intersectionPoints.end(), points.begin(), points.end());
 
 			_maximumRays.insert(randomSegment);
 			// Shouldn't the histogram be used without regard to the current tempMaximum? (changed it)
@@ -224,6 +234,8 @@ void RDepthComplexity3D::process(const TriMesh &mesh) {
 		if(_computeGoodRays && points.size() >= _threshold)
 			_goodRays[points.size()].insert(randomSegment);
 	}
+        
+        tex3d.cimg2Tex(_maximum);
 }
 
 void RDepthComplexity3D::processMeshSegment(const Segment& segment, std::vector<Point> *points) {
