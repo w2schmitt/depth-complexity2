@@ -2,6 +2,7 @@
 #define DC_3D_RANDOM_H
 
 #include "util.h"
+#include "Texture3D.h"
 
 #include <map>
 #include <set>
@@ -9,6 +10,7 @@
 #include <fstream>
 #include <sstream>
 #include <cstring>
+#include <GL/glew.h>
 
 // Usage:
 //   TriMesh mesh = ...;
@@ -33,6 +35,7 @@ public:
   void setComputeMaximumRays(bool computeMaximumRays);
   void setComputeGoodRays(bool computeGoodRays);
   void setThreshold(unsigned threshold);
+  GLuint getTextureID();
 
   unsigned maximum() const { return _maximum; }
   const std::set<Segment,classcomp> &maximumRays() const { return _maximumRays; }
@@ -60,6 +63,7 @@ private:
 private:
   // Input
   const TriMesh *_mesh;
+  Texture3D tex3d;
   int _fboWidth;
   int _fboHeight;
   int _discretSteps;

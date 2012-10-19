@@ -33,6 +33,7 @@ private:
   GLuint createOpenglTexture3D(int width, int height, int depth, const float* texels);
   
 public:
+    int _w,_h,_d;
     Texture3D(){}
     void CreateTexture3D(unsigned int _w, unsigned int _h, unsigned int _d, unsigned int _ch, float _init);
     Texture3D(const Texture3D& orig);

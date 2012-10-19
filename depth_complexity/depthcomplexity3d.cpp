@@ -44,6 +44,7 @@ bool showPlanes = false;
 bool doGoodRays = true;
 vec4f sphereColor(0.0, 1.0, 0.0, 1.0);
 unsigned int showRayIndex = 0;
+bool dc_type = true;
 
 CImgDisplay main_disp;
 CImg<float> cscale;//color_scale(40,500); 
@@ -170,9 +171,7 @@ void drawMesh(const TriMesh& mesh, const vec3f& dir)
 {
     
     glEnable(GL_TEXTURE_3D);
-#ifndef USE_RANDOM_DC3D
     glBindTexture(GL_TEXTURE_3D, dc3d->getTextureID());
-#endif
     glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
     glEnable(GL_COLOR_MATERIAL);
     
@@ -593,6 +592,7 @@ int doInteractive(TriMesh& mesh)
     dc3d->setThreshold(10);
     
     TwAddVarRW(bar, "showPlanes", TW_TYPE_BOOLCPP, &showPlanes, " label='show discret. planes' ");
+    TwAddVarRW(bar, "dc texture", TW_TYPE_BOOLCPP, &dc_type, "true=MAX false=AVERAGE label='DC calc.'");
 
     TwAddVarRW(bar, "goodRays", TW_TYPE_BOOLCPP, &doGoodRays, " label='show more rays' ");
 

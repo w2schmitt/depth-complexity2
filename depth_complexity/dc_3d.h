@@ -2,7 +2,7 @@
 #define DC_3D_H
 
 #include "util.h"
-
+#include "Texture3D.h"
 
 #include <map>
 #include <vector>
@@ -33,6 +33,7 @@ public:
   void setComputeMaximumRays(bool computeMaximumRays);
   void setComputeGoodRays(bool computeGoodRays);
   void setThreshold(unsigned threshold);
+  void setDCType(bool type);
 
   unsigned int maximum() const { return _maximum; }
   const std::set<Segment, classcomp> &maximumRays() const { return _maximumRays; }
@@ -63,6 +64,7 @@ private:
 
 private:
   DepthComplexity2D *_dc2d;
+  Texture3D tex3d;
 
   // Input
   const TriMesh *_mesh;
@@ -71,11 +73,13 @@ private:
   int _discretSteps;
   unsigned int _maximum;
   unsigned int _threshold;
+  
 
   // State
   bool _computeHistogram;
   bool _computeMaximumRays;
   bool _computeGoodRays;
+  bool _dc_type;
 
   // Output
   std::set<Segment,classcomp> _maximumRays;

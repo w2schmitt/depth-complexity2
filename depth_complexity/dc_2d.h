@@ -45,8 +45,9 @@ public:
   void setComputeMaximumRays(bool computeMaximumRays) {this->_computeMaximumRays = computeMaximumRays; }
   void setComputeGoodRays(bool computeGoodRays) {this->_computeGoodRays = computeGoodRays; }
   void setThreshold(unsigned threshold) {this->_threshold = threshold; }
-  void setTex3dSize(vec3d size) { this->_texSize = size;}
+  //void setTex3dSize(vec3d size) { this->_texSize = size;}
   void setMeshBoundingbox(BoundingBox aabb) { this->_aabb = aabb; }
+  //void setDCType(bool type) { _dc_type = type; }
   
   void cimg2Tex(unsigned int maxDC);
   // Compute the maximum depth complexity
@@ -108,6 +109,7 @@ private:
   bool                                  		_computeHistogram;
   bool                                 			_computeMaximumRays;
   bool                                  		_computeGoodRays;
+  //bool                                                  _dc_type;
 
   // Inputs
   int                                   		_fboWidth;

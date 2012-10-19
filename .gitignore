@@ -3,6 +3,7 @@
 hist*.txt
 *.off
 *.svg
+*.pdf
 toPlot.txt
 Tests/
 Tests.tar.gz
@@ -11,3 +12,5 @@ nbproject/
 DualImages/
 models/
 histogram/
+models2/
+modelTests

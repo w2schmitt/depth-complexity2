@@ -39,14 +39,14 @@ hard_clean: clean
 	rm -f *.off hist*.txt *.svg toPlot.txt
 	rm -rf Tests
 	
-depthcomplexity3d: depthcomplexity3d.o camera/Camera.o camera/float3.o dc_2d.o dc_3d.o util.o ShaderMgr.o timer.o
+depthcomplexity3d: depthcomplexity3d.o camera/Camera.o camera/float3.o dc_2d.o Texture3D.o dc_3d.o util.o ShaderMgr.o timer.o
 	g++ -g -o $@ $^ $(LDFLAGS) $(GLFW_LDFLAGS) $(GLUT_LDFLAGS) -lpthread -lX11
 
 depthcomplexity2d: depthcomplexity2d.o dc_2d.o util.o ShaderMgr.o flags.o timer.o 
 	g++ -g -o $@ $^ $(LDFLAGS) $(GLUT_LDFLAGS)  -lpthread -lX11
 
 depthcomplexity3d_offline: \
-	depthcomplexity3d_offline.o dc_3d.o  dc_2d.o flags.o util.o ShaderMgr.o timer.o
+	depthcomplexity3d_offline.o Texture3D.o  dc_3d.o  dc_2d.o flags.o util.o ShaderMgr.o timer.o
 	g++ -g -o $@ $^ $(LDFLAGS) $(GLFW_LDFLAGS) $(GLUT_LDFLAGS) -lpthread -lX11
 
 main_joao: main_joao.o
@@ -55,11 +55,11 @@ main_joao: main_joao.o
 #test: test.o
 #	g++ -g -o $@ $^ $(LDFLAGS) $(GLUT_LDFLAGS)
   
-randomdepthcomplexity3d: dc_3d_random.o camera/Camera.o camera/float3.o util.o timer.o flags.o
+randomdepthcomplexity3d: Texture3D.o dc_3d_random.o camera/Camera.o camera/float3.o util.o timer.o flags.o
 	g++ -g -o $@ depthcomplexity3d.cpp -D "USE_RANDOM_DC3D" $^ $(LDFLAGS) \
 	$(GLFW_LDFLAGS) $(GLUT_LDFLAGS) $(GLEW_CFLAGS) -lpthread -lX11
 	
-randomdepthcomplexity3d_offline: dc_3d_random.o flags.o util.o timer.o flags.o
+randomdepthcomplexity3d_offline: Texture3D.o dc_3d_random.o flags.o util.o timer.o flags.o
 	g++ -g -o $@ depthcomplexity3d_offline.cpp -D "USE_RANDOM_DC3D" $^ \
 	$(LDFLAGS) $(GLFW_LDFLAGS) $(GLUT_LDFLAGS) $(GLEW_CFLAGS) -lpthread -lX11
 
