@@ -188,6 +188,9 @@ void RDepthComplexity3D::process(const TriMesh &mesh) {
 
 	for (unsigned tn = 0; tn < Nrays ; ++tn) {
 		Segment randomSegment;
+                if ((tn%1000) == 0 ){
+                    std::cout << "Concluido: " << tn << " / " << Nrays << std::endl; 
+                }
 
 		if (!_computeRaysFromFile){		
 			double theta =	2.*uniformRandom()*PI;
@@ -224,15 +227,15 @@ void RDepthComplexity3D::process(const TriMesh &mesh) {
 
 			//_intersectionPoints.insert(_intersectionPoints.end(), points.begin(), points.end());
 
-			_maximumRays.insert(randomSegment);
+			//_maximumRays.insert(randomSegment);
 			// Shouldn't the histogram be used without regard to the current tempMaximum? (changed it)
 		}
 		
 		if(_computeHistogram)
 			++_histogram[points.size()];
 		
-		if(_computeGoodRays && points.size() >= _threshold)
-			_goodRays[points.size()].insert(randomSegment);
+		//if(_computeGoodRays && points.size() >= _threshold)
+		//	_goodRays[points.size()].insert(randomSegment);
 	}
         
         tex3d.cimg2Tex(_maximum);

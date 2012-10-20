@@ -7,9 +7,9 @@
 
 #include "Texture3D.h"
 
-#define WIDTH  64
-#define HEIGHT 64
-#define DEPTH  64
+#define WIDTH  256
+#define HEIGHT 256
+#define DEPTH  256
 
 void Texture3D::CreateTexture3D(unsigned int _w, unsigned int _h, unsigned int _d, unsigned int _ch, float _init) {
     _tex3D = CImg<unsigned int>(WIDTH, HEIGHT,DEPTH,_ch,0);
