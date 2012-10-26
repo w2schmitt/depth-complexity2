@@ -18,6 +18,11 @@ struct Triangle {
     //Triangle() : intercepted(false){}
 };
 
+struct Sphere {
+  vec3d center;
+  double radius;
+};
+
 typedef vec3d Point;
 
 struct Segment {
@@ -109,5 +114,7 @@ bool lineIntersection3D(const Segment &line1, const Segment &line2, double *t1, 
 bool lineIntersection2D(const Segment &line1, const Segment &line2, double *t1, double *t2);
 bool segmentIntersection2D(const Segment &seg1, const Segment &seg2, double *t1, double *t2);
 bool segmentIntersection3D(const Segment &seg1, const Segment &seg2, double *t1, double *t2);
+bool segmentSphereIntersection3D(const Segment &seg, const Sphere sph, vec3d & out0, vec3d & out1);
+vec3d cartesianToSpherical(vec3d point);
 
 #endif

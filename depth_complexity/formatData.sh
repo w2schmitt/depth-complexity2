@@ -15,8 +15,8 @@ TYPE[1]="Random"
 TERM[0]="u"
 TERM[1]="r"
 
-DATA_TMP[0]="$Data/{DIR}_Normal.data"
-DATA_TMP[1]="$Data/{DIR}_Random.data"
+DATA_TMP[0]="Data/${DIR}_Normal.data"
+DATA_TMP[1]="Data/${DIR}_Random.data"
 
 
 

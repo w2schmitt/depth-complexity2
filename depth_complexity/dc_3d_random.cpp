@@ -110,6 +110,7 @@ void RDepthComplexity3D::writeRaysSpherical(std::ostream& out, int k) {
   }
   out << total << "\n";
 
+  /*
   for(int i = 0 ; i <= k ; ++i) {
     int ind = maximum()-i;
     if (ind<0) break;
@@ -126,6 +127,30 @@ void RDepthComplexity3D::writeRaysSpherical(std::ostream& out, int k) {
       out << a << " " << b << " " << c << " " << d << " " << maximum()-i << "\n";
     }
   }
+   */
+  BoundingBox aabb = _mesh->aabb;
+  Sphere sph;
+  sph.center = aabb.center();
+  sph.radius = aabb.extents().length()/2;
+  
+  // Coordinates of intersection with bounding sphere
+  for (int i=0; i <= k; ++i){
+      int ind = maximum()-i;
+      if (ind<0) break;
+      const std::set<Segment,classcomp>& _rays = goodRays(ind);
+      std::set<Segment,classcomp>::const_iterator ite = _rays.begin();
+      std::set<Segment,classcomp>::const_iterator end = _rays.end();
+      for (; ite != end; ++ite) {
+          vec3d f, s;
+          if(!segmentSphereIntersection3D(*ite,sph,f,s)){
+              continue;
+          }
+          f = cartesianToSpherical(f);
+          s = cartesianToSpherical(s);
+          out << f.y << " " << f.z << " " << s.y << " " << s.z << " " << maximum()-i << std::endl;
+      }
+  }  
+  
 }
 
 void RDepthComplexity3D::setThreshold(unsigned threshold) {
@@ -232,6 +257,12 @@ void RDepthComplexity3D::process(const TriMesh &mesh) {
 		processMeshSegment(randomSegment, &points);
 
 		unsigned tempMaximum = points.size();
+                if (tempMaximum >= _maximum){
+                    _maximum = tempMaximum;
+                    _goodRays.resize(tempMaximum+1);
+                    _histogram.resize(tempMaximum+1);
+                }
+                
 		if (tempMaximum >= _maximum) {
 			if (tempMaximum > _maximum) {
 				_maximumRays.clear();
@@ -241,16 +272,17 @@ void RDepthComplexity3D::process(const TriMesh &mesh) {
 			}
 			_maximum = tempMaximum;
 
-			_intersectionPoints.insert(_intersectionPoints.end(), points.begin(), points.end());
+			//_intersectionPoints.insert(_intersectionPoints.end(), points.begin(), points.end());
 
-			_maximumRays.insert(randomSegment);
+                        //if (_maximumRays.size() < 50)
+                                _maximumRays.insert(randomSegment);
 			// Shouldn't the histogram be used without regard to the current tempMaximum? (changed it)
 		}
 		
 		if(_computeHistogram)
 			++_histogram[points.size()];
 		
-		if(_computeGoodRays && points.size() >= _threshold)
+		if(_computeGoodRays && points.size() >= _threshold)// && _goodRays[points.size()].size() < 50)
 			_goodRays[points.size()].insert(randomSegment);
 	}
 }

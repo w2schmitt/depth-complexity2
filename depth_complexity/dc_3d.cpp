@@ -113,6 +113,7 @@ void DepthComplexity3D::writeRaysSpherical(std::ostream& out, int k) {
   }
   out << total << std::endl;
 
+  /* Simple spherical coordinates
   for(int i = 0 ; i <= k ; ++i) {
     int ind = maximum()-i;
     if (ind<0) break;
@@ -129,6 +130,29 @@ void DepthComplexity3D::writeRaysSpherical(std::ostream& out, int k) {
       out << a << " " << b << " " << c << " " << d << " " << maximum()-i << "\n";
     }
   }
+   */
+  BoundingBox aabb = _mesh->aabb;
+  Sphere sph;
+  sph.center = aabb.center();
+  sph.radius = aabb.extents().length()/2;
+  
+  // Coordinates of intersection with bounding sphere
+  for (int i=0; i <= k; ++i){
+      int ind = maximum()-i;
+      if (ind<0) break;
+      const std::set<Segment,classcomp>& _rays = goodRays(ind);
+      std::set<Segment,classcomp>::const_iterator ite = _rays.begin();
+      std::set<Segment,classcomp>::const_iterator end = _rays.end();
+      for (; ite != end; ++ite) {
+          vec3d f, s;
+          if(!segmentSphereIntersection3D(*ite,sph,f,s)){
+              continue;
+          }
+          f = cartesianToSpherical(f);
+          s = cartesianToSpherical(s);
+          out << f.y << " " << f.z << " " << s.y << " " << s.z << " " << maximum()-i << std::endl;
+      }
+  }  
 }
 
 void DepthComplexity3D::process(const TriMesh &mesh) {

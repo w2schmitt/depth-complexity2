@@ -48,6 +48,7 @@ int main (int argc, char **argv) {
   //const bool computeMoreRays = cmd_option("-cmr", false, "Whether rays above the threshold of intersections should be output");
   const int intersectionThreshold  = cmd_option("-it",  0, "Threshold of intersections");
 
+  std::cout << "Threshold: " << intersectionThreshold << std::endl;
   try {
     tic();
     std::ifstream file(filename);

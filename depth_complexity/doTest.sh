@@ -27,11 +27,11 @@ do
 		CURR_DIR=${TEST_DIR}/${NAME}_${TIME_LIMIT}_${XROT}_${YROT}_${ZROT}/${TYPE[i]}
 		EXIT=0
 		DSTEPS=3
-		ITH=100
+		ITH=1
 		BEST[i]=0
 		until [ $EXIT -eq 1 ]; do
 			echo "Current DSTEPS is ${DSTEPS}"
-			timeout ${TIME_LIMIT} ./${EXEC_NAME[i]} -f ${MODEL_DIR}/${NAME} -dsteps ${DSTEPS} -fh "hist.txt" -fr "bestRays.off" -frs "Data/sphericalRays_${TYPE[i]}_${XROT}_${YROT}_${ZROT}.txt" -k 5 -x $XROT -y $YROT -z $ZROT -cmr true -it ${ITH}
+			timeout ${TIME_LIMIT} ./${EXEC_NAME[i]} -f ${MODEL_DIR}/${NAME} -dsteps ${DSTEPS} -fh "hist.txt" -fr "bestRays.off" -frs "Data/${NAME}_spherical_${TYPE[i]}_${XROT}_${YROT}_${ZROT}.txt" -k 5 -x $XROT -y $YROT -z $ZROT -cmr true -it 1
 			TIMEOUT=$?
 			if [ $TIMEOUT -eq 124 ]; then
 				EXIT=1

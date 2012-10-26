@@ -222,11 +222,12 @@ void drawMesh(const TriMesh& mesh, const vec3f& dir)
     
 void drawRays()
 {
+    /*
     if(!doGoodRays) {
         const std::set<Segment,classcomp>& rays = dc3d->maximumRays();
         std::set<Segment,classcomp>::const_iterator it = rays.begin();
         // draw rays
-        glLineWidth(1);
+        glLineWidth(2.5);
         glBegin(GL_LINES);
         glColor3f(0.5, 0.0, 0.5);
           for (; it!=rays.end(); ++it) {
@@ -236,15 +237,30 @@ void drawRays()
           }
         glEnd();
     }
+     */
     
     for(unsigned i = dc3d->_threshold ; i <= dc3d->_maximum && doGoodRays ; ++i) {
       const std::set<Segment,classcomp>& gRays = dc3d->goodRays(i);
       std::set<Segment,classcomp>::const_iterator it = gRays.begin();
       // draw rays
-      double color = ((dc3d->_maximum - i)*(0.5))/(dc3d->_maximum-dc3d->_threshold);
-      glLineWidth( (i - dc3d->_threshold)*3 + 1 );
+      //double color = ((dc3d->_maximum - i)*(0.5))/(dc3d->_maximum-dc3d->_threshold);
+      vec3d color(0,0,0);
+      if (i == dc3d->maximum()){
+          glLineWidth(2.5);
+          color = vec3d(0,1,0);
+      } else if (i == dc3d->maximum()-1){
+          glLineWidth(1.5);
+          color = vec3d(1,0,0);
+      } else if (i == dc3d->maximum()-2){
+          glLineWidth(1.0);
+          color = vec3d(0.5,0,1);
+      } else {
+          glLineWidth(0.5);
+          color = vec3d(0,0,1);
+      }
+      //glLineWidth( (i - dc3d->_threshold)*3 + 1 );
       glBegin(GL_LINES);
-      glColor3f(1.0 - color, color, color);
+      glColor3f(color.x, color.y, color.z);
         for (; it!=gRays.end(); ++it) {
           const Segment &r = *it;
           glVertex3f(r.a.x, r.a.y, r.a.z);
