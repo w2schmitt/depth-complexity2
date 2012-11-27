@@ -36,6 +36,7 @@ int main (int argc, char **argv) {
   const int fboWidth  = cmd_option("-fboWidth",  512, "Framebuffer width.");
   const int fboHeight = cmd_option("-fboHeight", 512, "Framebuffer height.");
   const int discretSteps = cmd_option("-dsteps", 10, "Discrete steps.");
+  const char *filenameParallelData = cmd_option("-fpr", "", "Save a *.txt containing rays informaton");
   const char *filenameHistogram = cmd_option("-fh", "", "Save a *.txt file with histogram information");
   //const char *filenameRays = cmd_option("-fr", "", "Save a *.off file with rays in ");
   const char *filenameRaysSpherical = cmd_option("-frs", "", "Save a *.txt file with rays in spherical coordinates");
@@ -118,7 +119,7 @@ int main (int argc, char **argv) {
         std::ostringstream filenameMoreRays;
         filenameMoreRays << "rays" << i << ".off";
         std::ofstream fileRays(filenameMoreRays.str().c_str());
-        dc3d.writeRays(fileRays,dc3d.goodRays(i));
+        dc3d.writeRays(fileRays,dc3d.goodRays(i),i);
         fileRays.close();
       }
     }
@@ -131,6 +132,15 @@ int main (int argc, char **argv) {
         dc3d.writeRaysSpherical(fileRaysSpherical,sphericalThreshold);
         fileRaysSpherical.close();
       } else throw "Spherical Rays' file should be *.txt!";
+    }
+    
+    if (strcmp(filenameParallelData, "")!=0) {
+        std::string extTxt = getExtension(filenameRaysSpherical);
+        if (extTxt == "txt" || extTxt == "TXT") {
+            std::ofstream fileRaysSpherical(filenameRaysSpherical);
+            //dc3d.writeRaysSpherical(fileRaysSpherical,sphericalThreshold);
+            fileRaysSpherical.close();        
+        }
     }
       
   } catch (const char* msg)  {

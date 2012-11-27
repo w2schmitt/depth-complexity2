@@ -85,21 +85,49 @@ void DepthComplexity3D::writeRays(std::ostream& out) {
     out << "2 " << i << " " << (i+1) << "\n";
 }
 
-void DepthComplexity3D::writeRays(std::ostream& out, const std::set<Segment,classcomp> & _rays) {
-  out << "OFF" << "\n";
-  out << (_rays.size()*2) << " "
-      << _rays.size() << " 0\n";
+void DepthComplexity3D::writeRays(std::ostream& out, const std::set<Segment,classcomp> & _rays, int dc) {
+  //out << "OFF" << "\n";
+  //out << (_maximumRays.size()*2) << " "
+  //    << _maximumRays.size() << " 0\n";
 
-  std::set<Segment,classcomp>::const_iterator ite = _rays.begin();
-  std::set<Segment,classcomp>::const_iterator end = _rays.end();
+  std::set<Segment, classcomp>::const_iterator ite = _maximumRays.begin();
+  std::set<Segment, classcomp>::const_iterator end = _maximumRays.end();
+  for (; ite != end; ++ite) {
+    out << ite->a.x << "," << ite->a.y << "," << ite->a.z << "," << ite->b.x << "," << ite->b.y << "," << ite->b.z << "," << dc << "\n";
+  }
+
+  //for(unsigned i=0; i<2*_maximumRays.size(); i+=2)
+  //  out << "2 " << i << " " << (i+1) << "\n";
+}
+
+void DepthComplexity3D::writeMaximumRays(std::ostream& out){
+    writeRays(out, _maximumRays, _maximum);
+}
+
+void DepthComplexity3D::writeGoodRays(std::ostream& out){
+    for(unsigned i = _threshold; i <= _maximum; ++i) {
+        writeRays(out, _goodRays[i], i);
+    }
+}
+
+/*
+void DepthComplexity3D::writeRays(std::ostream& out) {
+  out << "OFF" << "\n";
+  out << (_maximumRays.size()*2) << " "
+      << _maximumRays.size() << " 0\n";
+
+  std::set<Segment, classcomp>::const_iterator ite = _maximumRays.begin();
+  std::set<Segment, classcomp>::const_iterator end = _maximumRays.end();
   for (; ite != end; ++ite) {
     out << ite->a.x << " " << ite->a.y << " " << ite->a.z << "\n"
         << ite->b.x << " " << ite->b.y << " " << ite->b.z << "\n";
   }
 
-  for(unsigned i=0; i<2*_rays.size(); i+=2)
+  for(unsigned i=0; i<2*_maximumRays.size(); i+=2)
     out << "2 " << i << " " << (i+1) << "\n";
 }
+ */
+
 
 void DepthComplexity3D::writeRaysSpherical(std::ostream& out, int k) {
   assert(_computeGoodRays);
@@ -175,6 +203,10 @@ void DepthComplexity3D::process(const TriMesh &mesh) {
   processMeshAlign(AlignX, AlignY);
   processMeshAlign(AlignX, AlignZ);
 
+  std::ofstream fileMax("maximum_rays.txt");
+  std::ofstream fileGood("good_rays.txt");
+  writeMaximumRays(fileMax);
+  writeGoodRays(fileGood);
 }
 
 // Call this varying palign and salign.

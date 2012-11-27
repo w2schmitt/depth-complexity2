@@ -42,7 +42,9 @@ public:
 
   void writeHistogram(std::ostream& out);
   void writeRays(std::ostream& out);
-  void writeRays(std::ostream& out, const std::set<Segment,classcomp> & _rays);
+  void writeMaximumRays(std::ostream& out);
+  void writeGoodRays(std::ostream& out);
+  void writeRays(std::ostream& out, const std::set<Segment,classcomp> & _rays, int dc);
   void writeRaysSpherical(std::ostream& out, int k);
 
 private:
