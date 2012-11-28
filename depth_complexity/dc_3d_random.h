@@ -45,7 +45,10 @@ public:
   void writeRays(std::ostream& out);
   void writeRays(std::ostream& out, const std::set<Segment,classcomp> & _rays);
   void writeRaysSpherical(std::ostream& out, int k);
-
+  void writeMaximumRays(std::ostream& out);
+  void writeGoodRays(std::ostream& out);
+  void writeRays(std::ostream& out, const std::set<Segment,classcomp> & _rays, int dc);
+  
 private:
   enum PlaneAlign{
       AlignZ, AlignY, AlignX

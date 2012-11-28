@@ -19,6 +19,31 @@ T mix(const T& a, const T& b, double x) {
 	return p + q;
 }
 
+void RDepthComplexity3D::writeRays(std::ostream& out, const std::set<Segment,classcomp> & _rays, int dc) {
+  //out << "OFF" << "\n";
+  //out << (_maximumRays.size()*2) << " "
+  //    << _maximumRays.size() << " 0\n";
+
+  std::set<Segment, classcomp>::const_iterator ite = _rays.begin();
+  std::set<Segment, classcomp>::const_iterator end = _rays.end();
+  for (; ite != end; ++ite) {
+    out << ite->a.x << "," << ite->a.y << "," << ite->a.z << "," << ite->b.x << "," << ite->b.y << "," << ite->b.z << "," << dc << "\n";
+  }
+
+  //for(unsigned i=0; i<2*_maximumRays.size(); i+=2)
+  //  out << "2 " << i << " " << (i+1) << "\n";
+}
+
+void RDepthComplexity3D::writeMaximumRays(std::ostream& out){
+    writeRays(out, _maximumRays, _maximum);
+}
+
+void RDepthComplexity3D::writeGoodRays(std::ostream& out){
+    for(unsigned i = _threshold; i <= _maximum; ++i) {
+        writeRays(out, _goodRays[i], i);
+    }
+}
+
 RDepthComplexity3D::RDepthComplexity3D(int fboWidth, int fboHeight, int discretSteps):
 	_fboWidth(fboWidth),
 	_fboHeight(fboHeight),

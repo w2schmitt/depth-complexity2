@@ -90,8 +90,8 @@ void DepthComplexity3D::writeRays(std::ostream& out, const std::set<Segment,clas
   //out << (_maximumRays.size()*2) << " "
   //    << _maximumRays.size() << " 0\n";
 
-  std::set<Segment, classcomp>::const_iterator ite = _maximumRays.begin();
-  std::set<Segment, classcomp>::const_iterator end = _maximumRays.end();
+  std::set<Segment, classcomp>::const_iterator ite = _rays.begin();
+  std::set<Segment, classcomp>::const_iterator end = _rays.end();
   for (; ite != end; ++ite) {
     out << ite->a.x << "," << ite->a.y << "," << ite->a.z << "," << ite->b.x << "," << ite->b.y << "," << ite->b.z << "," << dc << "\n";
   }
@@ -203,8 +203,8 @@ void DepthComplexity3D::process(const TriMesh &mesh) {
   processMeshAlign(AlignX, AlignY);
   processMeshAlign(AlignX, AlignZ);
 
-  std::ofstream fileMax("maximum_rays.txt");
-  std::ofstream fileGood("good_rays.txt");
+  std::ofstream fileMax("parallel_data/maximum_rays.txt");
+  std::ofstream fileGood("parallel_data/good_rays.txt");
   writeMaximumRays(fileMax);
   writeGoodRays(fileGood);
 }
