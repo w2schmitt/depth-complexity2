@@ -27,9 +27,12 @@ LDFLAGS = $(ATB_LDFLAGS) $(GLEW_LDFLAGS) -Wall -Werror
 
 .PHONY: all clean
 
-all : sphereray main_joao depthcomplexity2d depthcomplexity3d_offline depthcomplexity3d \
-	  randomdepthcomplexity3d randomdepthcomplexity3d_offline mergeOFF
+#all : sphereray main_joao depthcomplexity2d depthcomplexity3d_offline depthcomplexity3d \
+	  #randomdepthcomplexity3d randomdepthcomplexity3d_offline newrandomdepthcomplexity3d mergeOFF
 
+all : depthcomplexity2d depthcomplexity3d_offline depthcomplexity3d \
+	newrandomdepthcomplexity3d mergeOFF
+	
 clean:
 	rm -f *.o camera/*.o depthcomplexity3d depthcomplexity2d main_joao \
 	test_intersection test depthcomplexity3d_offline randomdepthcomplexity3d \
@@ -55,7 +58,11 @@ main_joao: main_joao.o
 sphereray: sphererays.o
 	g++ -g -o $@ $^ $(LDFLAGS) $(GLUT_LDFLAGS)
   
-randomdepthcomplexity3d: dc_3d_random.o camera/Camera.o camera/float3.o util.o timer.o flags.o
+#randomdepthcomplexity3d: dc_3d_random.o camera/Camera.o camera/float3.o util.o timer.o flags.o
+#	g++ -g -o $@ depthcomplexity3d.cpp -D "USE_RANDOM_DC3D" $^ $(LDFLAGS) \
+	$(GLFW_LDFLAGS) $(GLUT_LDFLAGS) $(GLEW_CFLAGS)
+	
+newrandomdepthcomplexity3d: RFDepthComplexity3D.o camera/Camera.o camera/float3.o util.o timer.o flags.o
 	g++ -g -o $@ depthcomplexity3d.cpp -D "USE_RANDOM_DC3D" $^ $(LDFLAGS) \
 	$(GLFW_LDFLAGS) $(GLUT_LDFLAGS) $(GLEW_CFLAGS)
 	

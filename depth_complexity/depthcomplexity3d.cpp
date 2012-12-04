@@ -28,7 +28,8 @@
 #include "camera/Camera.h"
 #include "util.h"
 #ifdef USE_RANDOM_DC3D
-#include "dc_3d_random.h"
+//#include "dc_3d_random.h"
+#include "RFDepthComplexity3D.h" 
 #else
 #include "dc_3d.h"
 #endif
@@ -41,7 +42,7 @@ vec4f sphereColor(0.0, 1.0, 0.0, 1.0);
 unsigned int showRayIndex = 0;
 
 #ifdef USE_RANDOM_DC3D
-RDepthComplexity3D *dc3d;
+RFDepthComplexity3D *dc3d;
 const char *filenameRays;
 #else
 DepthComplexity3D *dc3d;
@@ -491,10 +492,10 @@ int doInteractive(TriMesh& mesh)
     bool showObj = true;
     
     #ifdef USE_RANDOM_DC3D
-		if (strcmp(filenameRays, "")!=0)
-			dc3d = new RDepthComplexity3D(512, 512, 2, filenameRays);
+		if (strcmp(filenameRays, "")!=0){}
+			//dc3d = new RFDepthComplexity3D(512, 512, 2, filenameRays);
 		else
-			dc3d = new RDepthComplexity3D(512, 512, 2);
+			dc3d = new RFDepthComplexity3D(512, 512, 2);
     #else
     dc3d = new DepthComplexity3D(512, 512, 2);
     #endif
