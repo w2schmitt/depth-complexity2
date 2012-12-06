@@ -80,13 +80,13 @@ private:
 private:
   //buffers 
   GLuint                                		_cboTexId;
-  GLuint										                _counterBuffId;
+  GLuint						_counterBuffId;
   GLuint                                		_fboId;
   GLuint                                		_rboId;
   
   // Shaders
-  GLuint 										                _shaderclearBuffer;
-  GLuint                                    _shaderCountDC;
+  GLuint 						_shaderclearBuffer;
+  GLuint                                                _shaderCountDC;
 
   // State
   bool                                  		_status;

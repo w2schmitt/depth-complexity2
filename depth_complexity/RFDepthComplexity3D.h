@@ -9,6 +9,7 @@
 #define	RFDEPTHCOMPLEXITY3D_H
 
 #include "util.h"
+#include "ShaderMgr.h"
 
 #include <map>
 #include <set>
@@ -16,6 +17,8 @@
 #include <fstream>
 #include <sstream>
 #include <cstring>
+
+#include <GL/glew.h>
 
 class RFDepthComplexity3D {
 public:
@@ -61,12 +64,26 @@ private:
   bool intersectPlaneSegment(const vec4d& plane, const vec3d& p0, const vec3d& p1, vec3d *pt);
   vec4d makePlane(const vec3d& a, const vec3d& b, const vec3d& c);
 
+  void initTextureCounter();
+  void renderScene(vec3d point);
+  void setShaderClearCounterBuffer();
+  void setShaderCountDC();
+  unsigned int findMaxValueInCounterBuffer();
+  
 //bool readRaysFromFile(std::istream& in);
   
 private:
+  //buffers 
+  GLuint						_counterBuffId;
+  GLuint                                		_rboId;
+  
+  // Shaders
+  GLuint 						_shaderclearBuffer;
+  GLuint                                                _shaderCountDC;
 
   // Input
   const TriMesh *_mesh;
+  std::vector<Triangle> _sorted_faces;
   int _fboWidth;
   int _fboHeight;
   int _discretSteps;
@@ -78,7 +95,7 @@ private:
   bool _computeHistogram;
   bool _computeMaximumRays;
   bool _computeGoodRays;
-	bool _computeRaysFromFile;
+  bool _computeRaysFromFile;
 
   // Output
   std::set<Segment,classcomp> _maximumRays;

@@ -62,7 +62,7 @@ sphereray: sphererays.o
 #	g++ -g -o $@ depthcomplexity3d.cpp -D "USE_RANDOM_DC3D" $^ $(LDFLAGS) \
 	$(GLFW_LDFLAGS) $(GLUT_LDFLAGS) $(GLEW_CFLAGS)
 	
-newrandomdepthcomplexity3d: RFDepthComplexity3D.o camera/Camera.o camera/float3.o util.o timer.o flags.o
+newrandomdepthcomplexity3d: RFDepthComplexity3D.o camera/Camera.o camera/float3.o util.o ShaderMgr.o timer.o flags.o
 	g++ -g -o $@ depthcomplexity3d.cpp -D "USE_RANDOM_DC3D" $^ $(LDFLAGS) \
 	$(GLFW_LDFLAGS) $(GLUT_LDFLAGS) $(GLEW_CFLAGS)
 	
