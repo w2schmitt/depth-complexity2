@@ -76,6 +76,17 @@ RFDepthComplexity3D::RFDepthComplexity3D(int fboWidth, int fboHeight, int discre
 void RFDepthComplexity3D::setShaderClearCounterBuffer(){
     glUseProgram(_shaderclearBuffer);
     
+    
+    
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    gluOrtho2D(0,1,0,1);
+    
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+    
     // Pass MODELVIEW and PROJECTION matrices to Shader
     GLfloat model[16],projection[16];
     glGetFloatv(GL_MODELVIEW_MATRIX, model);
@@ -85,13 +96,19 @@ void RFDepthComplexity3D::setShaderClearCounterBuffer(){
 
     // Pass Counter Buffer Texture
     glProgramUniform1iEXT(_shaderclearBuffer, glGetUniformLocation(_shaderclearBuffer, "counterBuff"), 0);
-      
+    
     glBegin(GL_QUADS);
-      glVertex2f(-1.0f, 2.0f);
+      glVertex2f(-1.0f , 2.0f);
       glVertex2f(2.0f, 2.0f);
       glVertex2f(2.0f, -1.0f);
       glVertex2f(-1.0f, -1.0f);
     glEnd();
+    
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
 }
 
 void RFDepthComplexity3D::setShaderCountDC(){
@@ -160,7 +177,6 @@ void RFDepthComplexity3D::writeRaysSpherical(std::ostream& out, int k) {
           out << f.y << " " << f.z << " " << s.y << " " << s.z << " " << maximum()-i << std::endl;
       }
   }  
-  
 }
 
 void RFDepthComplexity3D::setThreshold(unsigned threshold) {
@@ -224,8 +240,26 @@ void RFDepthComplexity3D::initTextureCounter(){
     
 }
 
+void RFDepthComplexity3D::erodeTriangle(vec3d &v1, vec3d &v2, vec3d &v3){
+    
+    double pixelSize = 1.0/512.0;
+    double step = 0.5*pixelSize*sqrt(2);
+    
+    vec3d v1dir = (v2 + v3)*0.5 - v1;
+    vec3d v2dir = (v1 + v3)*0.5 - v2;
+    vec3d v3dir = (v1 + v2)*0.5 - v3;
+    
+    v1dir.normalize();
+    v2dir.normalize();
+    v3dir.normalize();
+    
+    v1 = v1 + step*v1dir;
+    v2 = v2 + step*v2dir;
+    v3 = v3 + step*v3dir;    
+}
+
 void RFDepthComplexity3D::renderScene(vec3d point){
-    glClear( GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT );
+    //glClear( GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT );
      
     //glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
     //glEnable(GL_COLOR_MATERIAL);
@@ -240,11 +274,29 @@ void RFDepthComplexity3D::renderScene(vec3d point){
     
     //std::sort(sorted_faces.begin(), sorted_faces.end(), ByDist(dir));
     //std::clog << "done" << std::endl;
+    glPushAttrib(GL_VIEWPORT_BIT | GL_ENABLE_BIT);
+    glViewport(0, 0, _fboWidth, _fboHeight);
+
+    // desable all anti-aliasing to avoid precision error
+    glDisable(GL_POINT_SMOOTH);
+    glDisable(GL_LINE_SMOOTH);
+    glDisable(GL_POLYGON_SMOOTH);
+
+    glHint(GL_POLYGON_SMOOTH_HINT,GL_FASTEST);
+    glHint(GL_POINT_SMOOTH, GL_FASTEST);
+    glHint(GL_LINE_SMOOTH, GL_FASTEST);
     
-    glEnable(GL_DEPTH_TEST);
+    
+    glDisable(GL_DEPTH_TEST);
     glDisable(GL_LIGHTING);
     glDisable(GL_BLEND);
     //glDisable(GL_DEPTH_TEST);
+    
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    gluPerspective(50, 1024./768., 0.1, 10000);
+    
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glLoadIdentity();
@@ -262,15 +314,35 @@ void RFDepthComplexity3D::renderScene(vec3d point){
     // Ensure that all texture writing is done
     glMemoryBarrierEXT(GL_FRAMEBUFFER_BARRIER_BIT_EXT);
     
+    //int max = findMaxValueInCounterBuffer()-1;
+    //std::cout << "initialize test: " << max << std::endl;
+    
     // Set shader to write DC in the counter buffer 
     setShaderCountDC();
    
     //glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 1);    
     glColor4f(1,1,1,1);
-    glEnable(GL_VERTEX_ARRAY);
+    glBegin(GL_TRIANGLES);
+    for (unsigned i=0; i< _mesh->faces.size(); i++){
+        vec3d   v1(_mesh->faces[i].a.x, _mesh->faces[i].a.y, _mesh->faces[i].a.z),
+                v2(_mesh->faces[i].b.x, _mesh->faces[i].b.y, _mesh->faces[i].b.z),
+                v3(_mesh->faces[i].c.x, _mesh->faces[i].c.y, _mesh->faces[i].c.z);
+        
+        //erodeTriangle(v1,v2,v3);
+        
+        glVertex3f(v1.x,v1.y,v1.z);
+        glVertex3f(v2.x,v2.y,v2.z);
+        glVertex3f(v3.x,v3.y,v3.z);
+        
+        //glVertex3f(_mesh->faces[i  ].a.x, _mesh->faces[i  ].a.y, _mesh->faces[i  ].a.z );
+        //glVertex3f(_mesh->faces[i+1].b.x, _mesh->faces[i+1].b.y, _mesh->faces[i+1].b.z);
+        //glVertex3f(_mesh->faces[i+2].c.x, _mesh->faces[i+2].c.y, _mesh->faces[i+2].c.z);
+    }
+    glEnd();
+    //glEnable(GL_VERTEX_ARRAY);
 
-    glEnableClientState(GL_VERTEX_ARRAY);    
-    glVertexPointer(3, GL_DOUBLE, 2*sizeof(vec3d)+sizeof(vec4d), &_mesh->faces[0].a.x);
+    //glEnableClientState(GL_VERTEX_ARRAY);    
+    //glVertexPointer(3, GL_DOUBLE, 2*sizeof(vec3d)+sizeof(vec4d), &_mesh->faces[0].a.x);
     
     //glEnableClientState(GL_COLOR_ARRAY);
     //glColorPointer(4, GL_DOUBLE, 2*sizeof(vec3d)+sizeof(vec4d), &sorted_faces[0].ca.x);
@@ -278,10 +350,10 @@ void RFDepthComplexity3D::renderScene(vec3d point){
     //glEnableClientState(GL_NORMAL_ARRAY);
     //glNormalPointer(GL_DOUBLE, 2*sizeof(vec3d)+sizeof(vec4d), &sorted_faces[0].na.x);
 
-    glDrawArrays(GL_TRIANGLES, 0, _mesh->faces.size()*3);
+    //glDrawArrays(GL_TRIANGLES, 0, _mesh->faces.size()*3);
 
-    glDisableClientState(GL_VERTEX_ARRAY);
-    glDisable(GL_VERTEX_ARRAY);
+    //glDisableClientState(GL_VERTEX_ARRAY);
+    //glDisable(GL_VERTEX_ARRAY);
     //glDisableClientState(GL_NORMAL_ARRAY);
     //glDisable(GL_NORMAL_ARRAY);
     //glDisableClientState(GL_COLOR_ARRAY);
@@ -290,18 +362,25 @@ void RFDepthComplexity3D::renderScene(vec3d point){
     // Ensure that all texture writing is done
     glMemoryBarrierEXT(GL_TEXTURE_UPDATE_BARRIER_BIT_EXT);
     // Disable Shaders
-    int max = findMaxValueInCounterBuffer()-1;
-    std::cout << "the maximum DC is: " << max << std::endl;
+    _maximum = findMaxValueInCounterBuffer()-1;
+    //std::cout << "the maximum DC is: " << max << std::endl;
         
     glUseProgram(0);
     glBindTexture(GL_TEXTURE_2D, 0);   
 
+    glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
+    
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    
+    glPopAttrib();
     glEnable(GL_LIGHTING);
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     //glEnable(GL_DEPTH_TEST);
-    glDisable(GL_COLOR_MATERIAL);
+    //glDisable(GL_COLOR_MATERIAL);
+    glEnable(GL_DEPTH_TEST);
 
 }
 
@@ -315,6 +394,8 @@ void RFDepthComplexity3D::process(const TriMesh &mesh) {
 	_histogram.clear();
 	_histogram.resize(1);
 	_maximum = 0;
+        
+        initTextureCounter();
 	
 	/* test */
 	Point p;
@@ -339,7 +420,8 @@ void RFDepthComplexity3D::process(const TriMesh &mesh) {
         double r = radius.length();
         std::cout << r << std::endl;
 	
-	srand(time(0));
+	 /* initialize random seed: */
+        srand ( time(NULL) );
 
 	const unsigned steps = _discretSteps;
 	//const unsigned Nrays = (_computeRaysFromFile? _raysFromFile.size() : steps*steps*CONSTANT_FACTOR);
@@ -347,10 +429,26 @@ void RFDepthComplexity3D::process(const TriMesh &mesh) {
 
         std::cout << Nrays << std::endl;
         
+        float aspect = 1024./768.;
+        float fov = 50;
+        float fovh = aspect*fov;
+        
+        float modelsizex = aabb.extents().x;
+        float modelsizey = aabb.extents().y;
+        double distance=0;
+        
+        if (modelsizex/aspect > modelsizey){
+            distance = aabb.extents().z/2 + (modelsizex/2)/tan((fovh/2)*0.01745329238);
+        } else {
+            distance = aabb.extents().z/2 + (modelsizex/2)/tan((fov/2)*0.01745329238);
+        }
+        
         //generate random vector
-        vec3d v(rand()/(float)RAND_MAX - 0.5, rand()/(float)RAND_MAX - 0.5, rand()-RAND_MAX/2);
+        vec3d v(uniformRandom() - 0.5, uniformRandom() - 0.5, uniformRandom() - 0.5);
         v.normalize();
-        v = v*r + center;
+        v = distance*v + center;
+        
+        std::cout << v << std::endl;
         
         renderScene(v);
         
@@ -398,15 +496,29 @@ void RFDepthComplexity3D::process(const TriMesh &mesh) {
 unsigned int RFDepthComplexity3D::findMaxValueInCounterBuffer() {
   const int pixelNumber = _fboWidth * _fboHeight;
   unsigned int colorBuffer[pixelNumber];
+  float buff[pixelNumber];
   
   glBindTexture(GL_TEXTURE_2D, _counterBuffId);
   glGetTexImage( GL_TEXTURE_2D, 0 , GL_RED_INTEGER, GL_UNSIGNED_INT, colorBuffer ); 
   glBindTexture(GL_TEXTURE_2D, 0);
   
-  //for (int i=0; i<pixelNumber; i++)
-  //  std::cout << colorBuffer[i]-1 << std::endl;
+  // show pic
   
-  return *(std::max_element(colorBuffer, colorBuffer + pixelNumber));
+  
+  unsigned int max =  *(std::max_element(colorBuffer, colorBuffer + pixelNumber))-1;
+  
+  for (int i=0; i<pixelNumber; i++)
+      buff[i] = (colorBuffer[i]-1)/(float)max;
+      //((colorBuffer[i]-1)/((float)max-1.0f) > 0)? 1.0f: 0.0f;
+      //std::cout << colorBuffer[i]-1 << std::endl;
+  
+  CImg<float> cb(buff,512,512,1,1);
+  //cb.normalize(0,1);
+  
+  dualDisplay.display(cb);
+  
+  
+  return max+1;
 }
 
 void RFDepthComplexity3D::processMeshSegment(const Segment& segment, std::vector<Point> *points) {

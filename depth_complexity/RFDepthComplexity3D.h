@@ -10,6 +10,7 @@
 
 #include "util.h"
 #include "ShaderMgr.h"
+#include "CImg.h"
 
 #include <map>
 #include <set>
@@ -17,8 +18,11 @@
 #include <fstream>
 #include <sstream>
 #include <cstring>
+#include <time.h>
 
 #include <GL/glew.h>
+
+using namespace cimg_library;
 
 class RFDepthComplexity3D {
 public:
@@ -69,6 +73,9 @@ private:
   void setShaderClearCounterBuffer();
   void setShaderCountDC();
   unsigned int findMaxValueInCounterBuffer();
+  void erodeTriangle(vec3d &v1, vec3d &v2, vec3d &v3);
+  
+  CImgDisplay dualDisplay;
   
 //bool readRaysFromFile(std::istream& in);
   

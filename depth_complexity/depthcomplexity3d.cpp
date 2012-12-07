@@ -315,13 +315,15 @@ void recompute(void *data)
 {
     const TriMesh* mesh = reinterpret_cast<const TriMesh*>(data);
     if(doGoodRays)
-      dc3d->setComputeGoodRays(true);
+      dc3d->setComputeGoodRays(false);
     else
       dc3d->setComputeGoodRays(false);
     tic();
+    
     dc3d->process(*mesh);
     toc("Depth Complexity");
     std::clog << "Maximum: " << dc3d->maximum() << std::endl;
+    
     if(doGoodRays) {
       unsigned numRays = 0;
       for(unsigned i = dc3d->getThreshold() ; i <= dc3d->maximum() ; ++i)
@@ -550,6 +552,7 @@ int doInteractive(TriMesh& mesh)
 
         setupCamera(camera);
         
+       
         /*camera.update();	
 	    camera.lookAt();*/
 
@@ -558,7 +561,7 @@ int doInteractive(TriMesh& mesh)
        
 
         //drawPlaneIntersection(intersectionVectors);
-        drawRays();
+        //drawRays();
 
 
 				
@@ -576,6 +579,8 @@ int doInteractive(TriMesh& mesh)
         t->ca = vec4d(1.0f, 0.0f, 0.0f, 0.7f);
         t->cb = vec4d(1.0f, 0.0f, 0.0f, 0.7f);
         t->cc = vec4d(1.0f, 0.0f, 0.0f, 0.7f);
+        
+        //std::cout << "teste:" << camera.GetEye() << std::endl;
 
         // Draw tweak bars
         TwDraw();
