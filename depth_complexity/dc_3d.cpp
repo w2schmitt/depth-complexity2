@@ -141,24 +141,6 @@ void DepthComplexity3D::writeRaysSpherical(std::ostream& out, int k) {
   }
   out << total << std::endl;
 
-  /* Simple spherical coordinates
-  for(int i = 0 ; i <= k ; ++i) {
-    int ind = maximum()-i;
-    if (ind<0) break;
-    const std::set<Segment,classcomp> & _rays = goodRays(ind);
-    std::set<Segment,classcomp>::const_iterator ite = _rays.begin();
-    std::set<Segment,classcomp>::const_iterator end = _rays.end();
-    for (; ite != end; ++ite) {
-      double a, b, c, d;
-      double x1 = ite->a.x, x2 = ite->b.x, y1 = ite->a.y, y2 = ite->b.y, z1 = ite->a.z, z2 = ite->b.z;
-      a = atan2(y1, x1);
-      b = atan2(z1, sqrt(x1*x1 + y1*y1));
-      c = atan2(y2, x2);
-      d = atan2(z2, sqrt(x2*x2 + y2*y2));
-      out << a << " " << b << " " << c << " " << d << " " << maximum()-i << "\n";
-    }
-  }
-   */
   BoundingBox aabb = _mesh->aabb;
   Sphere sph;
   sph.center = aabb.center();
@@ -192,8 +174,6 @@ void DepthComplexity3D::process(const TriMesh &mesh) {
   _dc2d->setThreshold(_threshold);
   _maximum = 0;
   
-  //std::cout << _fboWidth << " " << _fboHeight << " " << _discretSteps << " " << _maximum << " " << _threshold << std::endl;
-  
   processMeshAlign(AlignZ, AlignX);
   processMeshAlign(AlignZ, AlignY);
 
@@ -203,10 +183,10 @@ void DepthComplexity3D::process(const TriMesh &mesh) {
   processMeshAlign(AlignX, AlignY);
   processMeshAlign(AlignX, AlignZ);
 
-  std::ofstream fileMax("parallel_data/maximum_rays.txt");
-  std::ofstream fileGood("parallel_data/good_rays.txt");
-  writeMaximumRays(fileMax);
-  writeGoodRays(fileGood);
+  //std::ofstream fileMax("parallel_data/maximum_rays.txt");
+  //std::ofstream fileGood("parallel_data/good_rays.txt");
+  //writeMaximumRays(fileMax);
+  //writeGoodRays(fileGood);
 }
 
 // Call this varying palign and salign.
@@ -313,8 +293,7 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
       _dc2d->process(sa, sb, segments);
 
       unsigned int tempMaximum = _dc2d->maximum();
-						//if (tempMaximum==3)
-								//std::cout << "values: " << az << " " << bz << std::endl;
+
       if (tempMaximum >= _maximum) {
         if (tempMaximum > _maximum) {
           _maximumRays.clear();
@@ -351,12 +330,12 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
       for(unsigned i=0; i< tempHist.size(); ++i)
         _histogram[i] += tempHist[i];
       
-#ifdef DEBUG_SAVE_HIST_EACH_FRAME
-      char filename[100]; sprintf(filename,"hist/hist%d%d.txt",az,bz);
-      std::ofstream fhist ( filename );
-      writeHistogram(fhist);
-      fhist.close();
-#endif
+//#ifdef DEBUG_SAVE_HIST_EACH_FRAME
+//      char filename[100]; sprintf(filename,"hist/hist%d%d.txt",az,bz);
+//      std::ofstream fhist ( filename );
+//      writeHistogram(fhist);
+//      fhist.close();
+//#endif
       if(_computeGoodRays) {
         //std::cout << "size of goodRays: " << _goodRays.size() << " and _threshold = " << _threshold << std::endl;
         for(unsigned int i = _threshold ; i <= tempMaximum ; ++i) {
@@ -365,6 +344,7 @@ void DepthComplexity3D::processMeshAlign(const PlaneAlign &palign, const PlaneAl
           _goodRays[i].insert(tempRays.begin(), tempRays.end());
         }
       }
+      
     }
   }
     //int index=0;

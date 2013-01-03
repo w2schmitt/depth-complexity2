@@ -445,30 +445,28 @@ bool shrinkSegment(Point &p1, Point &p2, vec3d d1, vec3d d2){
 }
 
 Segment DepthComplexity2D::computeDualSegmentFromPoint(const Point &p) {
-  Segment seg;
-  double t1, t2;
+    Segment seg;
+    double t1, t2;
 
-  // Finding left point
-  bool r1 = lineIntersection3D(_to, Segment(_from.a, p), &t1, &t2);
-		//printf("Point P(%f, %f) - at1 = %f\n",p.x, p.y, t1);
-  assert(r1);
-  seg.a = Point(0.0, t1);
+    // Finding left point
+    bool r1 = lineIntersection3D(_to, Segment(_from.a, p), &t1, &t2);
+    assert(r1);
+    seg.a = Point(0.0, t1);
 
-  // Finding right point
-  bool r2 = lineIntersection3D(_to, Segment(_from.b, p), &t1, &t2);
-  //printf("Point P(%f, %f) - at1 = %f\n",p.x, p.y, t1);
-  assert(r2);
-  seg.b = Point(1.0, t1);
+    // Finding right point
+    bool r2 = lineIntersection3D(_to, Segment(_from.b, p), &t1, &t2);
+    assert(r2);
+    seg.b = Point(1.0, t1);
 
-  return seg;
+    return seg;
 }
 
 void drawPolygon(const std::vector<Point> &polygon){
-	glBegin(GL_POLYGON);
-            for (unsigned i=0; i< polygon.size(); ++i){
-                    glVertex2f(polygon[i].x,polygon[i].y);
-            }
-	glEnd();
+    glBegin(GL_POLYGON);
+        for (unsigned i=0; i< polygon.size(); ++i){
+                glVertex2f(polygon[i].x,polygon[i].y);
+        }
+    glEnd();
 }
 
 
@@ -537,12 +535,10 @@ void DepthComplexity2D::findMaximumRaysAndHistogram() {
           seg.sortPoints();
 
           if (val == _maximum){
-            //if (_maximumRays.size() < 50)
               _maximumRays.insert(seg);
           }
           if (val >= _threshold){			   
-            //if (_goodRays[val].size() < 50)
-		_goodRays[val].insert(seg);
+              _goodRays[val].insert(seg);
           }
         }
      }

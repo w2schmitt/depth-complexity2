@@ -175,7 +175,6 @@ void drawMesh(const TriMesh& mesh, const vec3f& dir)
     
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-    //glDisable(GL_DEPTH_TEST);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_LIGHTING);
     glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 1);    
@@ -223,10 +222,12 @@ void drawMesh(const TriMesh& mesh, const vec3f& dir)
     
 void drawRays()
 {
-    /*
-    if(!doGoodRays) {
-        const std::set<Segment,classcomp>& rays = dc3d->maximumRays();
-        std::set<Segment,classcomp>::const_iterator it = rays.begin();
+    
+    
+    //if(!doGoodRays) {
+    const std::set<Segment,classcomp>& rays = dc3d->maximumRays();
+    std::set<Segment,classcomp>::const_iterator it = rays.begin();
+        if (rays.size()>0){
         // draw rays
         glLineWidth(2.5);
         glBegin(GL_LINES);
@@ -238,7 +239,8 @@ void drawRays()
           }
         glEnd();
     }
-     */
+    //}
+    
     
     for(unsigned i = dc3d->_threshold ; i <= dc3d->_maximum && doGoodRays ; ++i) {
       const std::set<Segment,classcomp>& gRays = dc3d->goodRays(i);
@@ -315,7 +317,7 @@ void recompute(void *data)
 {
     const TriMesh* mesh = reinterpret_cast<const TriMesh*>(data);
     if(doGoodRays)
-      dc3d->setComputeGoodRays(false);
+      dc3d->setComputeGoodRays(true);
     else
       dc3d->setComputeGoodRays(false);
     tic();
