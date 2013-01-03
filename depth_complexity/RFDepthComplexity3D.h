@@ -69,7 +69,7 @@ private:
   vec4d makePlane(const vec3d& a, const vec3d& b, const vec3d& c);
 
   void initTextureCounter();
-  void renderScene(vec3d point);
+  unsigned int renderScene(vec3d point);
   void setShaderClearCounterBuffer();
   void setShaderCountDC();
   unsigned int findMaxValueInCounterBuffer();

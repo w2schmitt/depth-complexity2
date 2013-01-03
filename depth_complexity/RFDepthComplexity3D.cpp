@@ -258,7 +258,7 @@ void RFDepthComplexity3D::erodeTriangle(vec3d &v1, vec3d &v2, vec3d &v3){
     v3 = v3 + step*v3dir;    
 }
 
-void RFDepthComplexity3D::renderScene(vec3d point){
+unsigned int RFDepthComplexity3D::renderScene(vec3d point){
     //glClear( GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT );
      
     //glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
@@ -362,7 +362,7 @@ void RFDepthComplexity3D::renderScene(vec3d point){
     // Ensure that all texture writing is done
     glMemoryBarrierEXT(GL_TEXTURE_UPDATE_BARRIER_BIT_EXT);
     // Disable Shaders
-    _maximum = findMaxValueInCounterBuffer()-1;
+    int max = findMaxValueInCounterBuffer()-1;
     //std::cout << "the maximum DC is: " << max << std::endl;
         
     glUseProgram(0);
@@ -381,7 +381,7 @@ void RFDepthComplexity3D::renderScene(vec3d point){
     //glEnable(GL_DEPTH_TEST);
     //glDisable(GL_COLOR_MATERIAL);
     glEnable(GL_DEPTH_TEST);
-
+    return max;
 }
 
 #define CONSTANT_FACTOR 500
@@ -416,18 +416,18 @@ void RFDepthComplexity3D::process(const TriMesh &mesh) {
 	
 	//double r = aabb.extents().length()/2.0;
 	vec3d center = aabb.center();
-        vec3d radius = aabb.max - center;
-        double r = radius.length();
-        std::cout << r << std::endl;
+        //vec3d radius = aabb.max - center;
+        //double r = radius.length();
+        //std::cout << r << std::endl;
 	
 	 /* initialize random seed: */
         srand ( time(NULL) );
 
-	const unsigned steps = _discretSteps;
+	//const unsigned steps = _discretSteps;
 	//const unsigned Nrays = (_computeRaysFromFile? _raysFromFile.size() : steps*steps*CONSTANT_FACTOR);
-        const unsigned Nrays = steps*steps*CONSTANT_FACTOR;
+        const unsigned Nrays = 2000;//steps*steps*CONSTANT_FACTOR;
 
-        std::cout << Nrays << std::endl;
+        //std::cout << Nrays << std::endl;
         
         float aspect = 1024./768.;
         float fov = 50;
@@ -443,14 +443,20 @@ void RFDepthComplexity3D::process(const TriMesh &mesh) {
             distance = aabb.extents().z/2 + (modelsizex/2)/tan((fov/2)*0.01745329238);
         }
         
+        for (unsigned i=0; i<Nrays; i++){
         //generate random vector
         vec3d v(uniformRandom() - 0.5, uniformRandom() - 0.5, uniformRandom() - 0.5);
         v.normalize();
         v = distance*v + center;
         
-        std::cout << v << std::endl;
+        //std::cout << v << std::endl;
         
-        renderScene(v);
+       
+            unsigned int m = renderScene(v);
+            if (m > _maximum){
+                _maximum = m;               
+            }        
+        }
         
         /*
 	for (unsigned tn = 0; tn < Nrays ; ++tn) {
