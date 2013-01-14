@@ -223,10 +223,12 @@ void drawMesh(const TriMesh& mesh, const vec3f& dir)
     
 void drawRays()
 {
-    /*
-    if(!doGoodRays) {
-        const std::set<Segment,classcomp>& rays = dc3d->maximumRays();
-        std::set<Segment,classcomp>::const_iterator it = rays.begin();
+    //
+     
+    const std::set<Segment,classcomp>& rays = dc3d->maximumRays();
+    std::set<Segment,classcomp>::const_iterator it = rays.begin();
+    if (rays.size()>0){
+        //std::cout << "desenhando..." << std::endl;
         // draw rays
         glLineWidth(2.5);
         glBegin(GL_LINES);
@@ -238,12 +240,13 @@ void drawRays()
           }
         glEnd();
     }
-     */
     
-    for(unsigned i = dc3d->_threshold ; i <= dc3d->_maximum && doGoodRays ; ++i) {
+    /*
+    for(unsigned i = dc3d->_threshold ; i < dc3d->_maximum && doGoodRays ; ++i) {
       const std::set<Segment,classcomp>& gRays = dc3d->goodRays(i);
       std::set<Segment,classcomp>::const_iterator it = gRays.begin();
       // draw rays
+     
       //double color = ((dc3d->_maximum - i)*(0.5))/(dc3d->_maximum-dc3d->_threshold);
       vec3d color(0,0,0);
       if (i == dc3d->maximum()){
@@ -269,6 +272,7 @@ void drawRays()
         }
       glEnd();
     }
+     */
     
     if(showPlanes) {
       const std::vector<Segment>& bounds = dc3d->usedPlanes();
@@ -308,14 +312,14 @@ void setupCamera(Camera& camera)
     glLoadIdentity();
     //cam.applyTransform();
     camera.update();	
-		camera.lookAt();
+    camera.lookAt();
 }
 
 void recompute(void *data)
 {
     const TriMesh* mesh = reinterpret_cast<const TriMesh*>(data);
     if(doGoodRays)
-      dc3d->setComputeGoodRays(false);
+      dc3d->setComputeGoodRays(true);
     else
       dc3d->setComputeGoodRays(false);
     tic();
@@ -323,7 +327,7 @@ void recompute(void *data)
     dc3d->process(*mesh);
     toc("Depth Complexity");
     std::clog << "Maximum: " << dc3d->maximum() << std::endl;
-    
+    std::cout << "Number of Maximum Rays: " << dc3d->maximumRays().size() << std::endl;
     if(doGoodRays) {
       unsigned numRays = 0;
       for(unsigned i = dc3d->getThreshold() ; i <= dc3d->maximum() ; ++i)
@@ -559,9 +563,9 @@ int doInteractive(TriMesh& mesh)
         /*GLfloat lpos[4] = { camera.GetEye().x, camera.GetEye().y, camera.GetEye().z, 1 };
         glLightfv(GL_LIGHT0, GL_POSITION, lpos);*/
        
-
+        //std::cout << "not\n";
         //drawPlaneIntersection(intersectionVectors);
-        //drawRays();
+        drawRays();
 
 
 				

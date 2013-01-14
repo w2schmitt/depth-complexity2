@@ -551,6 +551,7 @@ void DepthComplexity2D::findMaximumRaysAndHistogram() {
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 }
 
+
 float colors[10][3] = {
   {1.0f, 1.0f, 1.0f},
   {1.0f, 0.0f, 0.0f},

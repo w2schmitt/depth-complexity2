@@ -259,21 +259,7 @@ void RFDepthComplexity3D::erodeTriangle(vec3d &v1, vec3d &v2, vec3d &v3){
 }
 
 unsigned int RFDepthComplexity3D::renderScene(vec3d point){
-    //glClear( GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT );
-     
-    //glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
-    //glEnable(GL_COLOR_MATERIAL);
-    
-    //std::clog << "sorting...";
-    //if (sorted_faces.empty()) {
-    //    sorted_faces = _mesh.faces;
-    //}
-    //glMatrixMode(GL_PROJECTION);
-    //glPushMatrix();
-    //glLoadIdentity();
-    
-    //std::sort(sorted_faces.begin(), sorted_faces.end(), ByDist(dir));
-    //std::clog << "done" << std::endl;
+
     glPushAttrib(GL_VIEWPORT_BIT | GL_ENABLE_BIT);
     glViewport(0, 0, _fboWidth, _fboHeight);
 
@@ -295,14 +281,28 @@ unsigned int RFDepthComplexity3D::renderScene(vec3d point){
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
-    gluPerspective(50, 1024./768., 0.1, 10000);
+    
+    double aspect = 1024./768.;
+    vec3d up = vec3d(0,1,0);
+    vec3d size = _mesh->aabb.extents();
+    vec3d aspsize = size*aspect;
+    vec3d center = _mesh->aabb.center();
+    vec3d pos;
+    vec3d forward = (center-point); forward.normalize();
+    vec3d side = cross(forward,up);
+    
+    pos.x = (aspsize.x+size.x)/2;
+    pos.y = (aspsize.y+size.y)/2;
+    pos.z = (aspsize.z+size.z)/2;
+   
+    double dist = sqrt( pow((point.x-center.x),2)+ pow((point.y-center.y),2)+ pow((point.z-center.z),2));
+    glOrtho(-pos.x, pos.x, -pos.y, pos.y ,1, 2*dist);
     
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glLoadIdentity();
     
-    vec3d center = _mesh->aabb.center();
-    gluLookAt(point.x, point.y, point.z, center.x, center.y, center.z, 0, 1, 0  );
+    gluLookAt(point.x, point.y, point.z, center.x, center.y, center.z, 0, 1, 0);
 
     glActiveTexture(GL_TEXTURE0);
     glEnable(GL_TEXTURE_2D);
@@ -359,10 +359,12 @@ unsigned int RFDepthComplexity3D::renderScene(vec3d point){
     //glDisableClientState(GL_COLOR_ARRAY);
     //glDisable(GL_COLOR_ARRAY);
     
-    // Ensure that all texture writing is done
+    // Ensure that all texture writing is donetranslationY
     glMemoryBarrierEXT(GL_TEXTURE_UPDATE_BARRIER_BIT_EXT);
     // Disable Shaders
-    int max = findMaxValueInCounterBuffer()-1;
+    unsigned int max = findMaxValueInCounterBuffer()-1;
+    findMaximumRaysAndHistogram(point, forward, side, pos);
+
     //std::cout << "the maximum DC is: " << max << std::endl;
         
     glUseProgram(0);
@@ -414,42 +416,32 @@ void RFDepthComplexity3D::process(const TriMesh &mesh) {
 	aabb.merge(aabb.min - aabb.extents()/10.0);
 	aabb.merge(aabb.max + aabb.extents()/10.0);
 	
-	//double r = aabb.extents().length()/2.0;
 	vec3d center = aabb.center();
-        //vec3d radius = aabb.max - center;
-        //double r = radius.length();
-        //std::cout << r << std::endl;
 	
 	 /* initialize random seed: */
         srand ( time(NULL) );
-
-	//const unsigned steps = _discretSteps;
-	//const unsigned Nrays = (_computeRaysFromFile? _raysFromFile.size() : steps*steps*CONSTANT_FACTOR);
-        const unsigned Nrays = 2000;//steps*steps*CONSTANT_FACTOR;
-
-        //std::cout << Nrays << std::endl;
-        
-        float aspect = 1024./768.;
-        float fov = 50;
-        float fovh = aspect*fov;
+        const unsigned Nrays = 500;//steps*steps*CONSTANT_FACTOR;
         
         float modelsizex = aabb.extents().x;
         float modelsizey = aabb.extents().y;
-        double distance=0;
+        float modelsizez = aabb.extents().z;
+        double distance= sqrt(modelsizex*modelsizex + modelsizey*modelsizey + modelsizez*modelsizez);
+        //if (modelsizex)
         
-        if (modelsizex/aspect > modelsizey){
-            distance = aabb.extents().z/2 + (modelsizex/2)/tan((fovh/2)*0.01745329238);
-        } else {
-            distance = aabb.extents().z/2 + (modelsizex/2)/tan((fov/2)*0.01745329238);
-        }
+        //if (modelsizex/aspect > modelsizey){
+        //    distance = aabb.extents().z/2 + (modelsizex/2)/tan((fovh/2)*0.01745329238);
+        //} else {
+        //    distance = aabb.extents().z/2 + (modelsizex/2)/tan((fov/2)*0.01745329238);
+        //}
+        
+        distance = distance*1.3;
         
         for (unsigned i=0; i<Nrays; i++){
-        //generate random vector
-        vec3d v(uniformRandom() - 0.5, uniformRandom() - 0.5, uniformRandom() - 0.5);
-        v.normalize();
-        v = distance*v + center;
-        
-        //std::cout << v << std::endl;
+            //generate random vector
+            vec3d v(uniformRandom() - 0.5, uniformRandom() - 0.5, uniformRandom() - 0.5);
+            v.normalize();
+            v = distance*v + center;
+            //std::cout << v << std::endl;
         
        
             unsigned int m = renderScene(v);
@@ -458,45 +450,95 @@ void RFDepthComplexity3D::process(const TriMesh &mesh) {
             }        
         }
         
-        /*
-	for (unsigned tn = 0; tn < Nrays ; ++tn) {
-		Segment randomSegment;
+       
+        //std::cout << "Number of Maximum Rays: " << _goodRays.size() << std::endl;
+}
 
+void RFDepthComplexity3D::findMaximumRaysAndHistogram(vec3d initPos, vec3d f, vec3d s, vec3d p) {
+    // Output
+  //std::set<Segment,classcomp> tempMaximumRays;
+  //std::vector< std::set<Segment,classcomp> > tempGoodRays;
+  //std::vector<Segment> _usedPlanes;
+  //std::vector<unsigned long long> tempHistogram;
+  //std::vector<Point> _intersectionPoints;
+  //tempGoodRays.resize(_maximum + 1);
+  //tempHistogram.resize(_maximum + 1);
+  
+  //_maximumRays.clear();
+ // _goodRays.clear();
+  //_goodRays.resize(_maximum + 1);
+  //_histogram.clear();
+  //_histogram.resize(_maximum + 1);
 
-                
-		std::vector<Point> points;
-		processMeshSegment(randomSegment, &points);
+    //glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _fboId);
+    glPushAttrib(GL_VIEWPORT_BIT);
+    glViewport(0.0, 0.0, _fboWidth, _fboHeight);
+    
+    unsigned int colorBuffer[_fboWidth*_fboHeight];
+    
+    glBindTexture(GL_TEXTURE_2D, _counterBuffId);
+    glGetTexImage( GL_TEXTURE_2D, 0 , GL_RED_INTEGER, GL_UNSIGNED_INT, colorBuffer ); 
+    glBindTexture(GL_TEXTURE_2D, 0);
+    
+    for(int r=0; r<_fboHeight; ++r) {
+      for(int c=0; c<_fboWidth; ++c) {
+        unsigned int val = colorBuffer[r*_fboWidth+c]-1;
+        //if (val > 15)
+        //        std::cout << val << std::endl;
+        if (val < _threshold) continue;
+        
+        vec3d up = cross(f, up);        
+        Segment seg;
+        double translationX = ((c/_fboWidth)*2*p.x)-p.x;
+        double translationY = ((r/_fboHeight)*2*p.y)-p.y;                
+        seg.a = initPos + translationX*s + translationY*up;
+        seg.b = seg.a + 2500.0*f;
+        insertRays(val, seg);
+								
+        //if (_computeHistogram) _histogram[val]++;
+       // if ((_computeMaximumRays && val == _maximum) || (_computeGoodRays && val >= _threshold)) {
+		  
+          //Segment seg;
+          //double t1 = c/(double)_fboWidth;
+          //double t2 = r/(double)_fboHeight;
+          //seg.a = _from.a*(1.f-t1) + _from.b*t1;
+          //seg.b = _to.a*(1.f-t2) + _to.b*t2;          
+          //seg.sortPoints();
+          //insertRays();
+         // if (val == _maximum){
+            //if (_maximumRays.size() < 50)
+          //    tempMaximumRays.insert(seg);
+          //}
+          //if (val >= _threshold){			   
+            //if (_goodRays[val].size() < 50)
+	//	tempGoodRays[val].insert(seg);
+         // }
+        //}
+     }
+  }
+    
+  //checkRays();
+  glPopAttrib();
+  //glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+}
 
-		unsigned tempMaximum = points.size();
-                if (tempMaximum >= _maximum){
-                    _maximum = tempMaximum;
-                    _goodRays.resize(tempMaximum+1);
-                    _histogram.resize(tempMaximum+1);
-                }
-                
-		if (tempMaximum >= _maximum) {
-			if (tempMaximum > _maximum) {
-				_maximumRays.clear();
-				_goodRays.resize(tempMaximum+1);
-				_histogram.resize(tempMaximum+1);
-				_intersectionPoints.clear();
-			}
-			_maximum = tempMaximum;
-
-			//_intersectionPoints.insert(_intersectionPoints.end(), points.begin(), points.end());
-
-                        //if (_maximumRays.size() < 50)
-                                _maximumRays.insert(randomSegment);
-			// Shouldn't the histogram be used without regard to the current tempMaximum? (changed it)
-		}
-		
-		if(_computeHistogram)
-			++_histogram[points.size()];
-		
-		if(_computeGoodRays && points.size() >= _threshold)// && _goodRays[points.size()].size() < 50)
-			_goodRays[points.size()].insert(randomSegment);
-	}
-         */
+void RFDepthComplexity3D::insertRays(unsigned int tempMax, Segment seg){
+     //unsigned int tempMaximum = _dc2d->maximum();
+   
+    
+    //Segment seg;
+    if (tempMax == _maximum){
+        _maximumRays.insert(seg);
+    }
+    else if (tempMax > _maximum){
+        _goodRays.resize(tempMax+1);
+        _goodRays[tempMax].insert(_maximumRays.begin(), _maximumRays.end());
+        _maximumRays.clear();
+        _maximumRays.insert(seg);
+        _maximum = tempMax;
+    } else {        
+        _goodRays[tempMax].insert(seg);     
+    }    
 }
 
 unsigned int RFDepthComplexity3D::findMaxValueInCounterBuffer() {
@@ -507,9 +549,6 @@ unsigned int RFDepthComplexity3D::findMaxValueInCounterBuffer() {
   glBindTexture(GL_TEXTURE_2D, _counterBuffId);
   glGetTexImage( GL_TEXTURE_2D, 0 , GL_RED_INTEGER, GL_UNSIGNED_INT, colorBuffer ); 
   glBindTexture(GL_TEXTURE_2D, 0);
-  
-  // show pic
-  
   
   unsigned int max =  *(std::max_element(colorBuffer, colorBuffer + pixelNumber))-1;
   

@@ -57,6 +57,8 @@ public:
   void writeMaximumRays(std::ostream& out);
   void writeGoodRays(std::ostream& out);
   void writeRays(std::ostream& out, const std::set<Segment,classcomp> & _rays, int dc);
+  void findMaximumRaysAndHistogram(vec3d initPos, vec3d f, vec3d s, vec3d p);
+  void insertRays(unsigned int tempMax, Segment seg);
   
 private:
   enum PlaneAlign{
