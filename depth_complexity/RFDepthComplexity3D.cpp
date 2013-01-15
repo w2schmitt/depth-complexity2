@@ -290,12 +290,14 @@ unsigned int RFDepthComplexity3D::renderScene(vec3d point){
     vec3d pos;
     vec3d forward = (center-point); forward.normalize();
     vec3d side = cross(forward,up);
+    //std::cout << side << std::endl;
     
     pos.x = (aspsize.x+size.x)/2;
     pos.y = (aspsize.y+size.y)/2;
     pos.z = (aspsize.z+size.z)/2;
    
     double dist = sqrt( pow((point.x-center.x),2)+ pow((point.y-center.y),2)+ pow((point.z-center.z),2));
+    pos.z = 2*dist;
     glOrtho(-pos.x, pos.x, -pos.y, pos.y ,1, 2*dist);
     
     glMatrixMode(GL_MODELVIEW);
@@ -420,7 +422,7 @@ void RFDepthComplexity3D::process(const TriMesh &mesh) {
 	
 	 /* initialize random seed: */
         srand ( time(NULL) );
-        const unsigned Nrays = 500;//steps*steps*CONSTANT_FACTOR;
+        const unsigned Nrays = 1;//steps*steps*CONSTANT_FACTOR;
         
         float modelsizex = aabb.extents().x;
         float modelsizey = aabb.extents().y;
@@ -479,20 +481,25 @@ void RFDepthComplexity3D::findMaximumRaysAndHistogram(vec3d initPos, vec3d f, ve
     glBindTexture(GL_TEXTURE_2D, _counterBuffId);
     glGetTexImage( GL_TEXTURE_2D, 0 , GL_RED_INTEGER, GL_UNSIGNED_INT, colorBuffer ); 
     glBindTexture(GL_TEXTURE_2D, 0);
+    //s = -s;
+    vec3d up = cross(s,f);
+    up.normalize();
+    s.normalize();
+    
+    std::cout << p.x << " -- " << p.y << std::endl;
     
     for(int r=0; r<_fboHeight; ++r) {
       for(int c=0; c<_fboWidth; ++c) {
         unsigned int val = colorBuffer[r*_fboWidth+c]-1;
-        //if (val > 15)
-        //        std::cout << val << std::endl;
+
         if (val < _threshold) continue;
         
-        vec3d up = cross(f, up);        
+                
         Segment seg;
-        double translationX = ((c/_fboWidth)*2*p.x)-p.x;
-        double translationY = ((r/_fboHeight)*2*p.y)-p.y;                
+        double translationX = (((double)c/(double)(_fboWidth-1))*(2*p.x))-p.x;
+        double translationY = (((double)r/(double)(_fboHeight-1))*(2*p.y))-p.y;                
         seg.a = initPos + translationX*s + translationY*up;
-        seg.b = seg.a + 2500.0*f;
+        seg.b = seg.a + p.z*f;
         insertRays(val, seg);
 								
         //if (_computeHistogram) _histogram[val]++;

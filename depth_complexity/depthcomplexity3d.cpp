@@ -241,7 +241,7 @@ void drawRays()
         glEnd();
     }
     
-    /*
+    
     for(unsigned i = dc3d->_threshold ; i < dc3d->_maximum && doGoodRays ; ++i) {
       const std::set<Segment,classcomp>& gRays = dc3d->goodRays(i);
       std::set<Segment,classcomp>::const_iterator it = gRays.begin();
@@ -272,7 +272,7 @@ void drawRays()
         }
       glEnd();
     }
-     */
+    
     
     if(showPlanes) {
       const std::vector<Segment>& bounds = dc3d->usedPlanes();
