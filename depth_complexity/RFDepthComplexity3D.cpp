@@ -422,7 +422,7 @@ void RFDepthComplexity3D::process(const TriMesh &mesh) {
 	
 	 /* initialize random seed: */
         srand ( time(NULL) );
-        const unsigned Nrays = 1;//steps*steps*CONSTANT_FACTOR;
+        const unsigned Nrays = 500;//steps*steps*CONSTANT_FACTOR;
         
         float modelsizex = aabb.extents().x;
         float modelsizey = aabb.extents().y;
@@ -452,6 +452,18 @@ void RFDepthComplexity3D::process(const TriMesh &mesh) {
             }        
         }
         
+        // Count Intersections
+        unsigned int max=0;
+        std::vector<Point> inter;
+        for (std::set<Segment,classcomp>::iterator it = _maximumRays.begin(); it!=_maximumRays.end(); ++it){
+            processMeshSegment(*it,&inter);        
+            if (max<inter.size()) max = inter.size();
+            inter.clear();
+            break;
+        }
+        
+        std::cout << "Count intersections: " << max << std::endl;
+        
        
         //std::cout << "Number of Maximum Rays: " << _goodRays.size() << std::endl;
 }
@@ -473,20 +485,20 @@ void RFDepthComplexity3D::findMaximumRaysAndHistogram(vec3d initPos, vec3d f, ve
   //_histogram.resize(_maximum + 1);
 
     //glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _fboId);
-    glPushAttrib(GL_VIEWPORT_BIT);
+     glPushAttrib(GL_VIEWPORT_BIT);
     glViewport(0.0, 0.0, _fboWidth, _fboHeight);
     
     unsigned int colorBuffer[_fboWidth*_fboHeight];
     
     glBindTexture(GL_TEXTURE_2D, _counterBuffId);
-    glGetTexImage( GL_TEXTURE_2D, 0 , GL_RED_INTEGER, GL_UNSIGNED_INT, colorBuffer ); 
+    glGetTexImage( GL_TEXTURE_2D, 0 , GL_RED_INTEGER, GL_UNSIGNED_INT, colorBuffer );
     glBindTexture(GL_TEXTURE_2D, 0);
     //s = -s;
     vec3d up = cross(s,f);
     up.normalize();
     s.normalize();
     
-    std::cout << p.x << " -- " << p.y << std::endl;
+    //std::cout << p.x << " -- " << p.y << std::endl;
     
     for(int r=0; r<_fboHeight; ++r) {
       for(int c=0; c<_fboWidth; ++c) {
@@ -496,39 +508,48 @@ void RFDepthComplexity3D::findMaximumRaysAndHistogram(vec3d initPos, vec3d f, ve
         
                 
         Segment seg;
-        double translationX = (((double)c/(double)(_fboWidth-1))*(2*p.x))-p.x;
-        double translationY = (((double)r/(double)(_fboHeight-1))*(2*p.y))-p.y;                
+        double pxSizeX = (2.0*p.x)/(double)_fboWidth;
+        double pxSizeY = (2.0*p.y)/(double)_fboHeight;
+        double translationX = (double)c*pxSizeX - p.x + pxSizeX/2.0;
+        double translationY = (double)r*pxSizeY - p.y + pxSizeY/2.0;
         seg.a = initPos + translationX*s + translationY*up;
         seg.b = seg.a + p.z*f;
         insertRays(val, seg);
-								
-        //if (_computeHistogram) _histogram[val]++;
-       // if ((_computeMaximumRays && val == _maximum) || (_computeGoodRays && val >= _threshold)) {
-		  
-          //Segment seg;
-          //double t1 = c/(double)_fboWidth;
-          //double t2 = r/(double)_fboHeight;
-          //seg.a = _from.a*(1.f-t1) + _from.b*t1;
-          //seg.b = _to.a*(1.f-t2) + _to.b*t2;          
-          //seg.sortPoints();
-          //insertRays();
-         // if (val == _maximum){
-            //if (_maximumRays.size() < 50)
-          //    tempMaximumRays.insert(seg);
-          //}
-          //if (val >= _threshold){			   
-            //if (_goodRays[val].size() < 50)
-	//	tempGoodRays[val].insert(seg);
-         // }
-        //}
-     }
-  }
+      }
+    }
     
-  //checkRays();
-  glPopAttrib();
-  //glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 }
 
+bool RFDepthComplexity3D::intersectTriangleSegment(const Segment& segment, const Triangle& tri, Point *pnt) {
+	assert(pnt);
+
+	if(!intersectPlaneSegment(makePlane(tri.a, tri.b, tri.c),segment.a,segment.b,pnt))
+		return false;
+
+	vec3d u = tri.b - tri.a;
+	vec3d v = tri.c - tri.a;
+	vec3d w =	*pnt - tri.a;
+
+	double uu = dot(u,u);
+	double uv = dot(u,v);
+	double vv = dot(v,v);
+	double wu = dot(w,u);
+	double wv = dot(w,v);
+	
+	double den = uv*uv - uu*vv;
+
+	double s = (uv*wv - vv*wu)/den;
+	//std::cout << "s=" << s << std::endl;
+	if(s<0. || s>1.)
+		return false;
+	double t = (uv*wu - uu*wv)/den;
+	//std::cout << "t=" << t << std::endl;
+	if(t<0. || s+t>1.)
+		return false;
+	
+	return true;
+}
+   
 void RFDepthComplexity3D::insertRays(unsigned int tempMax, Segment seg){
      //unsigned int tempMaximum = _dc2d->maximum();
    
@@ -573,45 +594,24 @@ unsigned int RFDepthComplexity3D::findMaxValueInCounterBuffer() {
   return max+1;
 }
 
+
 void RFDepthComplexity3D::processMeshSegment(const Segment& segment, std::vector<Point> *points) {
 	assert(points);
 
 	for (unsigned i=0; i<_mesh->faces.size(); ++i) {
 		Point p;
-		if (intersectTriangleSegment(segment, _mesh->faces[i], &p))
+		if (intersectTriangleSegment(segment, _mesh->faces[i], &p)){
 			points->push_back(p);
+                        _intersectionTriangles.push_back(_mesh->faces[i]);
+                        _intersectionTriangles.back().ca = vec4d(1,0,0,1);
+                        _intersectionTriangles.back().cb = vec4d(1,0,0,1);
+                        _intersectionTriangles.back().cc = vec4d(1,0,0,1);
+                }
+                        
+                        //_mesh->faces[i].ca = vec4d(0,0,0,0);
 	}
 }
 
-bool RFDepthComplexity3D::intersectTriangleSegment(const Segment& segment, const Triangle& tri, Point *pnt) {
-	assert(pnt);
-
-	if(!intersectPlaneSegment(makePlane(tri.a, tri.b, tri.c),segment.a,segment.b,pnt))
-		return false;
-
-	vec3d u = tri.b - tri.a;
-	vec3d v = tri.c - tri.a;
-	vec3d w =	*pnt - tri.a;
-
-	double uu = dot(u,u);
-	double uv = dot(u,v);
-	double vv = dot(v,v);
-	double wu = dot(w,u);
-	double wv = dot(w,v);
-	
-	double den = uv*uv - uu*vv;
-
-	double s = (uv*wv - vv*wu)/den;
-	//std::cout << "s=" << s << std::endl;
-	if(s<0. || s>1.)
-		return false;
-	double t = (uv*wu - uu*wv)/den;
-	//std::cout << "t=" << t << std::endl;
-	if(t<0. || s+t>1.)
-		return false;
-	
-	return true;
-}
 
 bool RFDepthComplexity3D::intersectPlaneSegment(const vec4d& plane, const vec3d& p0, const vec3d& p1, vec3d *pt) {
 	double num = -plane.w - dot(plane.xyz(), p0);

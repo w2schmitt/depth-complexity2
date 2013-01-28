@@ -181,6 +181,7 @@ void drawMesh(const TriMesh& mesh, const vec3f& dir)
     glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 1);    
 
     glEnable(GL_VERTEX_ARRAY);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     glEnableClientState(GL_VERTEX_ARRAY);    
     glVertexPointer(3, GL_DOUBLE, 2*sizeof(vec3d)+sizeof(vec4d), &sorted_faces[0].a.x);
@@ -193,6 +194,7 @@ void drawMesh(const TriMesh& mesh, const vec3f& dir)
 
     glDrawArrays(GL_TRIANGLES, 0, sorted_faces.size()*3);
 
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisable(GL_VERTEX_ARRAY);
     glDisableClientState(GL_NORMAL_ARRAY);
@@ -239,6 +241,49 @@ void drawRays()
             glVertex3f(r.b.x, r.b.y, r.b.z);
           }
         glEnd();
+    }
+    
+    const std::vector<Triangle> &interTris = dc3d->intersectionTriangles();
+    for  (std::vector<Triangle>::const_iterator it=interTris.begin(); it!=interTris.end(); ++it){ // interTris.size()>0){
+        
+        glBegin(GL_TRIANGLES);
+        glColor4f(it->ca.x,it->ca.y,it->ca.z,it->ca.w);
+        glNormal3f(it->na.x,it->na.y,it->na.z);
+        glVertex3f(it->a.x,it->a.y,it->a.z);   
+        
+        glColor4f(it->cb.x,it->cb.y,it->cb.z,it->cb.w);
+        glNormal3f(it->nb.x,it->nb.y,it->nb.z);
+        glVertex3f(it->b.x,it->b.y,it->b.z);  
+        
+        glColor4f(it->cc.x,it->cc.y,it->cc.z,it->cc.w);
+        glNormal3f(it->nc.x,it->nc.y,it->nc.z);
+        glVertex3f(it->c.x,it->c.y,it->c.z);  
+        
+        glEnd();
+        
+        glLineWidth(3.0);
+        
+        glBegin(GL_LINE_LOOP);
+        glColor4f(0,0,0,1);
+        glNormal3f(it->na.x,it->na.y,it->na.z);
+        glVertex3f(it->a.x,it->a.y,it->a.z);   
+        
+        glColor4f(0,0,0,1);
+        glNormal3f(it->nb.x,it->nb.y,it->nb.z);
+        glVertex3f(it->b.x,it->b.y,it->b.z);  
+        
+        glColor4f(0,0,0,1);
+        glNormal3f(it->nb.x,it->nb.y,it->nb.z);
+        glVertex3f(it->b.x,it->b.y,it->b.z);  
+        
+        glColor4f(0,0,0,1);
+        glNormal3f(it->nc.x,it->nc.y,it->nc.z);
+        glVertex3f(it->c.x,it->c.y,it->c.z);  
+
+        
+        glEnd();
+        
+        glLineWidth(1.0);
     }
     
     
@@ -317,7 +362,8 @@ void setupCamera(Camera& camera)
 
 void recompute(void *data)
 {
-    const TriMesh* mesh = reinterpret_cast<const TriMesh*>(data);
+    //const TriMesh* mesh = reinterpret_cast<const TriMesh*>(data);
+    TriMesh* mesh = reinterpret_cast<TriMesh*>(data);
     if(doGoodRays)
       dc3d->setComputeGoodRays(true);
     else
@@ -568,7 +614,8 @@ int doInteractive(TriMesh& mesh)
         drawRays();
 
 
-				
+	
+        
         //glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, &objdiff.x);
         glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, &objspec.x);
         glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, shine);

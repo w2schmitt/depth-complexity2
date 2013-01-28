@@ -47,6 +47,7 @@ public:
   const std::set<Segment,classcomp> &goodRays(int intersect) const { return _goodRays[intersect]; }
   const std::vector<Segment> &usedPlanes() const { return _usedPlanes; }
   const std::vector<Point> &intersectionPoints() const { return _intersectionPoints; }
+  const std::vector<Triangle> &intersectionTriangles() const { return _intersectionTriangles;}
   unsigned getThreshold() { return _threshold; }
   
   // 
@@ -112,6 +113,7 @@ private:
   std::vector<Segment> _usedPlanes;
   std::vector<unsigned long long> _histogram;
   std::vector<Point> _intersectionPoints;
+  std::vector<Triangle> _intersectionTriangles;
   //  std::vector<Segment> _intersectionSegments;
 
   friend int doInteractive(TriMesh& mesh);
