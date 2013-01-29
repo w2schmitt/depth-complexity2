@@ -182,6 +182,7 @@ loadOBJMesh(std::istream& in) {
       std::clog << "ignored line: " << line << std::endl;
     }
     }
+    mesh.vertices = vertices;
   }
   
 
@@ -270,7 +271,7 @@ loadOBJMesh(std::istream& in, vec3d rotation) {
           t.b = vertices.at(b-1);
           t.c = vertices.at(c-1);
 
-										//printf("ta = (%f,%f) - tb = (%f,%f) - tc = (%f,%f)\n", t.a.x, t.a.y, t.b.x, t.b.y, t.c.x, t.c.y); 
+	//printf("ta = (%f,%f) - tb = (%f,%f) - tc = (%f,%f)\n", t.a.x, t.a.y, t.b.x, t.b.y, t.c.x, t.c.y); 
 
           // if we don't have a normal, make one
           if (na <= 0) {

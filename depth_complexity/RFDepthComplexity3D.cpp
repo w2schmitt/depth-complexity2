@@ -24,6 +24,8 @@ T mix(const T& a, const T& b, double x) {
 	return p + q;
 }
 
+Affine3f getModelview();
+
 void RFDepthComplexity3D::writeRays(std::ostream& out, const std::set<Segment,classcomp> & _rays, int dc) {
   //out << "OFF" << "\n";
   //out << (_maximumRays.size()*2) << " "
@@ -242,7 +244,7 @@ void RFDepthComplexity3D::initTextureCounter(){
 
 void RFDepthComplexity3D::erodeTriangle(vec3d &v1, vec3d &v2, vec3d &v3){
     
-    double pixelSize = 1.0/512.0;
+    double pixelSize = 1.0/_fboWidth;
     double step = 0.5*pixelSize*sqrt(2);
     
     vec3d v1dir = (v2 + v3)*0.5 - v1;
@@ -278,10 +280,7 @@ unsigned int RFDepthComplexity3D::renderScene(vec3d point){
     glDisable(GL_BLEND);
     //glDisable(GL_DEPTH_TEST);
     
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-    
+    // calculations
     double aspect = 1024./768.;
     vec3d up = vec3d(0,1,0);
     vec3d size = _mesh->aabb.extents();
@@ -290,22 +289,58 @@ unsigned int RFDepthComplexity3D::renderScene(vec3d point){
     vec3d pos;
     vec3d forward = (center-point); forward.normalize();
     vec3d side = cross(forward,up);
+    
     //std::cout << side << std::endl;
     
-    pos.x = (aspsize.x+size.x)/2;
-    pos.y = (aspsize.y+size.y)/2;
+    //pos.x = (aspsize.x+size.x)/2;
+    //pos.y = (aspsize.y+size.y)/2;
     pos.z = (aspsize.z+size.z)/2;
-   
+    
     double dist = sqrt( pow((point.x-center.x),2)+ pow((point.y-center.y),2)+ pow((point.z-center.z),2));
     pos.z = 2*dist;
-    glOrtho(-pos.x, pos.x, -pos.y, pos.y ,1, 2*dist);
+    
     
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glLoadIdentity();
     
     gluLookAt(point.x, point.y, point.z, center.x, center.y, center.z, 0, 1, 0);
+    
+    // get modelview matrix
+    Vector4f v;
+    vec3d vmin(99999.0,99999.0,0),vmax(-99999.0,-99999.0,0);
+    //std::vector<Vector4f> modified; 
+    //modified.resize(_mesh->vertices.size(), Vector4f());
+    Affine3f modelview = getModelview();
+    //std::cout << _mesh->vertices.size() << std::endl;
+    for (unsigned int i=0; i<_mesh->vertices.size(); i++){
+        v << _mesh->vertices[i].x, _mesh->vertices[i].y, _mesh->vertices[i].z, 1;
+        v = modelview*v;
+        //std::cout << v << std::endl;
+        if (vmin.x > v[0]) vmin.x = v[0];
+        if (vmin.y > v[1]) vmin.y = v[1];
+        if (vmax.x < v[0]) vmax.x = v[0];
+        if (vmax.y < v[1]) vmax.y = v[1];
+        //modified[i] = v;        
+    }
+    //vmin << _mesh->aabb.min.x, _mesh->aabb.min.y, _mesh->aabb.min.z, 1;
+    //vmax << _mesh->aabb.max.x, _mesh->aabb.max.y, _mesh->aabb.max.z, 1;
 
+    //vmin = modelview*vmin;
+    //vmax = modelview*vmax;
+    double relaxation = 1.1; // 10 percent
+    pos.x = abs(vmax.x - vmin.x)*relaxation/2.0;
+    pos.y = abs(vmax.y - vmin.y)*relaxation/2.0;
+    
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();  
+   
+    glOrtho(-pos.x, pos.x, -pos.y, pos.y ,1, 2*dist);
+    
+    glMatrixMode(GL_MODELVIEW);
+    
+    
     glActiveTexture(GL_TEXTURE0);
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, _counterBuffId);  
@@ -366,7 +401,7 @@ unsigned int RFDepthComplexity3D::renderScene(vec3d point){
     // Disable Shaders
     unsigned int max = findMaxValueInCounterBuffer()-1;
     findMaximumRaysAndHistogram(point, forward, side, pos);
-
+    
     //std::cout << "the maximum DC is: " << max << std::endl;
         
     glUseProgram(0);
@@ -388,10 +423,18 @@ unsigned int RFDepthComplexity3D::renderScene(vec3d point){
     return max;
 }
 
+Affine3f getModelview(){
+    float m[16];
+    glGetFloatv(GL_MODELVIEW_MATRIX, m);
+    
+    return Affine3f(Matrix4f(m));
+}
+
 #define CONSTANT_FACTOR 500
 void RFDepthComplexity3D::process(const TriMesh &mesh) {
 	 this->_mesh = &mesh;
-
+         _intersectionTriangles.clear();
+                 
 	_usedPlanes.clear();
 	_goodRays.clear();
 	_goodRays.resize(1);
@@ -399,19 +442,9 @@ void RFDepthComplexity3D::process(const TriMesh &mesh) {
 	_histogram.resize(1);
 	_maximum = 0;
         
+        
         initTextureCounter();
-	
-	/* test */
-	Point p;
-	Segment seg;
-	seg.a = Point(0,0,0);
-	seg.b = Point(0,5,0);
-	Triangle tri;
-	tri.a = Point(-2,3,-2);
-	tri.b = Point(2,3,-2);
-	tri.c = Point(-1,3,5);
-	assert(intersectTriangleSegment(seg,tri,&p));
-	
+
 	//std::cout << _fboWidth << " " << _fboHeight << " " << _discretSteps << " " << _maximum << " " << _threshold << std::endl;
 
 	BoundingBox aabb = _mesh->aabb;
@@ -438,13 +471,12 @@ void RFDepthComplexity3D::process(const TriMesh &mesh) {
         
         distance = distance*1.3;
         
+        
         for (unsigned i=0; i<Nrays; i++){
             //generate random vector
             vec3d v(uniformRandom() - 0.5, uniformRandom() - 0.5, uniformRandom() - 0.5);
             v.normalize();
-            v = distance*v + center;
-            //std::cout << v << std::endl;
-        
+            v = distance*v + center;        
        
             unsigned int m = renderScene(v);
             if (m > _maximum){
@@ -463,9 +495,6 @@ void RFDepthComplexity3D::process(const TriMesh &mesh) {
         }
         
         std::cout << "Count intersections: " << max << std::endl;
-        
-       
-        //std::cout << "Number of Maximum Rays: " << _goodRays.size() << std::endl;
 }
 
 void RFDepthComplexity3D::findMaximumRaysAndHistogram(vec3d initPos, vec3d f, vec3d s, vec3d p) {
@@ -498,10 +527,12 @@ void RFDepthComplexity3D::findMaximumRaysAndHistogram(vec3d initPos, vec3d f, ve
     up.normalize();
     s.normalize();
     
+    
     //std::cout << p.x << " -- " << p.y << std::endl;
     
     for(int r=0; r<_fboHeight; ++r) {
       for(int c=0; c<_fboWidth; ++c) {
+        //std::cout << "r: " << r << " c: " << c << std::endl;
         unsigned int val = colorBuffer[r*_fboWidth+c]-1;
 
         if (val < _threshold) continue;
@@ -585,7 +616,7 @@ unsigned int RFDepthComplexity3D::findMaxValueInCounterBuffer() {
       //((colorBuffer[i]-1)/((float)max-1.0f) > 0)? 1.0f: 0.0f;
       //std::cout << colorBuffer[i]-1 << std::endl;
   
-  CImg<float> cb(buff,512,512,1,1);
+  CImg<float> cb(buff,_fboWidth,_fboHeight,1,1);
   //cb.normalize(0,1);
   
   dualDisplay.display(cb);

@@ -88,6 +88,7 @@ struct BoundingBox {
 };
 
 struct TriMesh {
+    std::vector<vec3d> vertices;
     std::vector<Triangle> faces;
     BoundingBox aabb;
 };

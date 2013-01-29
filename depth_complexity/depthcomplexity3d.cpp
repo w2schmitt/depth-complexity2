@@ -98,6 +98,7 @@ static int winWidth, winHeight;
 // Callback function called by GLFW when window size changes
 void GLFWCALL WindowSizeCB(int width, int height)
 {
+    //std::cout << width << " " << height << std::endl;
     winWidth = width;
     winHeight = height;
     // Send the new window size to AntTweakBar
@@ -161,7 +162,7 @@ std::vector<Triangle> sorted_faces;
 
 void drawMesh(const TriMesh& mesh, const vec3f& dir)
 {
-    
+    //std::cout << "chupa\n";
     glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
     glEnable(GL_COLOR_MATERIAL);
     
@@ -543,14 +544,11 @@ int doInteractive(TriMesh& mesh)
     GLfloat shine = 50;
     bool showObj = true;
     
-    #ifdef USE_RANDOM_DC3D
-		if (strcmp(filenameRays, "")!=0){}
-			//dc3d = new RFDepthComplexity3D(512, 512, 2, filenameRays);
-		else
-			dc3d = new RFDepthComplexity3D(512, 512, 2);
-    #else
+#ifdef USE_RANDOM_DC3D
+    dc3d = new RFDepthComplexity3D(512, 512, 2);
+#else
     dc3d = new DepthComplexity3D(512, 512, 2);
-    #endif
+#endif
     dc3d->setComputeMaximumRays(true);
     dc3d->setComputeHistogram(true);
     dc3d->setThreshold(10);
@@ -665,10 +663,6 @@ int main(int argc, char **argv)
         std::ifstream file(argv[1]);
         std::string ext = getExtension(argv[1]);
 
-#ifdef USE_RANDOM_DC3D
-				filenameRays = cmd_option("-fr", "", "load text file with rays");
-				//std::clog << "[RAYS FILES] : " << filenameRays << std::endl;
-#endif
         TriMesh mesh;
 
        if (ext == "off" || ext == "OFF")

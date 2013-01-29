@@ -20,6 +20,17 @@
 #include <cstring>
 #include <time.h>
 
+// LINEAR ALGEBRA LIBRARY
+#undef Success 
+#include "Eigen/Dense"
+
+using Eigen::Affine3f;
+using Eigen::Matrix3f;
+using Eigen::Matrix4f;
+using Eigen::Vector3f;
+using Eigen::Vector4f;
+using Eigen::AngleAxisf;
+
 #include <GL/glew.h>
 
 using namespace cimg_library;
