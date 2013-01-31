@@ -10,11 +10,13 @@ layout(pixel_center_integer) in vec4 gl_FragCoord;
 //-- fragment counter texture
 coherent uniform layout(size1x32) uimage2D counterBuff;
 
+uniform ivec2 resolution;
+
 void main(void){
    //-- get coords
    ivec2 coords = ivec2(gl_FragCoord.xy);
 
-   if(coords.x>=0 && coords.y>=0 && coords.x<512 && coords.y<512 ){
+   if(coords.x>=0 && coords.y>=0 && coords.x<resolution.x && coords.y<resolution.y ){
      int abidx = (int)imageAtomicIncWrap( counterBuff, coords, 65535 );
    }
   

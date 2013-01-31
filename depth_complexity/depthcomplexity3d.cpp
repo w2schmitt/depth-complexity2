@@ -24,29 +24,23 @@
 #include "flags.h"
 #include "vector.hpp"
 #include "camera/float3.h"
-//#include "camera.hpp"
 #include "camera/Camera.h"
 #include "util.h"
-#ifdef USE_RANDOM_DC3D
-//#include "dc_3d_random.h"
 #include "RFDepthComplexity3D.h" 
-#else
-#include "dc_3d.h"
-#endif
 #include "timer.h"
 
 float radius = 0.01;
 bool showPlanes = false;
 bool doGoodRays = true;
+bool discretePts = true;
 vec4f sphereColor(0.0, 1.0, 0.0, 1.0);
 unsigned int showRayIndex = 0;
 
-#ifdef USE_RANDOM_DC3D
+//#ifdef USE_RANDOM_DC3D
 RFDepthComplexity3D *dc3d;
-const char *filenameRays;
-#else
-DepthComplexity3D *dc3d;
-#endif
+//#else
+//DepthComplexity3D *dc3d;
+//#endif
 
 template<class T>
 T clamp(const T& min, const T& x, const T& max)
@@ -194,6 +188,7 @@ void drawMesh(const TriMesh& mesh, const vec3f& dir)
     glNormalPointer(GL_DOUBLE, 2*sizeof(vec3d)+sizeof(vec4d), &sorted_faces[0].na.x);
 
     glDrawArrays(GL_TRIANGLES, 0, sorted_faces.size()*3);
+   
 
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glDisableClientState(GL_VERTEX_ARRAY);
@@ -319,6 +314,33 @@ void drawRays()
       glEnd();
     }
     
+     
+    if (discretePts){
+        glColor3f(0,0,0);
+        glPointSize(3.0);
+        const std::vector<vec3d> &vpoints = dc3d->visualizationPoints();
+        //vec3d center = mesh.aabb.center();
+        glBegin(GL_POINTS);
+        for(unsigned i=0; i<dc3d->visualizationPoints().size(); i++){
+            glVertex3f(vpoints[i].x,vpoints[i].y,vpoints[i].z );
+        }
+        glEnd();
+    }
+    
+    glBegin(GL_LINES);
+    //for(unsigned i=0; i<dc3d->visualizationPoints().size(); i++){
+        glVertex3f(0,0,0);
+        glVertex3f(1000,0,0);
+        
+        glVertex3f(0,0,0);
+        glVertex3f(0,1000,0);
+        
+        glVertex3f(0,0,0);
+        glVertex3f(0,0,1000);
+    //    glVertex3f( (center.x - vpoints[i].x) , (center.y-vpoints[i].y), (center.z-vpoints[i].z) );
+    //}
+   glEnd();
+    
     
     if(showPlanes) {
       const std::vector<Segment>& bounds = dc3d->usedPlanes();
@@ -351,7 +373,7 @@ void setupCamera(Camera& camera)
     glViewport(0, 0, winWidth, winHeight);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    camera.setPerspec(50, (double)winWidth/winHeight, 0.1, 10000);
+    camera.setPerspec(50, (double)winWidth/winHeight, 0.1, 30000);
    // gluPerspective(50, (double)winWidth/winHeight, 0.1, 1000);
 
     glMatrixMode(GL_MODELVIEW);
@@ -544,11 +566,11 @@ int doInteractive(TriMesh& mesh)
     GLfloat shine = 50;
     bool showObj = true;
     
-#ifdef USE_RANDOM_DC3D
-    dc3d = new RFDepthComplexity3D(512, 512, 2);
-#else
-    dc3d = new DepthComplexity3D(512, 512, 2);
-#endif
+//#ifdef USE_RANDOM_DC3D
+    dc3d = new RFDepthComplexity3D(512, 50);
+//#else
+//    dc3d = new DepthComplexity3D(512, 10);
+//#endif
     dc3d->setComputeMaximumRays(true);
     dc3d->setComputeHistogram(true);
     dc3d->setThreshold(10);
@@ -556,10 +578,12 @@ int doInteractive(TriMesh& mesh)
     TwAddVarRW(bar, "showPlanes", TW_TYPE_BOOLCPP, &showPlanes, " label='show discret. planes' ");
 
     TwAddVarRW(bar, "goodRays", TW_TYPE_BOOLCPP, &doGoodRays, " label='show more rays' ");
+    TwAddVarRW(bar, "discrete pts", TW_TYPE_BOOLCPP, &discretePts, " label='disc. pts' ");
 
     TwAddVarRW(bar, "goodThreshold", TW_TYPE_UINT32, &dc3d->_threshold, " label='intersection threshold' min=0 ");
 
-    TwAddVarRW(bar, "discretSteps", TW_TYPE_UINT32, &dc3d->_discretSteps, " label='discret. steps' min=2 ");
+    TwAddVarRW(bar, "discretSteps", TW_TYPE_UINT32, &dc3d->_discretSteps, " label='discret. steps' min=2 step=5 ");
+    TwAddVarRW(bar, "resolution", TW_TYPE_UINT32, &dc3d->_resolution, " label='resolution' min=30 max=700");
 
     TwAddButton(bar, "recompute", recompute, (void*)&mesh, " label='Recompute' ");
 
@@ -585,6 +609,7 @@ int doInteractive(TriMesh& mesh)
 
     //Camera cam;
     BoundingBox aabb = mesh.aabb;
+    std::cout << "aabb: " << aabb.center() << std::endl;
     
     camera.bbox(float3(aabb.min.x,aabb.min.y,aabb.min.z), float3(aabb.max.x,aabb.max.y,aabb.max.z), true );
 		camera.front();

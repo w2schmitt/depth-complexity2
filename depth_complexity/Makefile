@@ -31,9 +31,10 @@ LDFLAGS = $(ATB_LDFLAGS) $(GLEW_LDFLAGS) -Wall -Werror
 	  #randomdepthcomplexity3d randomdepthcomplexity3d_offline newrandomdepthcomplexity3d mergeOFF
 
 #all : depthcomplexity2d depthcomplexity3d_offline depthcomplexity3d \
-#	newrandomdepthcomplexity3d mergeOFF
+      newrandomdepthcomplexity3d mergeOFF
 
-all : newrandomdepthcomplexity3d
+all : depthcomplexity3d_offline mergeOFF
+	
 	
 clean:
 	rm -f *.o camera/*.o depthcomplexity3d depthcomplexity2d main_joao \
@@ -50,9 +51,10 @@ hard_clean: clean
 #depthcomplexity2d: depthcomplexity2d.o dc_2d.o util.o ShaderMgr.o flags.o timer.o 
 #	g++ -g -o $@ $^ $(LDFLAGS) $(GLUT_LDFLAGS)
 
-#depthcomplexity3d_offline: \
-	depthcomplexity3d_offline.o dc_3d.o  dc_2d.o flags.o util.o ShaderMgr.o timer.o
-#	g++ -g -o $@ $^ $(LDFLAGS) $(GLFW_LDFLAGS) $(GLUT_LDFLAGS)
+depthcomplexity3d_offline: \
+	RFDepthComplexity3D.o camera/Camera.o camera/float3.o util.o ShaderMgr.o timer.o flags.o
+	g++ -g -o $@ depthcomplexity3d_offline.cpp -D "USE_RANDOM_DC3D" $^ $(LDFLAGS) \
+	$(GLFW_LDFLAGS) $(GLUT_LDFLAGS) $(GLEW_CFLAGS) -lpthread
 
 #main_joao: main_joao.o
 #	g++ -g -o $@ $^ $(LDFLAGS) $(GLUT_LDFLAGS)
@@ -64,8 +66,8 @@ hard_clean: clean
 #	g++ -g -o $@ depthcomplexity3d.cpp -D "USE_RANDOM_DC3D" $^ $(LDFLAGS) \
 	$(GLFW_LDFLAGS) $(GLUT_LDFLAGS) $(GLEW_CFLAGS)
 	
-newrandomdepthcomplexity3d: RFDepthComplexity3D.o camera/Camera.o camera/float3.o util.o ShaderMgr.o timer.o flags.o
-	g++ -g -o $@ depthcomplexity3d.cpp -D "USE_RANDOM_DC3D" $^ $(LDFLAGS) \
+#newrandomdepthcomplexity3d: RFDepthComplexity3D.o camera/Camera.o camera/float3.o util.o ShaderMgr.o timer.o flags.o
+#	g++ -g -o $@ depthcomplexity3d.cpp -D "USE_RANDOM_DC3D" $^ $(LDFLAGS) \
 	$(GLFW_LDFLAGS) $(GLUT_LDFLAGS) $(GLEW_CFLAGS)
 	
 #randomdepthcomplexity3d_offline: dc_3d_random.o flags.o util.o timer.o flags.o

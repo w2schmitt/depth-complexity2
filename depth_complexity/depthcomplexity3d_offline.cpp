@@ -1,10 +1,6 @@
 #include "flags.h"
 #include "util.h"
-#ifdef USE_RANDOM_DC3D
-#include "dc_3d_random.h"
-#else
-#include "dc_3d.h"
-#endif
+#include "RFDepthComplexity3D.h"
 #include "timer.h"
 
 #include <iostream>
@@ -33,9 +29,10 @@ std::string getExtension(const std::string& filename);
 int main (int argc, char **argv) {
   cmd_usage("Program to find depth complexity out (offline mode)");
   const char *filename = cmd_option("-f", "models/suzanne.obj", "Model in OBJ or OFF format.");
-  const int fboWidth  = cmd_option("-fboWidth",  512, "Framebuffer width.");
-  const int fboHeight = cmd_option("-fboHeight", 512, "Framebuffer height.");
-  const int discretSteps = cmd_option("-dsteps", 10, "Discrete steps.");
+  //const int fboWidth  = cmd_option("-fboWidth",  512, "Framebuffer width.");
+  //const int fboHeight = cmd_option("-fboHeight", 512, "Framebuffer height.");
+  const int resolution = cmd_option("-res", 512, "Framebuffer Resolution.");  
+  const int discretSteps = cmd_option("-dsteps", 50, "Discrete steps.");
   const char *filenameParallelData = cmd_option("-fpr", "", "Save a *.txt containing rays informaton");
   const char *filenameHistogram = cmd_option("-fh", "", "Save a *.txt file with histogram information");
   //const char *filenameRays = cmd_option("-fr", "", "Save a *.off file with rays in ");
@@ -73,11 +70,8 @@ int main (int argc, char **argv) {
     glutCreateWindow("Dual Ray Implementation");
     glewInit();
 
-	#ifdef USE_RANDOM_DC3D
-    RDepthComplexity3D dc3d(fboWidth, fboHeight, discretSteps);
-	#else
-    DepthComplexity3D dc3d(fboWidth, fboHeight, discretSteps);
-    #endif
+    RFDepthComplexity3D dc3d(resolution, discretSteps);
+
     dc3d.setComputeHistogram(strcmp(filenameHistogram, "")!=0);
     dc3d.setComputeMaximumRays(strcmp(filenameRays, "")!=0);
     dc3d.setComputeGoodRays(computeMoreRays);

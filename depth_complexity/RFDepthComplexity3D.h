@@ -36,9 +36,9 @@ using Eigen::AngleAxisf;
 using namespace cimg_library;
 
 class RFDepthComplexity3D {
-public:
-    RFDepthComplexity3D(int fboWidth, int fboHeight, int discretSteps);
-        //RDepthComplexity3D(int fboWidith, int fboHeight, int discretSteps, const char* filenameRays);
+public:    
+    RFDepthComplexity3D(int _res, int discretSteps);
+    //RDepthComplexity3D(int fboWidith, int fboHeight, int discretSteps, const char* filenameRays);
         
     void process(const TriMesh &mesh);
     
@@ -59,6 +59,7 @@ public:
   const std::vector<Segment> &usedPlanes() const { return _usedPlanes; }
   const std::vector<Point> &intersectionPoints() const { return _intersectionPoints; }
   const std::vector<Triangle> &intersectionTriangles() const { return _intersectionTriangles;}
+  const std::vector<vec3d> &visualizationPoints() const { return _vpoints;}
   unsigned getThreshold() { return _threshold; }
   
   // 
@@ -105,9 +106,10 @@ private:
   // Input
   const TriMesh *_mesh;
   std::vector<Triangle> _sorted_faces;
+   int _resolution;
   int _fboWidth;
   int _fboHeight;
-  int _discretSteps;
+  int _discretSteps; 
   unsigned _maximum;
   unsigned _threshold;
 //std::vector<Segment> _raysFromFile;
@@ -126,6 +128,7 @@ private:
   std::vector<Point> _intersectionPoints;
   std::vector<Triangle> _intersectionTriangles;
   //  std::vector<Segment> _intersectionSegments;
+  std::vector<vec3d> _vpoints;
 
   friend int doInteractive(TriMesh& mesh);
   friend void drawRays();

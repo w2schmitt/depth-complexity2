@@ -22,6 +22,7 @@ class DepthComplexity2D;
 //   c3d.writeRays(std::cout);
 class DepthComplexity3D {
 public:
+    
   DepthComplexity3D(int fboWidth, int fboHeight, int discretSteps);
   virtual ~DepthComplexity3D();
 
@@ -40,6 +41,7 @@ public:
   unsigned int getThreshold() { return _threshold; }
   const std::vector<Triangle> &intersectionTriangles() const { return _intersectionTriangles;}
   const std::list<unsigned int> &intersectionTris(int rayIndex){return *_intersectionTriList.find(rayIndex)->second;}
+  const std::vector<vec3d> &visualizationPoints() const { return _vpoints;}
 
   void writeHistogram(std::ostream& out);
   void writeRays(std::ostream& out);
@@ -85,6 +87,7 @@ private:
   std::vector<Point> _intersectionPoints;
   std::map<int, std::list<unsigned int>* > _intersectionTriList;
   std::vector<Triangle> _intersectionTriangles;
+  std::vector<vec3d> _vpoints;
   //  std::vector<Segment> _intersectionSegments;
 
   friend int doInteractive(TriMesh& mesh);

@@ -51,9 +51,8 @@ void RFDepthComplexity3D::writeGoodRays(std::ostream& out){
     }
 }
 
-RFDepthComplexity3D::RFDepthComplexity3D(int fboWidth, int fboHeight, int discretSteps):
-	_fboWidth(fboWidth),
-	_fboHeight(fboHeight),
+RFDepthComplexity3D::RFDepthComplexity3D(int res, int discretSteps):
+        _resolution(res),
 	_discretSteps(discretSteps),
 	_maximum(0),
 	_computeHistogram(false),
@@ -66,20 +65,18 @@ RFDepthComplexity3D::RFDepthComplexity3D(int fboWidth, int fboHeight, int discre
         _shaderCountDC = shaderMgr.createShaderProgram("shader/dc.vert", "shader/dc.frag");        
         _shaderclearBuffer = shaderMgr.createShaderProgram("shader/clear.vert", "shader/clear.frag");
         
+        _fboWidth = _fboHeight = res;
                         
         shaderMgr.linkShaderProgram(_shaderCountDC); 
         shaderMgr.linkShaderProgram(_shaderclearBuffer);
 
-        shaderMgr.checkShaderStatus();
-  
+        shaderMgr.checkShaderStatus();  
 	_goodRays.resize(1);
 }
 
 void RFDepthComplexity3D::setShaderClearCounterBuffer(){
     glUseProgram(_shaderclearBuffer);
-    
-    
-    
+
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
@@ -95,6 +92,8 @@ void RFDepthComplexity3D::setShaderClearCounterBuffer(){
     glGetFloatv(GL_PROJECTION_MATRIX, projection);
     glProgramUniformMatrix4fv(_shaderclearBuffer, glGetUniformLocation(_shaderclearBuffer, "modelViewMat"), 1, GL_FALSE, model);
     glProgramUniformMatrix4fv(_shaderclearBuffer, glGetUniformLocation(_shaderclearBuffer, "projectionMat"), 1, GL_FALSE, projection);
+    glProgramUniform2i(_shaderclearBuffer, glGetUniformLocation(_shaderclearBuffer, "resolution"), _fboWidth, _fboHeight);
+    
 
     // Pass Counter Buffer Texture
     glProgramUniform1iEXT(_shaderclearBuffer, glGetUniformLocation(_shaderclearBuffer, "counterBuff"), 0);
@@ -123,6 +122,7 @@ void RFDepthComplexity3D::setShaderCountDC(){
     glGetFloatv(GL_PROJECTION_MATRIX, projection);
     glProgramUniformMatrix4fv(_shaderCountDC, glGetUniformLocation(_shaderCountDC, "modelViewMat"), 1, GL_FALSE, model);
     glProgramUniformMatrix4fv(_shaderCountDC, glGetUniformLocation(_shaderCountDC, "projectionMat"), 1, GL_FALSE, projection);
+    glProgramUniform2i(_shaderCountDC, glGetUniformLocation(_shaderCountDC, "resolution"), _fboWidth, _fboHeight);
 
     // Pass counter buff texture
     glProgramUniform1iEXT(_shaderCountDC, glGetUniformLocation(_shaderCountDC, "counterBuff"), 0);
@@ -242,6 +242,7 @@ void RFDepthComplexity3D::initTextureCounter(){
     
 }
 
+/*
 void RFDepthComplexity3D::erodeTriangle(vec3d &v1, vec3d &v2, vec3d &v3){
     
     double pixelSize = 1.0/_fboWidth;
@@ -259,13 +260,14 @@ void RFDepthComplexity3D::erodeTriangle(vec3d &v1, vec3d &v2, vec3d &v3){
     v2 = v2 + step*v2dir;
     v3 = v3 + step*v3dir;    
 }
+ */
 
 unsigned int RFDepthComplexity3D::renderScene(vec3d point){
 
     glPushAttrib(GL_VIEWPORT_BIT | GL_ENABLE_BIT);
     glViewport(0, 0, _fboWidth, _fboHeight);
 
-    // desable all anti-aliasing to avoid precision error
+    // desable all anti-aliasing to avoid precision errors
     glDisable(GL_POINT_SMOOTH);
     glDisable(GL_LINE_SMOOTH);
     glDisable(GL_POLYGON_SMOOTH);
@@ -274,27 +276,16 @@ unsigned int RFDepthComplexity3D::renderScene(vec3d point){
     glHint(GL_POINT_SMOOTH, GL_FASTEST);
     glHint(GL_LINE_SMOOTH, GL_FASTEST);
     
-    
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_LIGHTING);
     glDisable(GL_BLEND);
-    //glDisable(GL_DEPTH_TEST);
     
-    // calculations
-    double aspect = 1024./768.;
+    // variable computations
     vec3d up = vec3d(0,1,0);
-    vec3d size = _mesh->aabb.extents();
-    vec3d aspsize = size*aspect;
     vec3d center = _mesh->aabb.center();
     vec3d pos;
     vec3d forward = (center-point); forward.normalize();
     vec3d side = cross(forward,up);
-    
-    //std::cout << side << std::endl;
-    
-    //pos.x = (aspsize.x+size.x)/2;
-    //pos.y = (aspsize.y+size.y)/2;
-    pos.z = (aspsize.z+size.z)/2;
     
     double dist = sqrt( pow((point.x-center.x),2)+ pow((point.y-center.y),2)+ pow((point.z-center.z),2));
     pos.z = 2*dist;
@@ -308,35 +299,27 @@ unsigned int RFDepthComplexity3D::renderScene(vec3d point){
     
     // get modelview matrix
     Vector4f v;
-    vec3d vmin(99999.0,99999.0,0),vmax(-99999.0,-99999.0,0);
-    //std::vector<Vector4f> modified; 
-    //modified.resize(_mesh->vertices.size(), Vector4f());
+    vec3d vmin(INFINITY,INFINITY,0),vmax(-INFINITY,-INFINITY,0);
     Affine3f modelview = getModelview();
-    //std::cout << _mesh->vertices.size() << std::endl;
+    
     for (unsigned int i=0; i<_mesh->vertices.size(); i++){
         v << _mesh->vertices[i].x, _mesh->vertices[i].y, _mesh->vertices[i].z, 1;
         v = modelview*v;
-        //std::cout << v << std::endl;
         if (vmin.x > v[0]) vmin.x = v[0];
         if (vmin.y > v[1]) vmin.y = v[1];
         if (vmax.x < v[0]) vmax.x = v[0];
-        if (vmax.y < v[1]) vmax.y = v[1];
-        //modified[i] = v;        
+        if (vmax.y < v[1]) vmax.y = v[1];      
     }
-    //vmin << _mesh->aabb.min.x, _mesh->aabb.min.y, _mesh->aabb.min.z, 1;
-    //vmax << _mesh->aabb.max.x, _mesh->aabb.max.y, _mesh->aabb.max.z, 1;
 
-    //vmin = modelview*vmin;
-    //vmax = modelview*vmax;
-    double relaxation = 1.1; // 10 percent
-    pos.x = abs(vmax.x - vmin.x)*relaxation/2.0;
-    pos.y = abs(vmax.y - vmin.y)*relaxation/2.0;
+    double relaxation = 1.2; // 20 percent
+    pos.x = fabs(vmax.x - vmin.x)*relaxation/2.0;
+    pos.y = fabs(vmax.y - vmin.y)*relaxation/2.0;
     
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();  
    
-    glOrtho(-pos.x, pos.x, -pos.y, pos.y ,1, 2*dist);
+    glOrtho(-pos.x, pos.x, -pos.y, pos.y ,1, pos.z);
     
     glMatrixMode(GL_MODELVIEW);
     
@@ -351,13 +334,9 @@ unsigned int RFDepthComplexity3D::renderScene(vec3d point){
     // Ensure that all texture writing is done
     glMemoryBarrierEXT(GL_FRAMEBUFFER_BARRIER_BIT_EXT);
     
-    //int max = findMaxValueInCounterBuffer()-1;
-    //std::cout << "initialize test: " << max << std::endl;
-    
     // Set shader to write DC in the counter buffer 
     setShaderCountDC();
    
-    //glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 1);    
     glColor4f(1,1,1,1);
     glBegin(GL_TRIANGLES);
     for (unsigned i=0; i< _mesh->faces.size(); i++){
@@ -365,45 +344,19 @@ unsigned int RFDepthComplexity3D::renderScene(vec3d point){
                 v2(_mesh->faces[i].b.x, _mesh->faces[i].b.y, _mesh->faces[i].b.z),
                 v3(_mesh->faces[i].c.x, _mesh->faces[i].c.y, _mesh->faces[i].c.z);
         
-        //erodeTriangle(v1,v2,v3);
-        
         glVertex3f(v1.x,v1.y,v1.z);
         glVertex3f(v2.x,v2.y,v2.z);
         glVertex3f(v3.x,v3.y,v3.z);
-        
-        //glVertex3f(_mesh->faces[i  ].a.x, _mesh->faces[i  ].a.y, _mesh->faces[i  ].a.z );
-        //glVertex3f(_mesh->faces[i+1].b.x, _mesh->faces[i+1].b.y, _mesh->faces[i+1].b.z);
-        //glVertex3f(_mesh->faces[i+2].c.x, _mesh->faces[i+2].c.y, _mesh->faces[i+2].c.z);
     }
     glEnd();
-    //glEnable(GL_VERTEX_ARRAY);
-
-    //glEnableClientState(GL_VERTEX_ARRAY);    
-    //glVertexPointer(3, GL_DOUBLE, 2*sizeof(vec3d)+sizeof(vec4d), &_mesh->faces[0].a.x);
-    
-    //glEnableClientState(GL_COLOR_ARRAY);
-    //glColorPointer(4, GL_DOUBLE, 2*sizeof(vec3d)+sizeof(vec4d), &sorted_faces[0].ca.x);
-
-    //glEnableClientState(GL_NORMAL_ARRAY);
-    //glNormalPointer(GL_DOUBLE, 2*sizeof(vec3d)+sizeof(vec4d), &sorted_faces[0].na.x);
-
-    //glDrawArrays(GL_TRIANGLES, 0, _mesh->faces.size()*3);
-
-    //glDisableClientState(GL_VERTEX_ARRAY);
-    //glDisable(GL_VERTEX_ARRAY);
-    //glDisableClientState(GL_NORMAL_ARRAY);
-    //glDisable(GL_NORMAL_ARRAY);
-    //glDisableClientState(GL_COLOR_ARRAY);
-    //glDisable(GL_COLOR_ARRAY);
-    
+        
     // Ensure that all texture writing is donetranslationY
     glMemoryBarrierEXT(GL_TEXTURE_UPDATE_BARRIER_BIT_EXT);
+    
     // Disable Shaders
     unsigned int max = findMaxValueInCounterBuffer()-1;
     findMaximumRaysAndHistogram(point, forward, side, pos);
-    
-    //std::cout << "the maximum DC is: " << max << std::endl;
-        
+           
     glUseProgram(0);
     glBindTexture(GL_TEXTURE_2D, 0);   
 
@@ -417,8 +370,6 @@ unsigned int RFDepthComplexity3D::renderScene(vec3d point){
     glEnable(GL_LIGHTING);
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-    //glEnable(GL_DEPTH_TEST);
-    //glDisable(GL_COLOR_MATERIAL);
     glEnable(GL_DEPTH_TEST);
     return max;
 }
@@ -430,59 +381,88 @@ Affine3f getModelview(){
     return Affine3f(Matrix4f(m));
 }
 
-#define CONSTANT_FACTOR 500
+
+//#define CONSTANT_FACTOR 500
 void RFDepthComplexity3D::process(const TriMesh &mesh) {
-	 this->_mesh = &mesh;
-         _intersectionTriangles.clear();
-                 
+	this->_mesh = &mesh;
+        _intersectionTriangles.clear();                 
 	_usedPlanes.clear();
 	_goodRays.clear();
 	_goodRays.resize(1);
 	_histogram.clear();
 	_histogram.resize(1);
+        _vpoints.clear();
 	_maximum = 0;
-        
-        
+        _fboWidth = _fboHeight = _resolution;
+                
+                
         initTextureCounter();
-
-	//std::cout << _fboWidth << " " << _fboHeight << " " << _discretSteps << " " << _maximum << " " << _threshold << std::endl;
 
 	BoundingBox aabb = _mesh->aabb;
 	aabb.merge(aabb.min - aabb.extents()/10.0);
 	aabb.merge(aabb.max + aabb.extents()/10.0);
 	
-	vec3d center = aabb.center();
+	vec3d center = _mesh->aabb.center();
 	
 	 /* initialize random seed: */
-        srand ( time(NULL) );
-        const unsigned Nrays = 500;//steps*steps*CONSTANT_FACTOR;
+        //srand ( time(NULL) );
         
         float modelsizex = aabb.extents().x;
         float modelsizey = aabb.extents().y;
         float modelsizez = aabb.extents().z;
-        double distance= sqrt(modelsizex*modelsizex + modelsizey*modelsizey + modelsizez*modelsizez);
-        //if (modelsizex)
+        double distance = sqrt(modelsizex*modelsizex + modelsizey*modelsizey + modelsizez*modelsizez);
         
-        //if (modelsizex/aspect > modelsizey){
-        //    distance = aabb.extents().z/2 + (modelsizex/2)/tan((fovh/2)*0.01745329238);
-        //} else {
-        //    distance = aabb.extents().z/2 + (modelsizex/2)/tan((fov/2)*0.01745329238);
-        //}
+        int qty = _discretSteps;        
+        double inc = M_PI/60.0;
+        vec3d ans;
         
-        distance = distance*1.3;
-        
-        
-        for (unsigned i=0; i<Nrays; i++){
-            //generate random vector
-            vec3d v(uniformRandom() - 0.5, uniformRandom() - 0.5, uniformRandom() - 0.5);
-            v.normalize();
-            v = distance*v + center;        
-       
-            unsigned int m = renderScene(v);
-            if (m > _maximum){
-                _maximum = m;               
-            }        
+        for (float theta=0; theta <= M_PI/2.0; theta+=M_PI/(double)qty){ 
+            int length = round((double)qty*2.0 * sin(theta));
+            if (length==0) length = 1;
+            inc = 2*M_PI/(double)length;
+            for (float phi=-M_PI; phi < M_PI; phi+=inc){
+                
+                ans.x = distance*sin(theta)*cos(phi); 
+                ans.y = distance*sin(theta)*sin(phi);
+                ans.z = distance*cos(theta);
+
+                _vpoints.push_back(ans+center);
+
+                unsigned int m = renderScene(ans+center);
+                if (m > _maximum){
+                    _maximum = m;               
+                }        
+            }
         }
+        
+        // create histrogram
+        _histogram.resize(_maximum+1);
+        _histogram[_maximum] = _maximumRays.size();
+        
+        for (unsigned i=0; i< _goodRays.size(); ++i){
+            _histogram[i] = _goodRays[i].size();
+        }
+        
+        
+        
+        
+        std::ofstream fileHistogram("Histogram_teste.txt");
+        writeHistogram(fileHistogram);
+        fileHistogram.close();
+        
+        //}
+        //ans.normalize();
+        
+            //generate random vector
+            //vec3d v(uniformRandom() - 0.5, uniformRandom() - 0.5, uniformRandom() - 0.5);
+            //v.normalize();
+            //v = distance*v + center;        
+       
+            //unsigned int m = renderScene(v);
+            //if (m > _maximum){
+            //    _maximum = m;               
+            //}        
+        //}
         
         // Count Intersections
         unsigned int max=0;
@@ -498,23 +478,7 @@ void RFDepthComplexity3D::process(const TriMesh &mesh) {
 }
 
 void RFDepthComplexity3D::findMaximumRaysAndHistogram(vec3d initPos, vec3d f, vec3d s, vec3d p) {
-    // Output
-  //std::set<Segment,classcomp> tempMaximumRays;
-  //std::vector< std::set<Segment,classcomp> > tempGoodRays;
-  //std::vector<Segment> _usedPlanes;
-  //std::vector<unsigned long long> tempHistogram;
-  //std::vector<Point> _intersectionPoints;
-  //tempGoodRays.resize(_maximum + 1);
-  //tempHistogram.resize(_maximum + 1);
-  
-  //_maximumRays.clear();
- // _goodRays.clear();
-  //_goodRays.resize(_maximum + 1);
-  //_histogram.clear();
-  //_histogram.resize(_maximum + 1);
-
-    //glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _fboId);
-     glPushAttrib(GL_VIEWPORT_BIT);
+    glPushAttrib(GL_VIEWPORT_BIT);
     glViewport(0.0, 0.0, _fboWidth, _fboHeight);
     
     unsigned int colorBuffer[_fboWidth*_fboHeight];
@@ -522,21 +486,17 @@ void RFDepthComplexity3D::findMaximumRaysAndHistogram(vec3d initPos, vec3d f, ve
     glBindTexture(GL_TEXTURE_2D, _counterBuffId);
     glGetTexImage( GL_TEXTURE_2D, 0 , GL_RED_INTEGER, GL_UNSIGNED_INT, colorBuffer );
     glBindTexture(GL_TEXTURE_2D, 0);
-    //s = -s;
+    
+    // compute up vector
     vec3d up = cross(s,f);
     up.normalize();
     s.normalize();
     
-    
-    //std::cout << p.x << " -- " << p.y << std::endl;
-    
     for(int r=0; r<_fboHeight; ++r) {
       for(int c=0; c<_fboWidth; ++c) {
-        //std::cout << "r: " << r << " c: " << c << std::endl;
+          
         unsigned int val = colorBuffer[r*_fboWidth+c]-1;
-
-        if (val < _threshold) continue;
-        
+        if (val < _threshold) continue;        
                 
         Segment seg;
         double pxSizeX = (2.0*p.x)/(double)_fboWidth;
@@ -545,6 +505,7 @@ void RFDepthComplexity3D::findMaximumRaysAndHistogram(vec3d initPos, vec3d f, ve
         double translationY = (double)r*pxSizeY - p.y + pxSizeY/2.0;
         seg.a = initPos + translationX*s + translationY*up;
         seg.b = seg.a + p.z*f;
+        
         insertRays(val, seg);
       }
     }
@@ -559,7 +520,7 @@ bool RFDepthComplexity3D::intersectTriangleSegment(const Segment& segment, const
 
 	vec3d u = tri.b - tri.a;
 	vec3d v = tri.c - tri.a;
-	vec3d w =	*pnt - tri.a;
+	vec3d w = *pnt - tri.a;
 
 	double uu = dot(u,u);
 	double uv = dot(u,v);
@@ -582,10 +543,7 @@ bool RFDepthComplexity3D::intersectTriangleSegment(const Segment& segment, const
 }
    
 void RFDepthComplexity3D::insertRays(unsigned int tempMax, Segment seg){
-     //unsigned int tempMaximum = _dc2d->maximum();
-   
-    
-    //Segment seg;
+
     if (tempMax == _maximum){
         _maximumRays.insert(seg);
     }
@@ -613,12 +571,10 @@ unsigned int RFDepthComplexity3D::findMaxValueInCounterBuffer() {
   
   for (int i=0; i<pixelNumber; i++)
       buff[i] = (colorBuffer[i]-1)/(float)max;
-      //((colorBuffer[i]-1)/((float)max-1.0f) > 0)? 1.0f: 0.0f;
-      //std::cout << colorBuffer[i]-1 << std::endl;
   
   CImg<float> cb(buff,_fboWidth,_fboHeight,1,1);
-  //cb.normalize(0,1);
   
+  dualDisplay.resize(_fboWidth, _fboHeight, true);
   dualDisplay.display(cb);
   
   
@@ -638,8 +594,6 @@ void RFDepthComplexity3D::processMeshSegment(const Segment& segment, std::vector
                         _intersectionTriangles.back().cb = vec4d(1,0,0,1);
                         _intersectionTriangles.back().cc = vec4d(1,0,0,1);
                 }
-                        
-                        //_mesh->faces[i].ca = vec4d(0,0,0,0);
 	}
 }
 
@@ -650,7 +604,6 @@ bool RFDepthComplexity3D::intersectPlaneSegment(const vec4d& plane, const vec3d&
 	if (fabs(den) < EPS)
 		return false;
 	double r = num / den;
-	//std::cout << "r=" << r << "\n";
 	*pt = mix(p0, p1, r);
 	if (0 <= r && r <= 1)
 			return true;
