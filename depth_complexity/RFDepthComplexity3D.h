@@ -51,6 +51,8 @@ public:
   void setComputeMaximumRays(bool computeMaximumRays);
   void setComputeGoodRays(bool computeGoodRays);
   void setThreshold(unsigned threshold);
+  void setDiscreteSteps(int _dc);
+  void setResolution(int _res);
   
   // gets
   unsigned maximum() const { return _maximum; }
@@ -106,7 +108,7 @@ private:
   // Input
   const TriMesh *_mesh;
   std::vector<Triangle> _sorted_faces;
-   int _resolution;
+  int _resolution;
   int _fboWidth;
   int _fboHeight;
   int _discretSteps; 

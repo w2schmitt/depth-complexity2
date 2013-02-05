@@ -55,11 +55,12 @@ RFDepthComplexity3D::RFDepthComplexity3D(int res, int discretSteps):
         _resolution(res),
 	_discretSteps(discretSteps),
 	_maximum(0),
-	_computeHistogram(false),
-	_computeMaximumRays(false),
-	_computeGoodRays(false),
+	_computeHistogram(true),
+	_computeMaximumRays(true),
+	_computeGoodRays(true),
 	_computeRaysFromFile(false){
 	
+        _threshold = 10;
         //set up shaders
         ShaderMgr shaderMgr; 
         _shaderCountDC = shaderMgr.createShaderProgram("shader/dc.vert", "shader/dc.frag");        
@@ -185,7 +186,16 @@ void RFDepthComplexity3D::setThreshold(unsigned threshold) {
 	this->_threshold = threshold;
 }
 
+void RFDepthComplexity3D::setDiscreteSteps(int _dc) {
+    _discretSteps = _dc;
+}
+
+void RFDepthComplexity3D::setResolution(int _res){
+    _resolution = _res;
+}
+
 void RFDepthComplexity3D::writeHistogram(std::ostream& out) {
+    std::cout << "-- Computing Histogram --" << std::endl;
 	out << "Intersections Frequency\n";
 	for (unsigned i=0; i< _histogram.size(); ++i)
 		out << std::left << std::setw(14) << i << _histogram[i] << "\n";
@@ -261,6 +271,102 @@ void RFDepthComplexity3D::erodeTriangle(vec3d &v1, vec3d &v2, vec3d &v3){
     v3 = v3 + step*v3dir;    
 }
  */
+
+//#define CONSTANT_FACTOR 500
+void RFDepthComplexity3D::process(const TriMesh &mesh) {
+	this->_mesh = &mesh;
+        _intersectionTriangles.clear();                 
+	_usedPlanes.clear();
+	_goodRays.clear();
+	_goodRays.resize(1);
+	_histogram.clear();
+	_histogram.resize(1);
+        _vpoints.clear();
+	_maximum = 0;
+        _fboWidth = _fboHeight = _resolution;
+        std::cout << _fboWidth << "x" << _fboHeight << std::endl;
+                
+        initTextureCounter();
+
+	BoundingBox aabb = _mesh->aabb;
+	aabb.merge(aabb.min - aabb.extents()/10.0);
+	aabb.merge(aabb.max + aabb.extents()/10.0);
+	
+	vec3d center = _mesh->aabb.center();
+	
+	 /* initialize random seed: */
+        //srand ( time(NULL) );
+        
+        float modelsizex = aabb.extents().x;
+        float modelsizey = aabb.extents().y;
+        float modelsizez = aabb.extents().z;
+        double distance = sqrt(modelsizex*modelsizex + modelsizey*modelsizey + modelsizez*modelsizez);
+        
+        int qty = _discretSteps;        
+        double inc = M_PI/60.0;
+        vec3d ans;
+        
+        //std::cout << "Que porra eh essa! tche!" << std::endl;
+        
+        for (float theta=0; theta <= M_PI/2.0; theta+=M_PI/(double)qty){ 
+            int length = round((double)qty*2.0 * sin(theta));
+            if (length==0) length = 1;
+            inc = 2*M_PI/(double)length;
+            for (float phi=-M_PI; phi < M_PI; phi+=inc){
+                
+                ans.x = distance*sin(theta)*cos(phi); 
+                ans.y = distance*sin(theta)*sin(phi);
+                ans.z = distance*cos(theta);
+
+                _vpoints.push_back(ans+center);
+
+                unsigned int m = renderScene(ans+center);
+                //std::cout << "m: " << m << std::endl;
+                if (m > _maximum){
+                    _maximum = m;               
+                }        
+            }
+        }
+        
+        // create histrogram
+        _histogram.resize(_maximum+1);
+        _histogram[_maximum] = _maximumRays.size();
+        
+        for (unsigned i=0; i< _goodRays.size(); ++i){
+            _histogram[i] = _goodRays[i].size();
+        }
+        
+        //std::ofstream fileHistogram("hist_test.txt");
+        //writeHistogram(fileHistogram);
+        //fileHistogram.close();
+             
+        //}
+        //ans.normalize();
+        
+            //generate random vector
+            //vec3d v(uniformRandom() - 0.5, uniformRandom() - 0.5, uniformRandom() - 0.5);
+            //v.normalize();
+            //v = distance*v + center;        
+       
+            //unsigned int m = renderScene(v);
+            //if (m > _maximum){
+            //    _maximum = m;               
+            //}        
+        //}
+        
+        // Count Intersections
+        
+        unsigned int max=0;
+        std::vector<Point> inter;
+        for (std::set<Segment,classcomp>::iterator it = _maximumRays.begin(); it!=_maximumRays.end(); ++it){
+            processMeshSegment(*it,&inter);        
+            if (max<inter.size()) max = inter.size();
+            inter.clear();
+            break;
+        }
+        
+        std::cout << "Count intersections: " << max << std::endl;
+}
 
 unsigned int RFDepthComplexity3D::renderScene(vec3d point){
 
@@ -382,100 +488,7 @@ Affine3f getModelview(){
 }
 
 
-//#define CONSTANT_FACTOR 500
-void RFDepthComplexity3D::process(const TriMesh &mesh) {
-	this->_mesh = &mesh;
-        _intersectionTriangles.clear();                 
-	_usedPlanes.clear();
-	_goodRays.clear();
-	_goodRays.resize(1);
-	_histogram.clear();
-	_histogram.resize(1);
-        _vpoints.clear();
-	_maximum = 0;
-        _fboWidth = _fboHeight = _resolution;
-                
-                
-        initTextureCounter();
 
-	BoundingBox aabb = _mesh->aabb;
-	aabb.merge(aabb.min - aabb.extents()/10.0);
-	aabb.merge(aabb.max + aabb.extents()/10.0);
-	
-	vec3d center = _mesh->aabb.center();
-	
-	 /* initialize random seed: */
-        //srand ( time(NULL) );
-        
-        float modelsizex = aabb.extents().x;
-        float modelsizey = aabb.extents().y;
-        float modelsizez = aabb.extents().z;
-        double distance = sqrt(modelsizex*modelsizex + modelsizey*modelsizey + modelsizez*modelsizez);
-        
-        int qty = _discretSteps;        
-        double inc = M_PI/60.0;
-        vec3d ans;
-        
-        for (float theta=0; theta <= M_PI/2.0; theta+=M_PI/(double)qty){ 
-            int length = round((double)qty*2.0 * sin(theta));
-            if (length==0) length = 1;
-            inc = 2*M_PI/(double)length;
-            for (float phi=-M_PI; phi < M_PI; phi+=inc){
-                
-                ans.x = distance*sin(theta)*cos(phi); 
-                ans.y = distance*sin(theta)*sin(phi);
-                ans.z = distance*cos(theta);
-
-                _vpoints.push_back(ans+center);
-
-                unsigned int m = renderScene(ans+center);
-                if (m > _maximum){
-                    _maximum = m;               
-                }        
-            }
-        }
-        
-        // create histrogram
-        _histogram.resize(_maximum+1);
-        _histogram[_maximum] = _maximumRays.size();
-        
-        for (unsigned i=0; i< _goodRays.size(); ++i){
-            _histogram[i] = _goodRays[i].size();
-        }
-        
-        
-        
-        
-        std::ofstream fileHistogram("Histogram_teste.txt");
-        writeHistogram(fileHistogram);
-        fileHistogram.close();
-        
-        //}
-        //ans.normalize();
-        
-            //generate random vector
-            //vec3d v(uniformRandom() - 0.5, uniformRandom() - 0.5, uniformRandom() - 0.5);
-            //v.normalize();
-            //v = distance*v + center;        
-       
-            //unsigned int m = renderScene(v);
-            //if (m > _maximum){
-            //    _maximum = m;               
-            //}        
-        //}
-        
-        // Count Intersections
-        unsigned int max=0;
-        std::vector<Point> inter;
-        for (std::set<Segment,classcomp>::iterator it = _maximumRays.begin(); it!=_maximumRays.end(); ++it){
-            processMeshSegment(*it,&inter);        
-            if (max<inter.size()) max = inter.size();
-            inter.clear();
-            break;
-        }
-        
-        std::cout << "Count intersections: " << max << std::endl;
-}
 
 void RFDepthComplexity3D::findMaximumRaysAndHistogram(vec3d initPos, vec3d f, vec3d s, vec3d p) {
     glPushAttrib(GL_VIEWPORT_BIT);
@@ -545,7 +558,9 @@ bool RFDepthComplexity3D::intersectTriangleSegment(const Segment& segment, const
 void RFDepthComplexity3D::insertRays(unsigned int tempMax, Segment seg){
 
     if (tempMax == _maximum){
-        _maximumRays.insert(seg);
+        if (_maximumRays.size() < 100000){
+            _maximumRays.insert(seg);
+        }
     }
     else if (tempMax > _maximum){
         _goodRays.resize(tempMax+1);
@@ -554,14 +569,16 @@ void RFDepthComplexity3D::insertRays(unsigned int tempMax, Segment seg){
         _maximumRays.insert(seg);
         _maximum = tempMax;
     } else {        
-        _goodRays[tempMax].insert(seg);     
+        if (_goodRays[tempMax].size() < 100000){
+            _goodRays[tempMax].insert(seg);
+        }
     }    
 }
 
 unsigned int RFDepthComplexity3D::findMaxValueInCounterBuffer() {
   const int pixelNumber = _fboWidth * _fboHeight;
   unsigned int colorBuffer[pixelNumber];
-  float buff[pixelNumber];
+  //float buff[pixelNumber];
   
   glBindTexture(GL_TEXTURE_2D, _counterBuffId);
   glGetTexImage( GL_TEXTURE_2D, 0 , GL_RED_INTEGER, GL_UNSIGNED_INT, colorBuffer ); 
@@ -569,13 +586,13 @@ unsigned int RFDepthComplexity3D::findMaxValueInCounterBuffer() {
   
   unsigned int max =  *(std::max_element(colorBuffer, colorBuffer + pixelNumber))-1;
   
-  for (int i=0; i<pixelNumber; i++)
-      buff[i] = (colorBuffer[i]-1)/(float)max;
+  //for (int i=0; i<pixelNumber; i++)
+  //    buff[i] = (colorBuffer[i]-1)/(float)max;
   
-  CImg<float> cb(buff,_fboWidth,_fboHeight,1,1);
+  //CImg<float> cb(buff,_fboWidth,_fboHeight,1,1);
   
-  dualDisplay.resize(_fboWidth, _fboHeight, true);
-  dualDisplay.display(cb);
+  //dualDisplay.resize(_fboWidth, _fboHeight, true);
+  //dualDisplay.display(cb);
   
   
   return max+1;

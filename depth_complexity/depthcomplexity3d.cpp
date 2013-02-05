@@ -36,8 +36,13 @@ bool discretePts = true;
 vec4f sphereColor(0.0, 1.0, 0.0, 1.0);
 unsigned int showRayIndex = 0;
 
+// DEPTH COMPLEXITY 3D ---
+RFDepthComplexity3D *dc3d; // = new RFDepthComplexity3D(512, 50);
+
+//#define COMPUTE_OFFLINE
+
 //#ifdef USE_RANDOM_DC3D
-RFDepthComplexity3D *dc3d;
+//RFDepthComplexity3D *dc3d;
 //#else
 //DepthComplexity3D *dc3d;
 //#endif
@@ -387,22 +392,23 @@ void recompute(void *data)
 {
     //const TriMesh* mesh = reinterpret_cast<const TriMesh*>(data);
     TriMesh* mesh = reinterpret_cast<TriMesh*>(data);
-    if(doGoodRays)
-      dc3d->setComputeGoodRays(true);
-    else
-      dc3d->setComputeGoodRays(false);
-    tic();
-    
+    //if(doGoodRays)
+    //  dc3d->setComputeGoodRays(true);
+    //else
+    //  dc3d->setComputeGoodRays(false);
+    std::cout << "mehs faces: " << mesh->faces.size() << std::endl;
+    tic();    
     dc3d->process(*mesh);
     toc("Depth Complexity");
+    
     std::clog << "Maximum: " << dc3d->maximum() << std::endl;
     std::cout << "Number of Maximum Rays: " << dc3d->maximumRays().size() << std::endl;
-    if(doGoodRays) {
+    //if(doGoodRays) {
       unsigned numRays = 0;
       for(unsigned i = dc3d->getThreshold() ; i <= dc3d->maximum() ; ++i)
         numRays += dc3d->goodRays(i).size();
       std::clog << "Number of good rays: " << numRays << std::endl;
-    }
+    //}
     
     // check interception
     //const std::list<unsigned int>& ilist = dc3d->intersectionTris();
@@ -507,9 +513,9 @@ void GLFWCALL mouse_motion(int x, int y){
 	}//end if
 }
 
-int doInteractive(TriMesh& mesh)
-{
-   
+void initializeGraphics(){
+    
+    //std::cout << dc3d << std::endl;
     glfwInit();
     std::atexit(glfwTerminate);
     
@@ -520,7 +526,7 @@ int doInteractive(TriMesh& mesh)
                         0, 16, 0, GLFW_WINDOW) )
     {
         std::cerr << "failed to open window!" << std::endl;
-        return -1;
+        return;
     }
     
     // initialize GLEW
@@ -546,7 +552,7 @@ int doInteractive(TriMesh& mesh)
     if( !TwInit(TW_OPENGL, NULL) )
     {
         std::cerr << "AntTweakBar initialization failed: " << TwGetLastError() << std::endl;
-        return 1;
+        return;
     }
     // Set GLFW event callbacks
     glfwSetWindowSizeCallback(WindowSizeCB);
@@ -556,6 +562,14 @@ int doInteractive(TriMesh& mesh)
     glfwSetMouseWheelCallback((GLFWmousewheelfun)TwEventMouseWheelGLFW);
     glfwSetKeyCallback((GLFWkeyfun)TwEventKeyGLFW);
     glfwSetCharCallback((GLFWcharfun)TwEventCharGLFW);
+    
+}
+
+int doInteractive(TriMesh& mesh)
+{
+    
+    // setup opengl, glut, glew stuff.
+    //initializeGraphics();    
 
     TwBar *bar = TwNewBar("Controls");
     TwDefine(" GLOBAL ");
@@ -566,14 +580,16 @@ int doInteractive(TriMesh& mesh)
     GLfloat shine = 50;
     bool showObj = true;
     
+  
+    
 //#ifdef USE_RANDOM_DC3D
-    dc3d = new RFDepthComplexity3D(512, 50);
+    
 //#else
-//    dc3d = new DepthComplexity3D(512, 10);
+    //dc3d = new RFDepthComplexity3D(512, 10);
 //#endif
-    dc3d->setComputeMaximumRays(true);
-    dc3d->setComputeHistogram(true);
-    dc3d->setThreshold(10);
+    //dc3d->setComputeMaximumRays(true);
+    //dc3d->setComputeHistogram(true);
+    //dc3d->setThreshold(10);
     
     TwAddVarRW(bar, "showPlanes", TW_TYPE_BOOLCPP, &showPlanes, " label='show discret. planes' ");
 
@@ -625,6 +641,11 @@ int doInteractive(TriMesh& mesh)
 
         setupCamera(camera);
         
+        #ifdef COMPUTE_OFFLINE
+            //std::cout<<"OFFLINE RENDERING --" << std::endl;
+            recompute((void*)&mesh);
+            break;
+        #endif
        
         /*camera.update();	
 	    camera.lookAt();*/
@@ -635,10 +656,10 @@ int doInteractive(TriMesh& mesh)
         //std::cout << "not\n";
         //drawPlaneIntersection(intersectionVectors);
         drawRays();
-
-
-	
         
+
+
+
         //glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, &objdiff.x);
         glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, &objspec.x);
         glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, shine);
@@ -654,14 +675,18 @@ int doInteractive(TriMesh& mesh)
         t->cb = vec4d(1.0f, 0.0f, 0.0f, 0.7f);
         t->cc = vec4d(1.0f, 0.0f, 0.0f, 0.7f);
         
-        //std::cout << "teste:" << camera.GetEye() << std::endl;
+        
 
         // Draw tweak bars
         TwDraw();
 
         // Present frame buffer
         glfwSwapBuffers();
+        
+        
     }
+                
+
 
     return 0;
 }
@@ -674,13 +699,15 @@ std::string getExtension(const std::string& filename)
     return "";
 }
 
-
+#ifndef COMPUTE_OFFLINE
 int main(int argc, char **argv)
 {
+    std::cout << "*--- ONLINE RENDERING ---*" << std::endl;
     if (argc == 1) {
         std::cerr << "[ERROR] Missing Input File!" << std::endl;
         return 1;
     }
+   
  
     glutInit(&argc,argv);
     
@@ -696,6 +723,11 @@ int main(int argc, char **argv)
             mesh = loadOBJMesh(file);
         else
             throw "Unknown file type!";
+       file.close();
+        
+        // setup opengl, glut, glew stuff.
+        initializeGraphics();       
+        dc3d = new RFDepthComplexity3D(512, 50);
         
         if (doInteractive(mesh))
             return 1;
@@ -708,5 +740,137 @@ int main(int argc, char **argv)
     catch (std::string msg) {
         std::cerr << "Failed: " << msg << std::endl;
     }
-    
 }
+
+#else
+
+int main (int argc, char **argv) {
+  cmd_usage("Program to find depth complexity out (offline mode)");
+  
+  const char *filename = cmd_option("-f", "models/suzanne.obj", "Model in OBJ or OFF format.");
+  //const int fboWidth  = cmd_option("-fboWidth",  512, "Framebuffer width.");
+  //const int fboHeight = cmd_option("-fboHeight", 512, "Framebuffer height.");
+  const int resolution = cmd_option("-res", 512, "Framebuffer Resolution.");  
+  const int discretSteps = cmd_option("-dsteps", 50, "Discrete steps.");
+  const char *filenameParallelData = cmd_option("-fpr", "", "Save a *.txt containing rays informaton");
+  const char *filenameHistogram = cmd_option("-fh", "", "Save a *.txt file with histogram information");
+  //const char *filenameRays = cmd_option("-fr", "", "Save a *.off file with rays in ");
+  const char *filenameRaysSpherical = cmd_option("-frs", "", "Save a *.txt file with rays in spherical coordinates");
+  const int sphericalThreshold = cmd_option("-k",  0, "Spherical coordinates are calculated for rays with DC between MDC-k and MDC");
+  //const int rotateX = cmd_option("-x",  0, "Rotate model around x-axis x degrees");
+  //const int rotateY = cmd_option("-y",  0, "Rotate model around y-axis x degrees");
+  //const int rotateZ = cmd_option("-z",  0, "Rotate model around z-axis x degrees");
+  const char *filenameRays = cmd_option("-fr", "", "Save a *.off file with rays");
+  const bool computeMoreRays = cmd_option("-cmr", strcmp(filenameRaysSpherical, "")!=0, "Whether rays above the threshold of intersections should be output");
+  //const bool computeMoreRays = cmd_option("-cmr", false, "Whether rays above the threshold of intersections should be output");
+  const int intersectionThreshold  = cmd_option("-it",  0, "Threshold of intersections");
+
+  //std::cout << "Threshold: " << intersectionThreshold << std::endl;
+  try {
+    glutInit(&argc, argv);
+    //tic();
+    std::ifstream file(filename);
+    std::string ext = getExtension(filename);
+    TriMesh mesh;
+    if (ext == "off" || ext == "OFF")
+      mesh = loadOFFMesh(file);
+    else if (ext == "obj" || ext == "OBJ")
+      mesh = loadOBJMesh(file);
+    else
+      throw "Unknown file type!";
+    file.close();
+    
+    //rotatePoint(mesh.aabb.min ,rotateX,rotateY,rotateZ);
+    //rotatePoint(mesh.aabb.max ,rotateX,rotateY,rotateZ); 
+    //toc("Loading Mesh");
+
+    // TODO(jpocom) Look for another way to call glewInit() and work in offscreen.
+    
+    
+    std::cout << "*---- RENDERING OFFLINE ----*" << std::endl;
+    // setup opengl, glut, glew stuff.
+    initializeGraphics(); 
+    dc3d = new RFDepthComplexity3D(512, 50);    
+
+    dc3d->setDiscreteSteps(discretSteps);
+    dc3d->setResolution(resolution);
+    dc3d->setComputeHistogram(strcmp(filenameHistogram, "")!=0);
+    dc3d->setComputeMaximumRays(strcmp(filenameRays, "")!=0);
+    dc3d->setComputeGoodRays(true);
+    dc3d->setThreshold(intersectionThreshold);
+    
+    //std::cout << "parameters: " << resolution << << std::endl;
+
+    //tic();
+    doInteractive(mesh);
+    //toc("Computing Depth Complexity");
+
+    //std::cout << "Maximum: " << dc3d->maximum() << std::endl;
+    
+    // Saving Histogram file
+    if (strcmp(filenameHistogram, "")!=0) {
+      std::string extTxt = getExtension(filenameHistogram);
+      if (extTxt == "txt" || extTxt == "TXT") {
+        std::ofstream fileHistogram(filenameHistogram);
+        dc3d->writeHistogram(fileHistogram);
+        fileHistogram.close();
+      } else throw "Histogram's file should be *.txt!";
+    }
+
+    // Saving Rays file
+    if (strcmp(filenameRays, "")!=0) {
+      std::string extOff = getExtension(filenameRays);
+      if (extOff == "off" || extOff == "OFF") {
+        std::ofstream fileRays(filenameRays);
+        dc3d->writeRays(fileRays);
+        fileRays.close();
+      } else throw "Ray's file should be *.off!";
+    }
+   
+    // Saving MoreRays file
+    if(computeMoreRays) {
+      unsigned numRays = 0;
+      for(unsigned i = dc3d->getThreshold() ; i <= dc3d->maximum() ; ++i)
+        numRays += dc3d->goodRays(i).size();
+      std::cout << "Number of good rays: " << numRays << std::endl;
+      for(unsigned i=intersectionThreshold;i<=dc3d->maximum();++i) {
+        std::ostringstream filenameMoreRays;
+        filenameMoreRays << "rays" << i << ".off";
+        std::ofstream fileRays(filenameMoreRays.str().c_str());
+        dc3d->writeRays(fileRays,dc3d->goodRays(i),i);
+        fileRays.close();
+      }
+    }
+    
+     // Saving RaysSpherical file
+    if (strcmp(filenameRaysSpherical, "")!=0) {
+      std::string extTxt = getExtension(filenameRaysSpherical);
+      if (extTxt == "txt" || extTxt == "TXT") {
+        std::ofstream fileRaysSpherical(filenameRaysSpherical);
+        dc3d->writeRaysSpherical(fileRaysSpherical,sphericalThreshold);
+        fileRaysSpherical.close();
+      } else throw "Spherical Rays' file should be *.txt!";
+    }
+    
+    if (strcmp(filenameParallelData, "")!=0) {
+        std::string extTxt = getExtension(filenameRaysSpherical);
+        if (extTxt == "txt" || extTxt == "TXT") {
+            std::ofstream fileRaysSpherical(filenameRaysSpherical);
+            //dc3d->writeRaysSpherical(fileRaysSpherical,sphericalThreshold);
+            fileRaysSpherical.close();        
+        }
+    }
+     
+      
+  } catch (const char* msg)  {
+    std::cerr << "Failed: " << msg << std::endl;
+    return 1;
+  } catch (std::string msg) {
+    std::cerr << "Failed: " << msg << std::endl;
+    return 1;
+  }
+
+  return 0;
+}
+
+#endif
