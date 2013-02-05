@@ -32,7 +32,7 @@ do
     fi
     echo "set title \"${DIR}_${TERM[t]} Histogram\"" >> ${TMP}
     echo "set xlabel \"Depth Complexity\" " >> ${TMP}
-				echo "set logscale y" >> ${TMP}
+    echo "set logscale y" >> ${TMP}
     echo "set ylabel \"Number of Rays (in log_10 scale)\"" >> ${TMP}
     DIV_CAR="plot"
     COUNT=0
@@ -46,7 +46,7 @@ do
         VALUE[2]=$(echo "obase=16; scale=0; (${COUNT}*255/${MAX})" | bc -l)
         VALUE[3]="00"
         
-	    let COUNT=COUNT+1
+	let COUNT=COUNT+1
         if [ $d -lt ${LOWER_LIMIT[t]} ]; then continue; fi
         if [ $d -gt ${UPPER_LIMIT[t]} ]; then break; fi
         for ind in 1 2 3

@@ -328,6 +328,8 @@ void RFDepthComplexity3D::process(const TriMesh &mesh) {
             }
         }
         
+        std::cout << "vpoint: " << _vpoints.size() << std::endl;
+        
         // create histrogram
         _histogram.resize(_maximum+1);
         _histogram[_maximum] = _maximumRays.size();
