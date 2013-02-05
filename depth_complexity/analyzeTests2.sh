@@ -56,7 +56,7 @@ do
         done
         COR="#${VALUE[1]}${VALUE[2]}${VALUE[3]}"
         #echo "${COR}"
-								echo $(gawk '{print $1}' Tests/${DIR}/${TYPE[t]}/$d/hist.txt)
+	echo $(gawk '{print $1}' Tests/${DIR}/${TYPE[t]}/$d/hist.txt)
 
         echo -n "${DIV_CAR} \"Tests/${DIR}/${TYPE[t]}/$d/hist.txt\" using 1:(\$2) every ::1 w lines lt rgb \"${COR}\" title '$d'" >> ${TMP}
 	    DIV_CAR=","
