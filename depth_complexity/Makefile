@@ -52,7 +52,7 @@ hard_clean: clean
 #	g++ -g -o $@ $^ $(LDFLAGS) $(GLUT_LDFLAGS)
 
 depthcomplexity3d_offline: \
-	RFDepthComplexity3D.o camera/Camera.o camera/float3.o util.o ShaderMgr.o timer.o flags.o
+	RFDepthComplexity3D.o camera/Camera.o camera/float3.o util.o ShaderMgr.o Texture3D.o timer.o flags.o
 	g++ -g -o $@ depthcomplexity3d.cpp -D "COMPUTE_OFFLINE" $^ $(LDFLAGS) \
 	$(GLFW_LDFLAGS) $(GLUT_LDFLAGS) $(GLEW_CFLAGS) -lpthread
 
@@ -67,7 +67,7 @@ depthcomplexity3d_offline: \
 	$(GLFW_LDFLAGS) $(GLUT_LDFLAGS) $(GLEW_CFLAGS)
 	
 newrandomdepthcomplexity3d: \
-	RFDepthComplexity3D.o camera/Camera.o camera/float3.o util.o ShaderMgr.o timer.o flags.o
+	RFDepthComplexity3D.o camera/Camera.o camera/float3.o util.o ShaderMgr.o Texture3D.o timer.o flags.o
 	g++ -g -o $@ depthcomplexity3d.cpp $^ $(LDFLAGS) \
 	$(GLFW_LDFLAGS) $(GLUT_LDFLAGS) $(GLEW_CFLAGS) -lpthread
 	

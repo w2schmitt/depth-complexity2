@@ -28,6 +28,9 @@
 #include "util.h"
 #include "RFDepthComplexity3D.h" 
 #include "timer.h"
+#include "CImg.h"
+
+using namespace cimg_library;
 
 float radius = 0.01;
 bool showPlanes = false;
@@ -35,6 +38,10 @@ bool doGoodRays = true;
 bool discretePts = true;
 vec4f sphereColor(0.0, 1.0, 0.0, 1.0);
 unsigned int showRayIndex = 0;
+
+// for 3d textue display
+CImgDisplay main_disp;
+CImg<float> cscale;
 
 // DEPTH COMPLEXITY 3D ---
 RFDepthComplexity3D *dc3d; // = new RFDepthComplexity3D(512, 50);
@@ -161,7 +168,9 @@ std::vector<Triangle> sorted_faces;
 
 void drawMesh(const TriMesh& mesh, const vec3f& dir)
 {
-    //std::cout << "chupa\n";
+ 
+    glEnable(GL_TEXTURE_3D);
+    glBindTexture(GL_TEXTURE_3D, dc3d->getTextureID());
     glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
     glEnable(GL_COLOR_MATERIAL);
     
@@ -181,23 +190,29 @@ void drawMesh(const TriMesh& mesh, const vec3f& dir)
     glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 1);    
 
     glEnable(GL_VERTEX_ARRAY);
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     glEnableClientState(GL_VERTEX_ARRAY);    
-    glVertexPointer(3, GL_DOUBLE, 2*sizeof(vec3d)+sizeof(vec4d), &sorted_faces[0].a.x);
+    glVertexPointer(3, GL_DOUBLE, 3*sizeof(vec3d)+sizeof(vec4d), &sorted_faces[0].a.x);
+    
+    glEnableClientState (GL_TEXTURE_COORD_ARRAY);
+    glTexCoordPointer(3, GL_DOUBLE, 3*sizeof(vec3d)+sizeof(vec4d), &sorted_faces[0].tca.x);
     
     glEnableClientState(GL_COLOR_ARRAY);
-    glColorPointer(4, GL_DOUBLE, 2*sizeof(vec3d)+sizeof(vec4d), &sorted_faces[0].ca.x);
+    glColorPointer(4, GL_DOUBLE, 3*sizeof(vec3d)+sizeof(vec4d), &sorted_faces[0].ca.x);
 
     glEnableClientState(GL_NORMAL_ARRAY);
-    glNormalPointer(GL_DOUBLE, 2*sizeof(vec3d)+sizeof(vec4d), &sorted_faces[0].na.x);
+    glNormalPointer(GL_DOUBLE, 3*sizeof(vec3d)+sizeof(vec4d), &sorted_faces[0].na.x);
 
     glDrawArrays(GL_TRIANGLES, 0, sorted_faces.size()*3);
    
 
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisable(GL_VERTEX_ARRAY);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    glDisable(GL_TEXTURE_COORD_ARRAY);
     glDisableClientState(GL_NORMAL_ARRAY);
     glDisable(GL_NORMAL_ARRAY);
     glDisableClientState(GL_COLOR_ARRAY);
@@ -207,6 +222,8 @@ void drawMesh(const TriMesh& mesh, const vec3f& dir)
     glEnable(GL_DEPTH_TEST);
     glDisable(GL_COLOR_MATERIAL);
     
+    glDisable(GL_TEXTURE_3D);
+    glBindTexture(GL_TEXTURE_3D, 0);    
 }
 
 //void drawPlaneIntersection(const std::vector<Segment>& segments)
@@ -226,8 +243,7 @@ void drawMesh(const TriMesh& mesh, const vec3f& dir)
     
 void drawRays()
 {
-    //
-     
+    /*
     const std::set<Segment,classcomp>& rays = dc3d->maximumRays();
     std::set<Segment,classcomp>::const_iterator it = rays.begin();
     if (rays.size()>0){
@@ -243,6 +259,7 @@ void drawRays()
           }
         glEnd();
     }
+     
     
     const std::vector<Triangle> &interTris = dc3d->intersectionTriangles();
     for  (std::vector<Triangle>::const_iterator it=interTris.begin(); it!=interTris.end(); ++it){ // interTris.size()>0){
@@ -282,10 +299,10 @@ void drawRays()
         glVertex3f(it->c.x,it->c.y,it->c.z);  
 
         
-        glEnd();
-        
+        glEnd();        
         glLineWidth(1.0);
     }
+    */
     
     
     for(unsigned i = dc3d->_threshold ; i < dc3d->_maximum && doGoodRays ; ++i) {

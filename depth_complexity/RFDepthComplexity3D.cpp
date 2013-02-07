@@ -52,27 +52,32 @@ void RFDepthComplexity3D::writeGoodRays(std::ostream& out){
 }
 
 RFDepthComplexity3D::RFDepthComplexity3D(int res, int discretSteps):
-        _resolution(res),
-	_discretSteps(discretSteps),
-	_maximum(0),
-	_computeHistogram(true),
-	_computeMaximumRays(true),
-	_computeGoodRays(true),
-	_computeRaysFromFile(false){
-	
-        _threshold = 10;
-        //set up shaders
-        ShaderMgr shaderMgr; 
-        _shaderCountDC = shaderMgr.createShaderProgram("shader/dc.vert", "shader/dc.frag");        
-        _shaderclearBuffer = shaderMgr.createShaderProgram("shader/clear.vert", "shader/clear.frag");
-        
-        _fboWidth = _fboHeight = res;
-                        
-        shaderMgr.linkShaderProgram(_shaderCountDC); 
-        shaderMgr.linkShaderProgram(_shaderclearBuffer);
+    _resolution(res),
+    _discretSteps(discretSteps),
+    _maximum(0),
+    _computeHistogram(true),
+    _computeMaximumRays(true),
+    _computeGoodRays(true),
+    _computeRaysFromFile(false){
 
-        shaderMgr.checkShaderStatus();  
-	_goodRays.resize(1);
+    _threshold = 10;
+    //set up shaders
+    ShaderMgr shaderMgr; 
+    _shaderCountDC = shaderMgr.createShaderProgram("shader/dc.vert", "shader/dc.frag");        
+    _shaderclearBuffer = shaderMgr.createShaderProgram("shader/clear.vert", "shader/clear.frag");
+
+    _fboWidth = _fboHeight = res;
+
+    shaderMgr.linkShaderProgram(_shaderCountDC); 
+    shaderMgr.linkShaderProgram(_shaderclearBuffer);
+
+    shaderMgr.checkShaderStatus();  
+    _goodRays.resize(1);
+
+    // initialize 3d texture (size x, size y, size z, channels, px values)
+    // --> channel 1 -> DC of the ray
+    // --> chanell 2 -> ray counter
+    //_tex3D = CImg<unsigned int>(WIDTH,HEIGHT,DEPTH,2,0);
 }
 
 void RFDepthComplexity3D::setShaderClearCounterBuffer(){
@@ -291,6 +296,10 @@ void RFDepthComplexity3D::process(const TriMesh &mesh) {
 	BoundingBox aabb = _mesh->aabb;
 	aabb.merge(aabb.min - aabb.extents()/10.0);
 	aabb.merge(aabb.max + aabb.extents()/10.0);
+        
+        // initialize 3D texture
+        tex3d.CreateTexture3D(256,256,1,3,0);
+        tex3d.setMeshBoundingbox(aabb);
 	
 	vec3d center = _mesh->aabb.center();
 	
@@ -338,6 +347,9 @@ void RFDepthComplexity3D::process(const TriMesh &mesh) {
             _histogram[i] = _goodRays[i].size();
         }
         
+        
+        
+        tex3d.cimg2Tex(_maximum);
         //std::ofstream fileHistogram("hist_test.txt");
         //writeHistogram(fileHistogram);
         //fileHistogram.close();
@@ -562,6 +574,7 @@ void RFDepthComplexity3D::insertRays(unsigned int tempMax, Segment seg){
     if (tempMax == _maximum){
         if (_maximumRays.size() < 100000){
             _maximumRays.insert(seg);
+            tex3d.updateTexture3D(seg,tempMax);
         }
     }
     else if (tempMax > _maximum){
@@ -570,9 +583,11 @@ void RFDepthComplexity3D::insertRays(unsigned int tempMax, Segment seg){
         _maximumRays.clear();
         _maximumRays.insert(seg);
         _maximum = tempMax;
+        tex3d.updateTexture3D(seg,tempMax);
     } else {        
         if (_goodRays[tempMax].size() < 100000){
             _goodRays[tempMax].insert(seg);
+            tex3d.updateTexture3D(seg,tempMax);
         }
     }    
 }

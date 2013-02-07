@@ -11,6 +11,7 @@
 #include "util.h"
 #include "ShaderMgr.h"
 #include "CImg.h"
+#include "Texture3D.h"
 
 #include <map>
 #include <set>
@@ -63,6 +64,7 @@ public:
   const std::vector<Triangle> &intersectionTriangles() const { return _intersectionTriangles;}
   const std::vector<vec3d> &visualizationPoints() const { return _vpoints;}
   unsigned getThreshold() { return _threshold; }
+  GLuint getTextureID() { return tex3d.texture3DId();}
   
   // 
   void writeHistogram(std::ostream& out);
@@ -104,6 +106,9 @@ private:
   // Shaders
   GLuint 						_shaderclearBuffer;
   GLuint                                                _shaderCountDC;
+  
+  // texture 3D
+  Texture3D tex3d;
 
   // Input
   const TriMesh *_mesh;
@@ -114,6 +119,8 @@ private:
   int _discretSteps; 
   unsigned _maximum;
   unsigned _threshold;
+  
+
 //std::vector<Segment> _raysFromFile;
 
   // State
