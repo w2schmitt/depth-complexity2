@@ -298,7 +298,7 @@ void RFDepthComplexity3D::process(const TriMesh &mesh) {
 	aabb.merge(aabb.max + aabb.extents()/10.0);
         
         // initialize 3D texture
-        tex3d.CreateTexture3D(256,256,1,3,0);
+        tex3d.CreateTexture3D(512,512,1,3,0);
         tex3d.setMeshBoundingbox(aabb);
 	
 	vec3d center = _mesh->aabb.center();

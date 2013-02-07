@@ -405,6 +405,62 @@ void setupCamera(Camera& camera)
     camera.lookAt();
 }
 
+
+const unsigned int colorTableSize=6;
+
+float ColorTable[colorTableSize][3] = {
+    {0.0, 0.0, 1.0}, // Azul
+    {1.0, 0.0, 1.0}, // Roxo/Rosa
+    {1.0, 0.5, 0.0}, // Laranja
+    {1.0, 1.0, 0.0}, // Amarelo
+    {0.0, 1.0, 0.0}, // Verde
+    {0.0, 1.0, 0.0} // Verde
+};
+
+CImg<float> color_scale(int w, int h){
+    
+    float parts = h/(float)(colorTableSize-2);
+   
+ 
+    CImg<float> teste(w+30,h+3,1,3, 0.5);
+    
+    for (unsigned int i=1; i<colorTableSize-1; i++){
+        vec3d inc((ColorTable[i][0] - ColorTable[i-1][0])/parts,
+                  (ColorTable[i][1] - ColorTable[i-1][1])/parts,
+                  (ColorTable[i][2] - ColorTable[i-1][2])/parts);
+        float color[3] = {ColorTable[i-1][0], ColorTable[i-1][1], ColorTable[i-1][2]};
+        
+        for (int y=(i-1)*parts; y<(i-1)*parts+2; y++){
+         for (int x=0; x<w+30; x++){
+                teste(x,y,0,0) = 0.2;
+                teste(x,y,0,1) = 0.2;
+                teste(x,y,0,2) = 0.2;
+            }
+        }
+        
+        for (int y=(i-1)*parts+2; y<(i*parts); y++){            
+            for (int x=0; x<w+30; x++){
+                teste(x,y,0,0) = color[0];
+                teste(x,y,0,1) = color[1];
+                teste(x,y,0,2) = color[2];
+            }
+            color[0] += inc.x; color[1] += inc.y; color[2] += inc.z;
+        }
+    }
+    
+    for (int y=h; y<h+2; y++){
+        for (int x=0; x<w+30; x++){
+            teste(x,y,0,0) = 0.2;
+            teste(x,y,0,1) = 0.2;
+            teste(x,y,0,2) = 0.2;
+        }
+    }
+    //const char *t = "teste";
+    //teste.draw_text(10,10,t,0,0);
+    return teste;
+    
+}
+
 void recompute(void *data)
 {
     //const TriMesh* mesh = reinterpret_cast<const TriMesh*>(data);
@@ -426,6 +482,19 @@ void recompute(void *data)
         numRays += dc3d->goodRays(i).size();
       std::clog << "Number of good rays: " << numRays << std::endl;
     //}
+      
+    // create color scale
+    unsigned int val = dc3d->maximum();
+    cscale = color_scale(40,500); 
+
+    float color[3] = {0.0, 0.0, 0.0};
+    cscale.draw_text(3, 2  , "%d", color, 0, 1, 18, val*0/4);
+    cscale.draw_text(3, 127, "%d", color, 0, 1, 18, val*1/4);
+    cscale.draw_text(3, 252, "%d", color, 0, 1, 18, val*2/4);
+    cscale.draw_text(3, 377, "%d", color, 0, 1, 18, val*3/4);
+    cscale.draw_text(3, 482, "%d", color, 0, 1, 18, val*4/4);
+    
+    main_disp.display(cscale);
     
     // check interception
     //const std::list<unsigned int>& ilist = dc3d->intersectionTris();
