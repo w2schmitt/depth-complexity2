@@ -98,6 +98,11 @@ private:
   
 //bool readRaysFromFile(std::istream& in);
   
+public:
+    // menu input options
+    unsigned    _limitRays;
+    bool        _computeRays;
+    
 private:
   //buffers 
   GLuint						_counterBuffId;
@@ -120,6 +125,7 @@ private:
   unsigned _maximum;
   unsigned _threshold;
   
+  
 
 //std::vector<Segment> _raysFromFile;
 
@@ -127,7 +133,7 @@ private:
   bool _computeHistogram;
   bool _computeMaximumRays;
   bool _computeGoodRays;
-  bool _computeRaysFromFile;
+  //bool _computeRaysFromFile;
 
   // Output
   std::set<Segment,classcomp> _maximumRays;

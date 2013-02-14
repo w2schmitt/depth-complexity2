@@ -35,6 +35,9 @@ using namespace cimg_library;
 float radius = 0.01;
 bool showPlanes = false;
 bool doGoodRays = true;
+bool showMaxRays = true;
+bool showGoodRays = false;
+bool highlightTris = false;
 bool discretePts = true;
 vec4f sphereColor(0.0, 1.0, 0.0, 1.0);
 unsigned int showRayIndex = 0;
@@ -243,97 +246,103 @@ void drawMesh(const TriMesh& mesh, const vec3f& dir)
     
 void drawRays()
 {
-    /*
-    const std::set<Segment,classcomp>& rays = dc3d->maximumRays();
-    std::set<Segment,classcomp>::const_iterator it = rays.begin();
-    if (rays.size()>0){
-        //std::cout << "desenhando..." << std::endl;
-        // draw rays
-        glLineWidth(2.5);
-        glBegin(GL_LINES);
-        glColor3f(0.5, 0.0, 0.5);
-          for (; it!=rays.end(); ++it) {
-            const Segment &r = *it;
-            glVertex3f(r.a.x, r.a.y, r.a.z);
-            glVertex3f(r.b.x, r.b.y, r.b.z);
-          }
-        glEnd();
-    }
-     
     
-    const std::vector<Triangle> &interTris = dc3d->intersectionTriangles();
-    for  (std::vector<Triangle>::const_iterator it=interTris.begin(); it!=interTris.end(); ++it){ // interTris.size()>0){
-        
-        glBegin(GL_TRIANGLES);
-        glColor4f(it->ca.x,it->ca.y,it->ca.z,it->ca.w);
-        glNormal3f(it->na.x,it->na.y,it->na.z);
-        glVertex3f(it->a.x,it->a.y,it->a.z);   
-        
-        glColor4f(it->cb.x,it->cb.y,it->cb.z,it->cb.w);
-        glNormal3f(it->nb.x,it->nb.y,it->nb.z);
-        glVertex3f(it->b.x,it->b.y,it->b.z);  
-        
-        glColor4f(it->cc.x,it->cc.y,it->cc.z,it->cc.w);
-        glNormal3f(it->nc.x,it->nc.y,it->nc.z);
-        glVertex3f(it->c.x,it->c.y,it->c.z);  
-        
-        glEnd();
-        
-        glLineWidth(3.0);
-        
-        glBegin(GL_LINE_LOOP);
-        glColor4f(0,0,0,1);
-        glNormal3f(it->na.x,it->na.y,it->na.z);
-        glVertex3f(it->a.x,it->a.y,it->a.z);   
-        
-        glColor4f(0,0,0,1);
-        glNormal3f(it->nb.x,it->nb.y,it->nb.z);
-        glVertex3f(it->b.x,it->b.y,it->b.z);  
-        
-        glColor4f(0,0,0,1);
-        glNormal3f(it->nb.x,it->nb.y,it->nb.z);
-        glVertex3f(it->b.x,it->b.y,it->b.z);  
-        
-        glColor4f(0,0,0,1);
-        glNormal3f(it->nc.x,it->nc.y,it->nc.z);
-        glVertex3f(it->c.x,it->c.y,it->c.z);  
-
-        
-        glEnd();        
-        glLineWidth(1.0);
-    }
-    */
-    
-    
-    for(unsigned i = dc3d->_threshold ; i < dc3d->_maximum && doGoodRays ; ++i) {
-      const std::set<Segment,classcomp>& gRays = dc3d->goodRays(i);
-      std::set<Segment,classcomp>::const_iterator it = gRays.begin();
-      // draw rays
-     
-      //double color = ((dc3d->_maximum - i)*(0.5))/(dc3d->_maximum-dc3d->_threshold);
-      vec3d color(0,0,0);
-      if (i == dc3d->maximum()){
-          glLineWidth(2.5);
-          color = vec3d(0,1,0);
-      } else if (i == dc3d->maximum()-1){
-          glLineWidth(1.5);
-          color = vec3d(1,0,0);
-      } else if (i == dc3d->maximum()-2){
-          glLineWidth(1.0);
-          color = vec3d(0.5,0,1);
-      } else {
-          glLineWidth(0.5);
-          color = vec3d(0,0,1);
-      }
-      //glLineWidth( (i - dc3d->_threshold)*3 + 1 );
-      glBegin(GL_LINES);
-      glColor3f(color.x, color.y, color.z);
-        for (; it!=gRays.end(); ++it) {
-          const Segment &r = *it;
-          glVertex3f(r.a.x, r.a.y, r.a.z);
-          glVertex3f(r.b.x, r.b.y, r.b.z);
+    if (showMaxRays){
+        const std::set<Segment,classcomp>& rays = dc3d->maximumRays();
+        std::set<Segment,classcomp>::const_iterator it = rays.begin();
+        if (rays.size()>0){
+            //std::cout << "desenhando..." << std::endl;
+            // draw rays
+            glLineWidth(2.5);
+            glBegin(GL_LINES);
+            glColor3f(0.5, 0.0, 0.5);
+              for (; it!=rays.end(); ++it) {
+                const Segment &r = *it;
+                glVertex3f(r.a.x, r.a.y, r.a.z);
+                glVertex3f(r.b.x, r.b.y, r.b.z);
+              }
+            glEnd();
         }
-      glEnd();
+        // HIGHLIGHT TRIANGLES 
+        if (highlightTris){
+            const std::vector<Triangle> &interTris = dc3d->intersectionTriangles();
+            for  (std::vector<Triangle>::const_iterator it=interTris.begin(); it!=interTris.end(); ++it){ // interTris.size()>0){
+
+                glBegin(GL_TRIANGLES);
+                glColor4f(it->ca.x,it->ca.y,it->ca.z,it->ca.w);
+                glNormal3f(it->na.x,it->na.y,it->na.z);
+                glVertex3f(it->a.x,it->a.y,it->a.z);   
+
+                glColor4f(it->cb.x,it->cb.y,it->cb.z,it->cb.w);
+                glNormal3f(it->nb.x,it->nb.y,it->nb.z);
+                glVertex3f(it->b.x,it->b.y,it->b.z);  
+
+                glColor4f(it->cc.x,it->cc.y,it->cc.z,it->cc.w);
+                glNormal3f(it->nc.x,it->nc.y,it->nc.z);
+                glVertex3f(it->c.x,it->c.y,it->c.z);  
+
+                glEnd();
+
+                glLineWidth(3.0);
+
+                glBegin(GL_LINE_LOOP);
+                glColor4f(0,0,0,1);
+                glNormal3f(it->na.x,it->na.y,it->na.z);
+                glVertex3f(it->a.x,it->a.y,it->a.z);   
+
+                glColor4f(0,0,0,1);
+                glNormal3f(it->nb.x,it->nb.y,it->nb.z);
+                glVertex3f(it->b.x,it->b.y,it->b.z);  
+
+                glColor4f(0,0,0,1);
+                glNormal3f(it->nb.x,it->nb.y,it->nb.z);
+                glVertex3f(it->b.x,it->b.y,it->b.z);  
+
+                glColor4f(0,0,0,1);
+                glNormal3f(it->nc.x,it->nc.y,it->nc.z);
+                glVertex3f(it->c.x,it->c.y,it->c.z);  
+
+                glEnd();        
+                glLineWidth(1.0);
+            }
+        }
+    }
+     
+    
+    
+    
+    
+    if (showGoodRays){
+        for(unsigned i = dc3d->_threshold ; i < dc3d->_maximum ; ++i) {
+          const std::set<Segment,classcomp>& gRays = dc3d->goodRays(i);
+          std::set<Segment,classcomp>::const_iterator it = gRays.begin();
+          // draw rays
+
+          //double color = ((dc3d->_maximum - i)*(0.5))/(dc3d->_maximum-dc3d->_threshold);
+          vec3d color(0,0,0);
+          if (i == dc3d->maximum()){
+              glLineWidth(2.5);
+              color = vec3d(0,1,0);
+          } else if (i == dc3d->maximum()-1){
+              glLineWidth(1.5);
+              color = vec3d(1,0,0);
+          } else if (i == dc3d->maximum()-2){
+              glLineWidth(1.0);
+              color = vec3d(0.5,0,1);
+          } else {
+              glLineWidth(0.5);
+              color = vec3d(0,0,1);
+          }
+          //glLineWidth( (i - dc3d->_threshold)*3 + 1 );
+          glBegin(GL_LINES);
+          glColor3f(color.x, color.y, color.z);
+            for (; it!=gRays.end(); ++it) {
+              const Segment &r = *it;
+              glVertex3f(r.a.x, r.a.y, r.a.z);
+              glVertex3f(r.b.x, r.b.y, r.b.z);
+            }
+          glEnd();
+        }
     }
     
      
@@ -686,10 +695,17 @@ int doInteractive(TriMesh& mesh)
 
     TwAddVarRW(bar, "discretSteps", TW_TYPE_UINT32, &dc3d->_discretSteps, " label='discret. steps' min=2 step=5 ");
     TwAddVarRW(bar, "resolution", TW_TYPE_UINT32, &dc3d->_resolution, " label='resolution' min=30 max=700");
-
-    TwAddButton(bar, "recompute", recompute, (void*)&mesh, " label='Recompute' ");
-
     TwAddVarRO(bar, "maxDepth", TW_TYPE_UINT32, &dc3d->_maximum, " label='Max. depth' ");
+    
+    
+    TwAddButton(bar, "recompute", recompute, (void*)&mesh, " label='Recompute' ");
+    
+    TwAddVarRW(bar, "Compute Rays", TW_TYPE_BOOLCPP, &dc3d->_computeRays, " group='Rays' label='Compute Rays'");
+    TwAddVarRW(bar, "limit rays", TW_TYPE_UINT32, &dc3d->_limitRays, " group='Rays' label='Limit Rays'");
+    TwAddVarRW(bar, "Show Max", TW_TYPE_BOOLCPP, &showMaxRays, " group='Rays' label='Show Max'");
+    TwAddVarRW(bar, "Show Good", TW_TYPE_BOOLCPP, &showGoodRays, " group='Rays' label='Show Good'");
+    TwAddVarRW(bar, "highlight Tris", TW_TYPE_BOOLCPP, &highlightTris, " group='Rays' label='Highlight Tris'");
+    
 
     TwAddVarRW(bar, "top", TW_TYPE_COLOR3F, &top.x, " group='background' ");
     TwAddVarRW(bar, "mid", TW_TYPE_COLOR3F, &mid.x, " group='background' ");

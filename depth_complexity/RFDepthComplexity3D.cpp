@@ -57,15 +57,16 @@ RFDepthComplexity3D::RFDepthComplexity3D(int res, int discretSteps):
     _maximum(0),
     _computeHistogram(true),
     _computeMaximumRays(true),
-    _computeGoodRays(true),
-    _computeRaysFromFile(false){
+    _computeGoodRays(true){
+    //_computeRaysFromFile(false){
 
     _threshold = 10;
+    _limitRays = 100000;
     //set up shaders
     ShaderMgr shaderMgr; 
     _shaderCountDC = shaderMgr.createShaderProgram("shader/dc.vert", "shader/dc.frag");        
     _shaderclearBuffer = shaderMgr.createShaderProgram("shader/clear.vert", "shader/clear.frag");
-
+    
     _fboWidth = _fboHeight = res;
 
     shaderMgr.linkShaderProgram(_shaderCountDC); 
@@ -100,7 +101,6 @@ void RFDepthComplexity3D::setShaderClearCounterBuffer(){
     glProgramUniformMatrix4fv(_shaderclearBuffer, glGetUniformLocation(_shaderclearBuffer, "projectionMat"), 1, GL_FALSE, projection);
     glProgramUniform2i(_shaderclearBuffer, glGetUniformLocation(_shaderclearBuffer, "resolution"), _fboWidth, _fboHeight);
     
-
     // Pass Counter Buffer Texture
     glProgramUniform1iEXT(_shaderclearBuffer, glGetUniformLocation(_shaderclearBuffer, "counterBuff"), 0);
     
@@ -350,23 +350,7 @@ void RFDepthComplexity3D::process(const TriMesh &mesh) {
         
         
         tex3d.cimg2Tex(_maximum);
-        //std::ofstream fileHistogram("hist_test.txt");
-        //writeHistogram(fileHistogram);
-        //fileHistogram.close();
-             
-        //}
-        //ans.normalize();
-        
-            //generate random vector
-            //vec3d v(uniformRandom() - 0.5, uniformRandom() - 0.5, uniformRandom() - 0.5);
-            //v.normalize();
-            //v = distance*v + center;        
-       
-            //unsigned int m = renderScene(v);
-            //if (m > _maximum){
-            //    _maximum = m;               
-            //}        
-        //}
+  
         
         // Count Intersections
         
@@ -570,26 +554,34 @@ bool RFDepthComplexity3D::intersectTriangleSegment(const Segment& segment, const
 }
    
 void RFDepthComplexity3D::insertRays(unsigned int tempMax, Segment seg){
-
-    if (tempMax == _maximum){
-        if (_maximumRays.size() < 100000){
+    bool includeRay = !_computeRays;
+    
+    if (_computeRays){
+        if (tempMax == _maximum){
+            if (_maximumRays.size() < _limitRays){
+                _maximumRays.insert(seg);
+                includeRay = true;
+            }
+        }
+        else if (tempMax > _maximum){
+            _goodRays.resize(tempMax+1);
+            _goodRays[tempMax].insert(_maximumRays.begin(), _maximumRays.end());
+            _maximumRays.clear();
             _maximumRays.insert(seg);
-            tex3d.updateTexture3D(seg,tempMax);
+            _maximum = tempMax;
+            includeRay = true;
+        } else {        
+            if (_goodRays[tempMax].size() < _limitRays){
+                _goodRays[tempMax].insert(seg);
+                includeRay = true;
+            }
         }
-    }
-    else if (tempMax > _maximum){
+    } else {
         _goodRays.resize(tempMax+1);
-        _goodRays[tempMax].insert(_maximumRays.begin(), _maximumRays.end());
-        _maximumRays.clear();
-        _maximumRays.insert(seg);
-        _maximum = tempMax;
+    }
+        
+    if (includeRay)
         tex3d.updateTexture3D(seg,tempMax);
-    } else {        
-        if (_goodRays[tempMax].size() < 100000){
-            _goodRays[tempMax].insert(seg);
-            tex3d.updateTexture3D(seg,tempMax);
-        }
-    }    
 }
 
 unsigned int RFDepthComplexity3D::findMaxValueInCounterBuffer() {
