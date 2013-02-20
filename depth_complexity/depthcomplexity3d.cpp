@@ -691,8 +691,6 @@ int doInteractive(TriMesh& mesh)
     TwAddVarRW(bar, "goodRays", TW_TYPE_BOOLCPP, &doGoodRays, " label='show more rays' ");
     TwAddVarRW(bar, "discrete pts", TW_TYPE_BOOLCPP, &discretePts, " label='disc. pts' ");
 
-    TwAddVarRW(bar, "goodThreshold", TW_TYPE_UINT32, &dc3d->_threshold, " label='intersection threshold' min=0 ");
-
     TwAddVarRW(bar, "discretSteps", TW_TYPE_UINT32, &dc3d->_discretSteps, " label='discret. steps' min=2 step=5 ");
     TwAddVarRW(bar, "resolution", TW_TYPE_UINT32, &dc3d->_resolution, " label='resolution' min=30 max=700");
     TwAddVarRO(bar, "maxDepth", TW_TYPE_UINT32, &dc3d->_maximum, " label='Max. depth' ");
@@ -700,7 +698,8 @@ int doInteractive(TriMesh& mesh)
     
     TwAddButton(bar, "recompute", recompute, (void*)&mesh, " label='Recompute' ");
     
-    TwAddVarRW(bar, "Compute Rays", TW_TYPE_BOOLCPP, &dc3d->_computeRays, " group='Rays' label='Compute Rays'");
+    TwAddVarRW(bar, "Compute Rays", TW_TYPE_BOOLCPP, &dc3d->_computeRays, "group='Rays' label='Compute Rays'");
+    TwAddVarRW(bar, "goodThreshold", TW_TYPE_UINT32, &dc3d->_threshold, "group='Rays' label='threshold' min=0 ");
     TwAddVarRW(bar, "limit rays", TW_TYPE_UINT32, &dc3d->_limitRays, " group='Rays' label='Limit Rays'");
     TwAddVarRW(bar, "Show Max", TW_TYPE_BOOLCPP, &showMaxRays, " group='Rays' label='Show Max'");
     TwAddVarRW(bar, "Show Good", TW_TYPE_BOOLCPP, &showGoodRays, " group='Rays' label='Show Good'");
