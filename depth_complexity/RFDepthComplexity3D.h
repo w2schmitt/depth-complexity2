@@ -65,6 +65,7 @@ public:
   const std::vector<vec3d> &visualizationPoints() const { return _vpoints;}
   unsigned getThreshold() { return _threshold; }
   GLuint getTextureID() { return tex3d.texture3DId();}
+  void setShaderTex3d(){ tex3d.setShaderTex3d(); }
   
   // 
   void writeHistogram(std::ostream& out);
@@ -100,8 +101,8 @@ private:
   
 public:
     // menu input options
-    unsigned    _limitRays;
-    bool        _computeRays;
+    unsigned                                            _limitRays;
+    bool                                                _computeRays;
     
 private:
   //buffers 
@@ -113,7 +114,7 @@ private:
   GLuint                                                _shaderCountDC;
   
   // texture 3D
-  Texture3D tex3d;
+  Texture3D                                             tex3d;
 
   // Input
   const TriMesh *_mesh;

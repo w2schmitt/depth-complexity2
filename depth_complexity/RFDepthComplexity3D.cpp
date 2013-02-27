@@ -130,7 +130,7 @@ void RFDepthComplexity3D::setShaderCountDC(){
     glProgramUniformMatrix4fv(_shaderCountDC, glGetUniformLocation(_shaderCountDC, "projectionMat"), 1, GL_FALSE, projection);
     glProgramUniform2i(_shaderCountDC, glGetUniformLocation(_shaderCountDC, "resolution"), _fboWidth, _fboHeight);
 
-    // Pass counter buff texture
+    // Pass counter buff textureinitTextureCounter
     glProgramUniform1iEXT(_shaderCountDC, glGetUniformLocation(_shaderCountDC, "counterBuff"), 0);
 }
 

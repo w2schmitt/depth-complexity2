@@ -14,6 +14,12 @@
 
 void Texture3D::CreateTexture3D(unsigned int _w, unsigned int _h, unsigned int _d, unsigned int _ch, float _init) {
     _tex3D = CImg<unsigned int>(WIDTH, HEIGHT,DEPTH,_ch,0);
+    
+    // create shader program for texture3d
+    ShaderMgr shaderMgr; 
+    _shaderTex3d = shaderMgr.createShaderProgram("shader/texture3d.vert", "shader/texture3d.frag"); 
+    shaderMgr.linkShaderProgram(_shaderTex3d); 
+    shaderMgr.checkShaderStatus(); 
 }
 
 Texture3D::Texture3D(const Texture3D& orig) {
@@ -166,7 +172,6 @@ void Texture3D::cimg2Tex(unsigned int maxDC){
         }
     }
     
-    
     std::cout << "Creating 3D texture..." << std::endl;
     _texID = createOpenglTexture3D(_tex3D.width(), _tex3D.height(), _tex3D.depth(), interlaced_data);
     if (_texID!=0) { std::cout << "[OK] 3D texture succefful" << std::endl;}
@@ -199,6 +204,23 @@ void Texture3D::updateTexture3D(Segment line, unsigned int dc){
     
     // rasterize ray into a 3D texture, using dc as color
     bresenham_line_3D(start, end, dc);  
+}
+
+
+void Texture3D::setShaderTex3d(){
+    // Set shader to count DC
+    glUseProgram(_shaderTex3d);   
+	
+    // Pass MODELVIEW and PROJECTION matrices to Shader
+    GLfloat model[16],projection[16];
+    glGetFloatv(GL_MODELVIEW_MATRIX, model);
+    glGetFloatv(GL_PROJECTION_MATRIX, projection);
+    glProgramUniformMatrix4fv(_shaderTex3d, glGetUniformLocation(_shaderTex3d, "modelViewMat"), 1, GL_FALSE, model);
+    glProgramUniformMatrix4fv(_shaderTex3d, glGetUniformLocation(_shaderTex3d, "projectionMat"), 1, GL_FALSE, projection);
+    //glProgramUniform2i(_shaderTex3d, glGetUniformLocation(_shaderTex3d, "resolution"), _fboWidth, _fboHeight);
+
+    // Pass counter buff textureinitTextureCounter
+    glProgramUniform1iEXT(_shaderTex3d, glGetUniformLocation(_shaderTex3d, "counterBuff"), 0);
 }
 
 

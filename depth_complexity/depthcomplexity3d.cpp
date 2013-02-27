@@ -177,6 +177,9 @@ void drawMesh(const TriMesh& mesh, const vec3f& dir)
     glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
     glEnable(GL_COLOR_MATERIAL);
     
+    // set texture 3d shader
+    dc3d->setShaderTex3d();
+    
     //std::clog << "sorting...";
     if (sorted_faces.empty()) {
         sorted_faces = mesh.faces;

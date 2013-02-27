@@ -11,6 +11,7 @@
 #include <iomanip>
 #include "util.h"
 #include "CImg.h"
+#include "ShaderMgr.h"
 
 
 using namespace cimg_library;
@@ -29,6 +30,10 @@ private:
   vec3d                                                 _texSize;
   BoundingBox                                           _aabb;
   GLuint                                                _texID;
+  
+  GLuint                                                _shaderTex3d;
+  bool                                                  _shaderReady;
+  
   
   GLuint createOpenglTexture3D(int width, int height, int depth, const float* texels);
   
@@ -49,6 +54,9 @@ public:
     
     void drawPixel(vec3d pos, unsigned int color);
     void bresenham_line_3D(vec3d &v1, vec3d &v2, unsigned int color);
+    
+    //shader methods
+    void setShaderTex3d();
     
     
     
