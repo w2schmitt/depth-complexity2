@@ -33,9 +33,11 @@ private:
   
   GLuint                                                _shaderTex3d;
   bool                                                  _shaderReady;
+  unsigned int                                          *_glTex3d;
   
   
-  GLuint createOpenglTexture3D(int width, int height, int depth, const float* texels);
+  GLuint createOpenglTexture3D(int width, int height, int depth, const unsigned int* texels);
+  GLuint createOpenglTexture3D2(int width, int height, int depth, const float* texels);
   
 public:
     int _w,_h,_d;
@@ -48,6 +50,7 @@ public:
     void setTex3dSize(vec3d size) { this->_texSize = size;}
     void updateTexture3D(Segment s, unsigned int value);
     void cimg2Tex(unsigned int maxDC);
+    void buildGLTexture();
     
     GLuint texture3DId() const       { return _texID; }
     void setMeshBoundingbox(BoundingBox aabb) { this->_aabb = aabb; }

@@ -348,7 +348,9 @@ void RFDepthComplexity3D::process(const TriMesh &mesh) {
         }
         
         
-        
+        //std::cout << "fuck\n";
+        //tex3d.buildGLTexture();
+        //std::cout << "fuck2\n";
         tex3d.cimg2Tex(_maximum);
   
         

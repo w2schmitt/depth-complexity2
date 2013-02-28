@@ -212,6 +212,8 @@ void drawMesh(const TriMesh& mesh, const vec3f& dir)
 
     glDrawArrays(GL_TRIANGLES, 0, sorted_faces.size()*3);
    
+    
+    glUseProgram(0);
 
     //glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     
