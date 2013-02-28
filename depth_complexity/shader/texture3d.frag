@@ -1,4 +1,4 @@
-#version 130
+#version 330
 
 //-- enable opengl extentions
 #extension GL_EXT_gpu_shader4 : enable    //Include support for this extension, which defines usampler2D
@@ -9,14 +9,20 @@
 //coherent uniform layout(size1x32) uimage3D tex3d;
 uniform sampler3D tex3d;
 
-in vec3 texCoordOut;
+in Data {
+    vec3 normal;
+    vec4 eye;
+    smooth vec3 texCoord;
+} DataIn;
+ 
+//in vec3 texCoordOut;
 out vec4 colorOut;
 
 void main(void){
     //uint texel = texture(tex3d, ivec3(texCoordOut)).x; //imageLoad(tex3d, ivec3(texCoordOut)).x;
 
-    vec4 texel = texture(tex3d, texCoordOut);
-    colorOut = texel;
+    vec4 texColor = texture(tex3d, DataIn.texCoord);
+    colorOut = texColor; //vec4(DataIn.texCoord, 1.0); //
 
     //if (texel < 2U)
     //    colorOut = vec4(0.0, 0.0, 0.0, 1.0);

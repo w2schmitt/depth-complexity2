@@ -7,9 +7,9 @@
 
 #include "Texture3D.h"
 
-#define WIDTH  128
-#define HEIGHT 128
-#define DEPTH  128
+#define WIDTH  512
+#define HEIGHT 512
+#define DEPTH  512
 
 
 void Texture3D::CreateTexture3D(unsigned int _w, unsigned int _h, unsigned int _d, unsigned int _ch, float _init) {

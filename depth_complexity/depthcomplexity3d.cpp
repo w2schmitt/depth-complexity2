@@ -204,6 +204,8 @@ void drawMesh(const TriMesh& mesh, const vec3f& dir)
     glEnableClientState (GL_TEXTURE_COORD_ARRAY);
     glTexCoordPointer(3, GL_DOUBLE, 3*sizeof(vec3d)+sizeof(vec4d), &sorted_faces[0].tca.x);
     
+    //glTexCoord3d(0,1,0);
+    
     glEnableClientState(GL_COLOR_ARRAY);
     glColorPointer(4, GL_DOUBLE, 3*sizeof(vec3d)+sizeof(vec4d), &sorted_faces[0].ca.x);
 
