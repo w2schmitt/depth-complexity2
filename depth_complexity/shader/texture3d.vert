@@ -1,26 +1,26 @@
 #version 330
- 
-uniform mat4 projectionMat;
-uniform mat4 modelViewMat;
 
-//in vec3 vertexPos;
-//in vec3 texCoord;
-//out vec3 texCoordOut;
+// opengl Matrices 
+uniform mat4  gl_ModelViewProjectionMatrix;
+uniform mat3  gl_NormalMatrix;
 
-out Data {
-    vec3 normal;
-    vec4 eye;
-    smooth vec3 texCoord;
-} DataOut;
 
+// Inputs
 attribute vec3 gl_MultiTexCoord0;
-
-attribute vec4 position;   // local space
+attribute vec4 gl_Vertex;      // local space
 attribute vec3 gl_Normal;     // local space
+
+
+// Outputs
+out smooth vec3 texCoord;
+out vec3 normal;
+
+
 //in vec3 texCoord;
 
 void main(void) {
-    gl_Position = projectionMat * modelViewMat * vec4(position.xyz, 1.0);
+    gl_Position = gl_ModelViewProjectionMatrix * vec4(gl_Vertex.xyz, 1.0);
+    normal = normalize(gl_NormalMatrix * gl_Normal);
     DataOut.texCoord = gl_MultiTexCoord0;
 }
 

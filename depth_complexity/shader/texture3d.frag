@@ -17,6 +17,7 @@ in Data {
  
 //in vec3 texCoordOut;
 out vec4 colorOut;
+in vec3 normal;
 
 void main(void){
     //uint texel = texture(tex3d, ivec3(texCoordOut)).x; //imageLoad(tex3d, ivec3(texCoordOut)).x;
@@ -24,10 +25,4 @@ void main(void){
     vec4 texColor = texture(tex3d, DataIn.texCoord);
     colorOut = texColor; //vec4(DataIn.texCoord, 1.0); //
 
-    //if (texel < 2U)
-    //    colorOut = vec4(0.0, 0.0, 0.0, 1.0);
-    //else if (texel > 12U)
-    //   colorOut = vec4(1.0, 0.0, 0.0, 1.0);
-    //else 
-    //    colorOut = vec4(0.0, 0.0, 1.0, 1.0);
 }
