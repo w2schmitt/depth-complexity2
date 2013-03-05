@@ -37,7 +37,7 @@ void main(void){
     vec4 diffuse;
 
     //uint texel = texture(tex3d, ivec3(texCoordOut)).x; //imageLoad(tex3d, ivec3(texCoordOut)).x;
-    vec4 texColor = texture(tex3d, texCoord);
+    vec4 texColor = texture(tex3d, texCoord.yxz);
 
     
     lightDir = normalize(lightDir);

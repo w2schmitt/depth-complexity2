@@ -60,8 +60,9 @@ RFDepthComplexity3D::RFDepthComplexity3D(int res, int discretSteps):
     _computeGoodRays(true){
     //_computeRaysFromFile(false){
 
-    _threshold = 10;
-    _limitRays = 100000;
+    _threshold = 1;//10;
+    _limitRays = 100;//100000;
+    _computeRays = true;
     //set up shaders
     ShaderMgr shaderMgr; 
     _shaderCountDC = shaderMgr.createShaderProgram("shader/dc.vert", "shader/dc.frag");        
@@ -294,8 +295,8 @@ void RFDepthComplexity3D::process(const TriMesh &mesh) {
         initTextureCounter();
 
 	BoundingBox aabb = _mesh->aabb;
-	aabb.merge(aabb.min - aabb.extents()/10.0);
-	aabb.merge(aabb.max + aabb.extents()/10.0);
+	//aabb.merge(aabb.min - aabb.extents()/10.0);
+	//aabb.merge(aabb.max + aabb.extents()/10.0);
         
         // initialize 3D texture
         tex3d.CreateTexture3D(512,512,1,3,0);
