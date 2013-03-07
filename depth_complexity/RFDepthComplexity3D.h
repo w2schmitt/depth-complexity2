@@ -65,7 +65,7 @@ public:
   const std::vector<vec3d> &visualizationPoints() const { return _vpoints;}
   unsigned getThreshold() { return _threshold; }
   GLuint getTextureID() { return tex3d.texture3DId();}
-  void setShaderTex3d(){ tex3d.setShaderTex3d(); }
+  void setShaderTex3d(){ tex3d.setShaderTex3d(_maximum); }
   
   // 
   void writeHistogram(std::ostream& out);
@@ -148,6 +148,7 @@ private:
 
   friend int doInteractive(TriMesh& mesh);
   friend void drawRays();
+  friend void Tex3DTweakBar();
 
 };
 

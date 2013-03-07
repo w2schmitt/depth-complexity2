@@ -178,7 +178,7 @@ void drawMesh(const TriMesh& mesh, const vec3f& dir)
     glEnable(GL_COLOR_MATERIAL);
     
     // set texture 3d shader
-    //dc3d->setShaderTex3d();
+    dc3d->setShaderTex3d();
     
     //std::clog << "sorting...";
     if (sorted_faces.empty()) {
@@ -475,6 +475,24 @@ CImg<float> color_scale(int w, int h){
     
 }
 
+void Tex3DTweakBar(){
+    // initialize
+    dc3d->tex3d.min = dc3d->_threshold;
+    dc3d->tex3d.max = dc3d->_maximum;
+    
+    TwBar *bar = TwNewBar("mybar");
+    TwDefine(" mybar label='texture3D' position='50 400' size='160 100'");
+      
+    TwAddVarRW(bar, "Min", TW_TYPE_INT32,  &(dc3d->tex3d.min), "");
+    TwSetParam(bar, "Min", "max", TW_PARAM_INT32, 1, &dc3d->_maximum);
+    TwSetParam(bar, "Min", "min", TW_PARAM_INT32, 1, &dc3d->_threshold);
+    
+    TwAddVarRW(bar, "Max", TW_TYPE_INT32,  &(dc3d->tex3d.max), "");
+    TwSetParam(bar, "Max", "max", TW_PARAM_INT32, 1, &dc3d->_maximum);
+    TwSetParam(bar, "Max", "min", TW_PARAM_INT32, 1, &dc3d->_threshold);
+}
+
+
 void recompute(void *data)
 {
     //const TriMesh* mesh = reinterpret_cast<const TriMesh*>(data);
@@ -509,6 +527,9 @@ void recompute(void *data)
     cscale.draw_text(3, 482, "%d", color, 0, 1, 18, val*4/4);
     
     main_disp.display(cscale);
+    
+    
+    Tex3DTweakBar();
     
     // check interception
     //const std::list<unsigned int>& ilist = dc3d->intersectionTris();

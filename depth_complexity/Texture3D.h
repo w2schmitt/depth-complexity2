@@ -35,12 +35,17 @@ private:
   bool                                                  _shaderReady;
   unsigned int                                          *_glTex3d;
   
+
+  
   
   GLuint createOpenglTexture3D(int width, int height, int depth, const unsigned int* texels);
   GLuint createOpenglTexture3D2(int width, int height, int depth, const float* texels);
   
-public:
-    int _w,_h,_d;
+public:    
+    int                                                   _w,_h,_d;
+    unsigned int                                          min;
+    unsigned int                                          max;
+  
     Texture3D(){}
     void CreateTexture3D(unsigned int _w, unsigned int _h, unsigned int _d, unsigned int _ch, float _init);
     Texture3D(const Texture3D& orig);
@@ -59,7 +64,7 @@ public:
     void bresenham_line_3D(vec3d &v1, vec3d &v2, unsigned int color);
     
     //shader methods
-    void setShaderTex3d();
+    void setShaderTex3d(unsigned int dcMax);
     
     
     

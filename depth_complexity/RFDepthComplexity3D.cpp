@@ -60,8 +60,8 @@ RFDepthComplexity3D::RFDepthComplexity3D(int res, int discretSteps):
     _computeGoodRays(true){
     //_computeRaysFromFile(false){
 
-    _threshold = 1;//10;
-    _limitRays = 100;//100000;
+    _threshold = 10;
+    _limitRays = 100000;
     _computeRays = true;
     //set up shaders
     ShaderMgr shaderMgr; 
@@ -350,9 +350,10 @@ void RFDepthComplexity3D::process(const TriMesh &mesh) {
         
         
         //std::cout << "fuck\n";
-        //tex3d.buildGLTexture();
+        tex3d.buildGLTexture();
         //std::cout << "fuck2\n";
-        tex3d.cimg2Tex(_maximum);
+        
+        //tex3d.cimg2Tex(_maximum);
   
         
         // Count Intersections

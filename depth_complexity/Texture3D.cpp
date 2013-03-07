@@ -7,9 +7,9 @@
 
 #include "Texture3D.h"
 
-#define WIDTH  256
-#define HEIGHT 256
-#define DEPTH  256
+#define WIDTH  512
+#define HEIGHT 512
+#define DEPTH  512
 
 
 void Texture3D::CreateTexture3D(unsigned int _w, unsigned int _h, unsigned int _d, unsigned int _ch, float _init) {
@@ -112,33 +112,19 @@ GLuint Texture3D::createOpenglTexture3D2(int width, int height, int depth, const
 }
 
 GLuint Texture3D::createOpenglTexture3D(int width, int height, int depth, const unsigned int* texels){
-    /*
-    //allocate texture name
-    GLuint id;
-    glGenTextures(1, &id);
-    glBindTexture(GL_TEXTURE_3D, id);
-    
-    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-    glTexParameterf(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    
-    glTexParameterf(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameterf(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameterf(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_REPEAT);
-    
-    glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA, width, height, depth, 0, GL_RGBA, GL_FLOAT, texels);
-    
-    glBindTexture(GL_TEXTURE_3D, 0);
-    
-    return id;
-    */
     GLuint id;
     
     //Use a texture as a COUNTER per-pixel Buffer ------------------------
     glGenTextures(1, &id);
     glBindTexture(GL_TEXTURE_3D, id);
+    
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    
+    glTexParameterf(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameterf(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameterf(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_REPEAT);
     //glTexParameterf(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     //glTexParameterf(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
@@ -234,28 +220,28 @@ void Texture3D::buildGLTexture(){
     //float *interlaced_data = new float[4*texsize];
     
     for (unsigned int i=0; i<texsize; i++){
-        if (i<10)
-                _glTex3d[i] = 0;
-        else
-                _glTex3d[i] = 15;
+        //if (i<10)
+        _glTex3d[i] = 0;
+        //else
+        //        _glTex3d[i] = 15;
     }
     
     
-//    for (unsigned int r=0; r<d; r++){
-//        for (unsigned int s=0; s<w; s++){
-//            for (unsigned int t=0; t<h; t++){
-//                //float pxColor[4] = {0.0, 0.0, 0.0, 0.0};
-//                //float Nray = _tex3D(s,t,r,1);
-//                //Nray = (Nray==0)? 1 : Nray;
-//                //findColor(pxColor, (_tex3D(s,t,r,0)/*/nray*/)/(float)maxDC);
-//                //if (_tex3D(s,t,r,0) > 0){ std::cout << "maior\n";}
-//                _glTex3d[TEXEL3(t,s,r,1)] = _tex3D(s,t,r,0);
-//                //interlaced_data[TEXEL3(t,s,r,4)+1] = pxColor[1];
-//                //interlaced_data[TEXEL3(t,s,r,4)+2] = pxColor[2];
-//                //interlaced_data[TEXEL3(t,s,r,4)+3] = pxColor[3];
-//            }
-//        }
-//    }
+    for (unsigned int r=0; r<d; r++){
+        for (unsigned int s=0; s<w; s++){
+            for (unsigned int t=0; t<h; t++){
+                //float pxColor[4] = {0.0, 0.0, 0.0, 0.0};
+                //float Nray = _tex3D(s,t,r,1);
+                //Nray = (Nray==0)? 1 : Nray;
+                //findColor(pxColor, (_tex3D(s,t,r,0)/*/nray*/)/(float)maxDC);
+                //if (_tex3D(s,t,r,0) > 0){ std::cout << "maior\n";}
+                _glTex3d[TEXEL3(t,s,r,1)] = _tex3D(s,t,r,0);
+                //interlaced_data[TEXEL3(t,s,r,4)+1] = pxColor[1];
+                //interlaced_data[TEXEL3(t,s,r,4)+2] = pxColor[2];
+                //interlaced_data[TEXEL3(t,s,r,4)+3] = pxColor[3];
+            }
+        }
+    }
     
     
     std::cout << "Creating 3D texture..." << std::endl;
@@ -292,7 +278,9 @@ void Texture3D::updateTexture3D(Segment line, unsigned int dc){
 }
 
 
-void Texture3D::setShaderTex3d(){
+void Texture3D::setShaderTex3d(unsigned int dcMax){
+    //if (dcMax==0) std::cerr << "dcMax==0, cannot set texture3d" << std::endl;
+    
     // Set shader to count DC
     glUseProgram(_shaderTex3d);   
 	
@@ -302,6 +290,11 @@ void Texture3D::setShaderTex3d(){
     glGetFloatv(GL_PROJECTION_MATRIX, projection);
     glProgramUniformMatrix4fv(_shaderTex3d, glGetUniformLocation(_shaderTex3d, "modelViewMat"), 1, GL_FALSE, model);
     glProgramUniformMatrix4fv(_shaderTex3d, glGetUniformLocation(_shaderTex3d, "projectionMat"), 1, GL_FALSE, projection);
+    glProgramUniform1ui(_shaderTex3d, glGetUniformLocation(_shaderTex3d, "maxDC"), dcMax);
+    glProgramUniform1ui(_shaderTex3d, glGetUniformLocation(_shaderTex3d, "minValue"), min);
+    glProgramUniform1ui(_shaderTex3d, glGetUniformLocation(_shaderTex3d, "maxValue"), max);
+    
+    
     //glProgramUniform2i(_shaderTex3d, glGetUniformLocation(_shaderTex3d, "resolution"), _fboWidth, _fboHeight);
     
     //glProgramUniform1iEXT(_shaderCountDC, glGetUniformLocation(_shaderCountDC, "counterBuff"), 0);
