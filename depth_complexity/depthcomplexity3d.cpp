@@ -37,6 +37,7 @@ bool showPlanes = false;
 bool doGoodRays = true;
 bool showMaxRays = true;
 bool showGoodRays = false;
+bool thresholdRays = false;
 bool highlightTris = false;
 bool discretePts = true;
 vec4f sphereColor(0.0, 1.0, 0.0, 1.0);
@@ -312,10 +313,7 @@ void drawRays()
             }
         }
     }
-     
-    
-    
-    
+
     
     if (showGoodRays){
         for(unsigned i = dc3d->_threshold ; i < dc3d->_maximum ; ++i) {
@@ -347,6 +345,7 @@ void drawRays()
               glVertex3f(r.b.x, r.b.y, r.b.z);
             }
           glEnd();
+          if (thresholdRays) break;
         }
     }
     
@@ -409,7 +408,7 @@ void setupCamera(Camera& camera)
     glViewport(0, 0, winWidth, winHeight);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    camera.setPerspec(50, (double)winWidth/winHeight, 0.1, 30000);
+    camera.setPerspec(50, (double)winWidth/winHeight, 0.1, 20000);
    // gluPerspective(50, (double)winWidth/winHeight, 0.1, 1000);
 
     glMatrixMode(GL_MODELVIEW);
@@ -479,6 +478,13 @@ void Tex3DTweakBar(){
     // initialize
     dc3d->tex3d.min = dc3d->_threshold;
     dc3d->tex3d.max = dc3d->_maximum;
+    dc3d->tex3d.colorAlpha[0] = 0.1f;
+    dc3d->tex3d.colorAlpha[1] = 1.0f;
+    dc3d->tex3d.colorAlpha[2] = 1.0f;
+    dc3d->tex3d.colorAlpha[3] = 1.0f;
+    dc3d->tex3d.colorAlpha[4] = 1.0f;
+    dc3d->tex3d.colorAlpha[5] = 1.0f;
+    
     
     TwBar *bar = TwNewBar("mybar");
     TwDefine(" mybar label='texture3D' position='50 400' size='160 100'");
@@ -490,6 +496,15 @@ void Tex3DTweakBar(){
     TwAddVarRW(bar, "Max", TW_TYPE_INT32,  &(dc3d->tex3d.max), "");
     TwSetParam(bar, "Max", "max", TW_PARAM_INT32, 1, &dc3d->_maximum);
     TwSetParam(bar, "Max", "min", TW_PARAM_INT32, 1, &dc3d->_threshold);
+    
+    TwAddVarRW(bar, "alpha1", TW_TYPE_FLOAT, &(dc3d->tex3d.colorAlpha[0]), "min=0 max=1 step=0.1");
+    TwAddVarRW(bar, "alpha2", TW_TYPE_FLOAT, &(dc3d->tex3d.colorAlpha[1]), "min=0 max=1 step=0.1");
+    TwAddVarRW(bar, "alpha3", TW_TYPE_FLOAT, &(dc3d->tex3d.colorAlpha[2]), "min=0 max=1 step=0.1");
+    TwAddVarRW(bar, "alpha4", TW_TYPE_FLOAT, &(dc3d->tex3d.colorAlpha[3]), "min=0 max=1 step=0.1");
+    TwAddVarRW(bar, "alpha5", TW_TYPE_FLOAT, &(dc3d->tex3d.colorAlpha[4]), "min=0 max=1 step=0.1");
+    TwAddVarRW(bar, "alpha6", TW_TYPE_FLOAT, &(dc3d->tex3d.colorAlpha[5]), "min=0 max=1 step=0.1");
+    
+
 }
 
 
@@ -729,6 +744,7 @@ int doInteractive(TriMesh& mesh)
     TwAddVarRW(bar, "limit rays", TW_TYPE_UINT32, &dc3d->_limitRays, " group='Rays' label='Limit Rays'");
     TwAddVarRW(bar, "Show Max", TW_TYPE_BOOLCPP, &showMaxRays, " group='Rays' label='Show Max'");
     TwAddVarRW(bar, "Show Good", TW_TYPE_BOOLCPP, &showGoodRays, " group='Rays' label='Show Good'");
+    TwAddVarRW(bar, "Threshold Rays", TW_TYPE_BOOLCPP, &thresholdRays, " group='Rays' label='Threshold Rays'");
     TwAddVarRW(bar, "highlight Tris", TW_TYPE_BOOLCPP, &highlightTris, " group='Rays' label='Highlight Tris'");
     
 

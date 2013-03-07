@@ -293,6 +293,7 @@ void Texture3D::setShaderTex3d(unsigned int dcMax){
     glProgramUniform1ui(_shaderTex3d, glGetUniformLocation(_shaderTex3d, "maxDC"), dcMax);
     glProgramUniform1ui(_shaderTex3d, glGetUniformLocation(_shaderTex3d, "minValue"), min);
     glProgramUniform1ui(_shaderTex3d, glGetUniformLocation(_shaderTex3d, "maxValue"), max);
+    glProgramUniform1fv(_shaderTex3d, glGetUniformLocation(_shaderTex3d, "alphas"), 6, colorAlpha);
     
     
     //glProgramUniform2i(_shaderTex3d, glGetUniformLocation(_shaderTex3d, "resolution"), _fboWidth, _fboHeight);

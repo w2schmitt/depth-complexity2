@@ -45,6 +45,7 @@ public:
     int                                                   _w,_h,_d;
     unsigned int                                          min;
     unsigned int                                          max;
+    float                                                 colorAlpha[6];
   
     Texture3D(){}
     void CreateTexture3D(unsigned int _w, unsigned int _h, unsigned int _d, unsigned int _ch, float _init);

@@ -9,6 +9,7 @@ uniform usampler3D tex3d;
 uniform uint maxDC;
 uniform uint minValue;
 uniform uint maxValue;
+uniform float alphas[6];
 
 //-- output
 out vec4 colorOut;
@@ -20,12 +21,12 @@ in vec3 normal;
 
 //-- contants
 vec4 ColorTable[6] = vec4[6]( 
-    vec4(0.0, 0.0, 1.0, 0.85),
-    vec4(1.0, 0.0, 1.0, 1.0),
-    vec4(1.0, 0.5, 0.0, 1.0),
-    vec4(1.0, 1.0, 0.0, 1.0),
-    vec4(0.0, 1.0, 0.0, 1.0),
-    vec4(0.0, 1.0, 0.0, 1.0) 
+    vec4(0.0, 0.0, 1.0, alphas[0]),
+    vec4(1.0, 0.0, 1.0, alphas[1]),
+    vec4(1.0, 0.5, 0.0, alphas[2]),
+    vec4(1.0, 1.0, 0.0, alphas[3]),
+    vec4(0.0, 1.0, 0.0, alphas[4]),
+    vec4(0.0, 1.0, 0.0, alphas[5]) 
 );
 
 vec4 lerpColor(vec4 color1, vec4 color2, float value){
@@ -69,8 +70,8 @@ void main(void){
     float NdotL;
     
     // material
-    vec4 triDiffuseColor = vec4(0.45f, 0.45f, 0.45f, 0.85f);
-    vec4 triAmbientColor = vec4(0.1f, 0.1f, 0.1f, 1.0f);
+    vec4 triDiffuseColor = vec4(0.45f, 0.45f, 0.45f, 0.0f);
+    vec4 triAmbientColor = vec4(0.1f, 0.1f, 0.1f, 0.0f);
     vec4 diffuse;
     
     //vec4 texColor;
@@ -91,10 +92,7 @@ void main(void){
 
     diffuse = texColor * lightDiffuse;
     color = max(NdotL * diffuse, triAmbientColor);
-    //color.a = 0.75f;
+    color.a = diffuse.a;
 
     colorOut = color;
-
-    //colorOut = color; //vec4(DataIn.texCoord, 1.0); //
-
 }
