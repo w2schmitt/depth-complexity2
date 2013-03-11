@@ -190,7 +190,8 @@ void drawMesh(const TriMesh& mesh, const vec3f& dir)
     //std::clog << "done" << std::endl;
     
     glEnable(GL_BLEND);
-    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
+    //glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     //glDisable(GL_DEPTH_TEST);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_LIGHTING);
@@ -616,12 +617,12 @@ void GLFWCALL mouse_motion(int x, int y){
 		float dx = mDx - x;
 		float dy = mDy - y;
 		float d = sqrt(dx*dx + dy*dy);
-		float delta = 0.001;
+		float delta = 0.0015;
 
 		switch(mbutton){
-			case GLFW_MOUSE_BUTTON_MIDDLE : //look
+			case GLFW_MOUSE_BUTTON_RIGHT : //look
 				//if( glutGetModifiers() == GLUT_ACTIVE_SHIFT){
-					camera.lookLefRigObj(dx * delta );
+					camera.lookLefRigObj(dx * delta);
 					camera.lookUpDownObj(dy * delta);
 				/*} else { 
 					camera.lookLefRig(dx * delta);
@@ -637,7 +638,7 @@ void GLFWCALL mouse_motion(int x, int y){
 					camera.MoveCimaBaixoObj(-dy*delta);				
 				//}*/
 			break;
-			case GLFW_MOUSE_BUTTON_RIGHT: 
+                    case GLFW_MOUSE_BUTTON_MIDDLE :
 				if( dy>0) d = -d;
 				//if( glutGetModifiers() != GLUT_ACTIVE_SHIFT)
 					camera.MoveFrente(d*delta);
