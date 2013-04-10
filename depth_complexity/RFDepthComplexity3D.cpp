@@ -341,16 +341,17 @@ void RFDepthComplexity3D::process(const TriMesh &mesh) {
         std::cout << "vpoint: " << _vpoints.size() << std::endl;
         
         // create histrogram
-        _histogram.resize(_maximum+1);
-        _histogram[_maximum] = _maximumRays.size();
+        //_histogram.resize(_maximum+1);
+        //_histogram[_maximum] = _maximumRays.size();
         
-        for (unsigned i=0; i< _goodRays.size(); ++i){
-            _histogram[i] = _goodRays[i].size();
-        }
+        //for (unsigned i=0; i< _goodRays.size(); ++i){
+        //    _histogram[i] = _goodRays[i].size();
+        //}
         
         
         //std::cout << "fuck\n";
-        tex3d.buildGLTexture();
+        if (_compute3Dtexture)
+              tex3d.buildGLTexture();
         //std::cout << "fuck2\n";
         
         //tex3d.cimg2Tex(_maximum);
@@ -560,31 +561,38 @@ bool RFDepthComplexity3D::intersectTriangleSegment(const Segment& segment, const
 void RFDepthComplexity3D::insertRays(unsigned int tempMax, Segment seg){
     bool includeRay = !_computeRays;
     
-    if (_computeRays){
-        if (tempMax == _maximum){
-            if (_maximumRays.size() < _limitRays){
-                _maximumRays.insert(seg);
-                includeRay = true;
-            }
+    if (!_computeRays) {
+        _goodRays.resize(tempMax+1);
+    }
+    
+    if (tempMax == _maximum){
+        if (_computeRays && ( !_isRaysLimited || _maximumRays.size()<_limitRays)) {
+            _maximumRays.insert(seg);
+            includeRay = true;
         }
-        else if (tempMax > _maximum){
+        _histogram[tempMax] += 1;
+    }
+    else if (tempMax > _maximum){
+         _maximum = tempMax;
+         if (_computeRays){
             _goodRays.resize(tempMax+1);
             _goodRays[tempMax].insert(_maximumRays.begin(), _maximumRays.end());
             _maximumRays.clear();
             _maximumRays.insert(seg);
-            _maximum = tempMax;
+         }
+        _histogram.resize(tempMax+1, 0);
+        _histogram[tempMax] = 1;
+
+        includeRay = true;
+    } else {        
+        if (_computeRays && ( !_isRaysLimited || _goodRays[tempMax].size() < _limitRays)){
+            _goodRays[tempMax].insert(seg);
             includeRay = true;
-        } else {        
-            if (_goodRays[tempMax].size() < _limitRays){
-                _goodRays[tempMax].insert(seg);
-                includeRay = true;
-            }
         }
-    } else {
-        _goodRays.resize(tempMax+1);
+        _histogram[tempMax] += 1;
     }
         
-    if (includeRay)
+    if (_compute3Dtexture && includeRay)
         tex3d.updateTexture3D(seg,tempMax);
 }
 
