@@ -103,6 +103,8 @@ public:
     // menu input options
     unsigned                                            _limitRays;
     bool                                                _computeRays;
+    bool                                                _compute3Dtexture;
+    bool                                                _isRaysLimited;
     
 private:
   //buffers 

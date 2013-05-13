@@ -316,9 +316,10 @@ void RFDepthComplexity3D::process(const TriMesh &mesh) {
         double inc = M_PI/60.0;
         vec3d ans;
         
-        //std::cout << "Que porra eh essa! tche!" << std::endl;
+       
         
         for (float theta=0; theta <= M_PI/2.0; theta+=M_PI/(double)qty){ 
+            /**/
             int length = round((double)qty*2.0 * sin(theta));
             if (length==0) length = 1;
             inc = 2*M_PI/(double)length;
@@ -330,11 +331,11 @@ void RFDepthComplexity3D::process(const TriMesh &mesh) {
 
                 _vpoints.push_back(ans+center);
 
-                unsigned int m = renderScene(ans+center);
+                //unsigned int m = renderScene(ans+center);
                 //std::cout << "m: " << m << std::endl;
-                if (m > _maximum){
-                    _maximum = m;               
-                }        
+                //if (m > _maximum){
+                //    _maximum = m;               
+                //}        
             }
         }
         
