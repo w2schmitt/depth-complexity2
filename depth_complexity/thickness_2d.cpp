@@ -7,10 +7,12 @@
 
 #include "vector.hpp"
 
-#define NUMBER_OF_RAYS 100
-#define OBJECT_TYPE OBJ_CUBE
+#define NUMBER_OF_RAYS 100000
+#define OBJECT_TYPE OBJ_TRAPEZOID
+#define OUTPUT_FORMAT TWO_COLUMNS_WITH_LABEL
 
-enum Object{ OBJ_CUBE, OBJ_TRIANGLE};
+enum OutputFormat{ ONLY_ONE_COLUMN, TWO_COLUMNS, TWO_COLUMNS_WITH_LABEL };
+enum Object{ OBJ_SQUARE, OBJ_TRIANGLE, OBJ_CIRCLE, OBJ_RECTANGLE, OBJ_TRAPEZOID};
 
 const double EPS = 1.0E-5;
 #define perp(u,v)  ((u).x * (v).y - (u).y * (v).x)  // perp product (2D)
@@ -22,21 +24,24 @@ struct Segment{
 };
 
 // geometry
-struct Triangle {
-    vec3d v[3];   
+struct Mesh {
+    std::vector<vec3d> vlist;   
 };
-struct Cube {
-    vec3d v[4];
-};
+
+//struct Cube {
+//    vec3d v[4];
+//};
 
 //GLOBALS
-int NSegments;
-
-Triangle tri;
+float histMin, histMax;
+int intervals;
+float boundingRadius;
+Mesh obj;
 
 std::vector<Segment> lines;
 std::vector<vec3d> intersection;
 std::vector<double> thickness;
+std::vector<long long unsigned int> histogram;
 
 
 
@@ -81,18 +86,18 @@ void createRays(){
         Segment s1;
         float val1 = 2*M_PI*uniformRandom();
         float val2 = 2*M_PI*uniformRandom();
-        s1.a = vec3d(2*sin(val1), 2*cos(val1), 0);
-        s1.b = vec3d(2*sin(val2), 2*cos(val2), 0);
+        s1.a = vec3d(boundingRadius*sin(val1), boundingRadius*cos(val1), 0);
+        s1.b = vec3d(boundingRadius*sin(val2), boundingRadius*cos(val2), 0);
         lines.push_back(s1);
         
         std::vector<vec3d> distanceThick;
         
         // check intersection points
-        for (int j=0; j<NSegments; j++){
+        for (unsigned int j=0; j<obj.vlist.size(); j++){
             double t1,t2; //intersection info
             Segment s2;
-            s2.a = tri.v[j];
-            s2.b = tri.v[(j+1)%NSegments];
+            s2.a = obj.vlist[j];
+            s2.b = obj.vlist[(j+1)%obj.vlist.size()];
             if (segmentIntersection2D(s1,s2,&t1,&t2)){
                 vec3d ipoint = s1.a*(1.0f-t1) + t1*s1.b;
                 intersection.push_back(ipoint); 
@@ -101,16 +106,43 @@ void createRays(){
         }
         if (distanceThick.size()==2){
             double thicknessValue = sqrt(pow(distanceThick[1].x - distanceThick[0].x, 2) + 
-                               pow(distanceThick[1].y - distanceThick[0].y, 2));
+                                    pow(distanceThick[1].y - distanceThick[0].y, 2));
             
             thickness.push_back(thicknessValue);
         }
     }
     
+    //for (unsigned int i=0; i<thickness.size(); i++){
+    //    std::cout << thickness[i] << std::endl;
+        
+    //}
+    
     for (unsigned int i=0; i<thickness.size(); i++){
-        std::cout << thickness[i] << std::endl;
+        double factor = static_cast<double>(histMax)/intervals;
+        histogram[ thickness[i] / factor ] += 1;   
+    }    
+    
+    for (unsigned int i=0; i<histogram.size(); i++){
+       
+        switch(OUTPUT_FORMAT){
+            case ONLY_ONE_COLUMN:
+                std::cout << histogram[i] << std::endl;
+            break;
+            
+            case TWO_COLUMNS:
+                std::cout << i << "\t" << histogram[i] << std::endl;
+            break;
+                
+            case TWO_COLUMNS_WITH_LABEL:
+                if (i==0)
+                    std::cout << "Thickness\tFrequency" << std::endl;
+                
+                std::cout << i << "\t" << histogram[i] << std::endl;
+            break;
+        }
         
     }
+    
     
 }
 
@@ -118,20 +150,47 @@ void initialize(){
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     
     switch(OBJECT_TYPE){
-        case OBJ_CUBE:
-            NSegments = 4;
+        case OBJ_SQUARE:
+            obj.vlist.push_back(vec3d(-1,-1,0));
+            obj.vlist.push_back(vec3d(-1,1,0));
+            obj.vlist.push_back(vec3d(1,1,0));
+            obj.vlist.push_back(vec3d(1,-1,0));
         break;
         
         case OBJ_TRIANGLE:
-            NSegments = 3;
+            obj.vlist.push_back(vec3d(-1,-1,0));
+            obj.vlist.push_back(vec3d(0,2*0.73,0));
+            obj.vlist.push_back(vec3d(1,-1,0));
+        break;
+        
+        case OBJ_CIRCLE:
+            for (float i=0; i<2*M_PI; i+=2*M_PI/16.0 )
+                obj.vlist.push_back(vec3d(sqrt(2)*sin(i),sqrt(2)*cos(i),0));
+        break;
+        
+        case OBJ_RECTANGLE:
+            obj.vlist.push_back(vec3d(-0.5,-1,0));
+            obj.vlist.push_back(vec3d(-0.5,1,0));
+            obj.vlist.push_back(vec3d(0.5,1,0));
+            obj.vlist.push_back(vec3d(0.5,-1,0));
+        break;
+        
+        case OBJ_TRAPEZOID:
+            obj.vlist.push_back(vec3d(-1,-1,0));
+            obj.vlist.push_back(vec3d(-1,0.25,0));
+            obj.vlist.push_back(vec3d(1,1,0));
+            obj.vlist.push_back(vec3d(1,-1,0));
         break;
     }
     
     
     
-    tri.v[0] = vec3d(-1,-1,0);
-    tri.v[1] = vec3d(0,1,0);
-    tri.v[2] = vec3d(1,-1,0);
+    intervals = 100;
+    histogram.resize(intervals,0);
+    histMin = 0;
+    histMax = 2*sqrt(2)*1.1;
+    boundingRadius = sqrt(2)*1.1;
+
     
     createRays();
 }
@@ -151,19 +210,25 @@ void display(){
         glVertex2i(0,10);        
     glEnd();
     
+    
     glColor3f(0,0,0);
-    glBegin(GL_LINE_STRIP);
-        glVertex2f(tri.v[0].x, tri.v[0].y);
-        glVertex2f(tri.v[1].x, tri.v[1].y);
-
-        glVertex2f(tri.v[1].x, tri.v[1].y);
-        glVertex2f(tri.v[2].x, tri.v[2].y);
-
-        glVertex2f(tri.v[2].x, tri.v[2].y);
-        glVertex2f(tri.v[0].x, tri.v[0].y);
-    glEnd();
     
     
+    for (unsigned int i=0; i<obj.vlist.size(); i++){
+        glBegin(GL_LINE_STRIP);
+            glVertex2f(obj.vlist[i].x, obj.vlist[i].y);
+            glVertex2f(obj.vlist[(i+1)%obj.vlist.size()].x, obj.vlist[(i+1)%obj.vlist.size()].y);
+
+            //glVertex2f(tri.v[1].x, tri.v[1].y);
+            //glVertex2f(tri.v[2].x, tri.v[2].y);
+
+            //glVertex2f(tri.v[2].x, tri.v[2].y);
+            //glVertex2f(tri.v[0].x, tri.v[0].y);
+        glEnd();
+    }
+    
+    
+    /*
     for (unsigned int i=0; i<lines.size(); i++){        
          glBegin(GL_LINES);
          glVertex2f(lines[i].a.x, lines[i].a.y);  
@@ -171,15 +236,18 @@ void display(){
          
          glEnd();
     }
+     */
+    
     
     glLineWidth(2.0);
     //draw bounding circle
     glBegin(GL_LINE_STRIP);
     for (float i=0; i<2*M_PI; i+=2*M_PI/30.0){
-        glVertex2f(2*sin(i),2*cos(i));
+        glVertex2f(boundingRadius*sin(i),boundingRadius*cos(i));
     }
     glEnd();
     
+    /*
     glColor3f(1,0,0);
     glPointSize(5.0f);
     glBegin(GL_POINTS);
@@ -187,7 +255,7 @@ void display(){
         glVertex2f(intersection[i].x,intersection[i].y);
     }
     glEnd();
-    
+    */
 
     
     glutSwapBuffers();
