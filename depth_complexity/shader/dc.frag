@@ -9,7 +9,6 @@ layout(pixel_center_integer) in vec4 gl_FragCoord;
 
 //-- fragment counter texture
 coherent uniform layout(size1x32) uimage2D counterBuff;
-
 uniform ivec2 resolution;
 
 void main(void){
