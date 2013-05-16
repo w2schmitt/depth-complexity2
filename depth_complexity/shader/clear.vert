@@ -1,4 +1,4 @@
-#version 400
+#version 420
  
 uniform mat4 projectionMat;
 uniform mat4 modelViewMat;

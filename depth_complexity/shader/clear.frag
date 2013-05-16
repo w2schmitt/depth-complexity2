@@ -1,4 +1,4 @@
-#version 400
+#version 420
 
 //-- enable opengl extentions
 #extension GL_NV_gpu_shader5 : enable
@@ -16,9 +16,7 @@ void main(void){
    ivec2 coords = ivec2(gl_FragCoord.xy);
 
    if(coords.x>=0 && coords.y>=0 && coords.x<resolution.x && coords.y<resolution.y ){
-     //int abidx = (int)imageAtomicIncWrap( counterBuff, coords, 65535 );
      imageStore(counterBuff, coords, uvec4(1));
-     //imageAtomicAdd(counterBuff, coords, 1);
    }
   
    //-- Discard fragment so nothing is writen to the framebuffer
