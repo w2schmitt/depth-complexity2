@@ -33,11 +33,11 @@ LDFLAGS = $(ATB_LDFLAGS) $(GLEW_LDFLAGS) -Wall -Werror
 #all : depthcomplexity2d depthcomplexity3d_offline depthcomplexity3d \
       newrandomdepthcomplexity3d mergeOFF
 
-all : newrandomdepthcomplexity3d depthcomplexity3d_offline thickness_2d mergeOFF
+all : newrandomdepthcomplexity3d depthcomplexity3d_offline thickness_2d hist_matching mergeOFF
 	
 	
 clean:
-	rm -f *.o camera/*.o depthcomplexity3d thickness_2d depthcomplexity2d main_joao \
+	rm -f *.o camera/*.o depthcomplexity3d hist_matching thickness_2d depthcomplexity2d main_joao \
 	test_intersection test depthcomplexity3d_offline randomdepthcomplexity3d \
 	randomdepthcomplexity3d_offline newrandomdepthcomplexity3d mergeOFF
 	
@@ -58,6 +58,11 @@ depthcomplexity3d_offline: \
 
 thickness_2d: thickness_2d.o
 	g++ -g -o $@ $^ $(LDFLAGS) $(GLUT_LDFLAGS)
+	
+hist_matching: HistMatching.o
+	g++ -g -o $@ $^ $(LDFLAGS) #(GLUT_LDFLAGS)
+	
+	
 #main_joao: main_joao.o
 #	g++ -g -o $@ $^ $(LDFLAGS) $(GLUT_LDFLAGS)
 
