@@ -62,9 +62,9 @@ RFDepthComplexity3D::RFDepthComplexity3D(int res, int discretSteps):
 
     _threshold = 10;
     _limitRays = 100000;
-    _computeRays = true;
+    _computeRays = false;
     _compute3Dtexture = false;
-    _isRaysLimited = false;
+    _isRaysLimited = false;    
     //set up shaders
     ShaderMgr shaderMgr; 
     _shaderCountDC = shaderMgr.createShaderProgram("shader/dc.vert", "shader/dc.frag");        
@@ -294,6 +294,7 @@ void RFDepthComplexity3D::process(const TriMesh &mesh) {
         _fboWidth = _fboHeight = _resolution;
         std::cout << _fboWidth << "x" << _fboHeight << std::endl;
                 
+        
         initTextureCounter();
 
 	BoundingBox aabb = _mesh->aabb;
@@ -301,8 +302,10 @@ void RFDepthComplexity3D::process(const TriMesh &mesh) {
 	//aabb.merge(aabb.max + aabb.extents()/10.0);
         
         // initialize 3D texture
-        tex3d.CreateTexture3D(512,512,1,3,0);
-        tex3d.setMeshBoundingbox(aabb);
+        if (_compute3Dtexture){
+            tex3d.CreateTexture3D(512,512,1,3,0);
+            tex3d.setMeshBoundingbox(aabb);
+        }
 	
 	vec3d center = _mesh->aabb.center();
 	
@@ -316,10 +319,10 @@ void RFDepthComplexity3D::process(const TriMesh &mesh) {
         
         int qty = _discretSteps;        
         double inc = M_PI/60.0;
-        vec3d ans;  
+        vec3d ans;
         
         for (float theta=0; theta <= M_PI/2.0; theta+=M_PI/(double)qty){ 
-            /**/
+            /**/            
             int length = round((double)qty*2.0 * sin(theta));
             if (length==0) length = 1;
             inc = 2*M_PI/(double)length;
@@ -411,6 +414,8 @@ unsigned int RFDepthComplexity3D::renderScene(vec3d point){
     vec3d vmin(INFINITY,INFINITY,0),vmax(-INFINITY,-INFINITY,0);
     Affine3f modelview = getModelview();
     
+    //std::cout << _mesh->vertices.size() << std::endl;
+           
     for (unsigned int i=0; i<_mesh->vertices.size(); i++){
         v << _mesh->vertices[i].x, _mesh->vertices[i].y, _mesh->vertices[i].z, 1;
         v = modelview*v;
@@ -428,7 +433,8 @@ unsigned int RFDepthComplexity3D::renderScene(vec3d point){
     glPushMatrix();
     glLoadIdentity();  
    
-    glOrtho(-pos.x, pos.x, -pos.y, pos.y ,1, pos.z);
+    //std::cout << "[pos]: " << pos << std::endl;
+    glOrtho(-pos.x, pos.x, -pos.y, pos.y ,0.000001f, pos.z);
     
     glMatrixMode(GL_MODELVIEW);
     
@@ -513,7 +519,8 @@ void RFDepthComplexity3D::findMaximumRaysAndHistogram(vec3d initPos, vec3d f, ve
     for(int r=0; r<_fboHeight; ++r) {
       for(int c=0; c<_fboWidth; ++c) {
           
-        unsigned int val = colorBuffer[r*_fboWidth+c]-1;
+         
+        unsigned int val = colorBuffer[r*_fboWidth+c]-1;        
         if (val < _threshold) continue;        
                 
         Segment seg;
@@ -524,9 +531,7 @@ void RFDepthComplexity3D::findMaximumRaysAndHistogram(vec3d initPos, vec3d f, ve
         seg.a = initPos + translationX*s + translationY*up;
         seg.b = seg.a + p.z*f;
         
-        std::cout << "antes" << std::endl;
         insertRays(val, seg);
-        std::cout << "depois" << std::endl;
       }
     }
     
@@ -568,8 +573,8 @@ void RFDepthComplexity3D::insertRays(unsigned int tempMax, Segment seg){
     if (!_computeRays) {
         _goodRays.resize(tempMax+1);
     }
-     std::cout << tempMax << std::endl;
-    if (tempMax == _maximum){
+    
+    if (tempMax == _maximum){        
         if (_computeRays && ( !_isRaysLimited || _maximumRays.size()<_limitRays)) {
             _maximumRays.insert(seg);
             includeRay = true;
@@ -601,6 +606,8 @@ void RFDepthComplexity3D::insertRays(unsigned int tempMax, Segment seg){
         
     if (_compute3Dtexture && includeRay)
         tex3d.updateTexture3D(seg,tempMax);
+    
+    
 }
 
 unsigned int RFDepthComplexity3D::findMaxValueInCounterBuffer() {

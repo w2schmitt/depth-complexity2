@@ -63,13 +63,8 @@ loadOFFMesh(std::istream& in){
       mesh.faces.push_back(t);
     }
   }
-  
-
-   std::clog << "Loaded " << mesh.faces.size() << " faces" << std::endl;
-  
-
-
-    			
+  mesh.vertices = vertices;
+  std::clog << "Loaded " << mesh.faces.size() << " faces" << std::endl;
 
   // now build the normals
   for (unsigned i=0; i<mesh.faces.size(); ++i) {
@@ -79,6 +74,47 @@ loadOFFMesh(std::istream& in){
     vec3d n = cross(ab, ac);
     n.normalize();
     t.na = t.nb = t.nc = n;
+  }
+  
+  std::cout << "mesh vertices: " << mesh.vertices.size() << std::endl;
+  
+   // e Bounding Box 
+    mesh.aabb.merge(mesh.aabb.min - mesh.aabb.extents()/10.0);
+    mesh.aabb.merge(mesh.aabb.max + mesh.aabb.extents()/10.0);    
+
+    vec3d desloc = mesh.aabb.min;
+    vec3d bblen = mesh.aabb.extents();
+    vec3d pos;
+
+  // set up 3d texture coordinates based in the position of the triangle
+  for (unsigned int i=0; i < mesh.faces.size(); ++i){
+      Triangle &t = mesh.faces[i];
+      
+      //vertex 1
+      pos = t.a - desloc;
+      pos.x = pos.x/bblen.x; 
+      pos.y = pos.y/bblen.y;
+      pos.z = pos.z/bblen.z;
+      t.tca = pos;
+      
+      //vertex 2
+      pos = t.b - desloc;
+      pos.x = pos.x/bblen.x; 
+      pos.y = pos.y/bblen.y;
+      pos.z = pos.z/bblen.z;
+      t.tcb = pos;
+      
+      //vertex 3
+      pos = t.c - desloc;
+      pos.x = pos.x/bblen.x; 
+      pos.y = pos.y/bblen.y;
+      pos.z = pos.z/bblen.z;
+      t.tcc = pos;    
+      
+
+      //std::cout << t.tca << std::endl;
+      //std::cout << t.tcb << std::endl;
+      //std::cout << t.tcc << std::endl;
   }
 
   return mesh;
@@ -183,11 +219,13 @@ loadOBJMesh(std::istream& in) {
       break;
     }
     default: {
-      std::clog << "ignored line: " << line << std::endl;
+      //std::clog << "ignored line: " << line << std::endl;
     }
     }
     mesh.vertices = vertices;
   }
+  
+  
   
     // e Bounding Box 
     mesh.aabb.merge(mesh.aabb.min - mesh.aabb.extents()/10.0);
@@ -238,7 +276,9 @@ loadOBJMesh(std::istream& in) {
 
 TriMesh
 loadOBJMesh(std::istream& in, vec3d rotation) {
+  
   std::clog << "Loading OBJ file" << std::endl;
+  
   Affine3f rot = Affine3f::Identity();
   
   if (rotation.x!=0 || rotation.y !=0 || rotation.z != 0){
@@ -248,6 +288,7 @@ loadOBJMesh(std::istream& in, vec3d rotation) {
       rot.rotate(AngleAxisf(rotation.y, y)); 
       rot.rotate(AngleAxisf(rotation.z, z)); 
   }
+   
 
   std::string line;
 
@@ -269,9 +310,9 @@ loadOBJMesh(std::istream& in, vec3d rotation) {
         if (sscanf(line.c_str()+2, "%lf %lf %lf", &p.x, &p.y, &p.z) != 3)
           throw std::string("Error reading vertex at line " + line);
 								//printf("px = (%f) - py = (%f) - pz = (%f)\n", p.x, p.y, p.z); 
-        Vector3f ptmp; ptmp << p.x, p.y, p.z;
-        ptmp = rot*ptmp;
-        p.x = ptmp(0); p.y=ptmp(1); p.z=ptmp(2);
+        //Vector3f ptmp; ptmp << p.x, p.y, p.z;
+        //ptmp = rot*ptmp;
+        //p.x = ptmp(0); p.y=ptmp(1); p.z=ptmp(2);
         vertices.push_back(p);
         mesh.aabb.merge(p);
       } else if (line[1] == 'n') {
@@ -346,7 +387,7 @@ loadOBJMesh(std::istream& in, vec3d rotation) {
       break;
     }
     default: {
-      std::clog << "ignored line: " << line << std::endl;
+      //std::clog << "ignored line: " << line << std::endl;
     }
     }
   }
