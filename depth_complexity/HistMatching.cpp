@@ -42,6 +42,7 @@ std::vector<Comp> compList;                         // bhattacharya coef.
 std::vector<std::string>        searchFiles(std::string folder);
 void                            openFiles(std::string filepath);
 bool                            compFunction (Hist h);
+bool                            sortFunction  (Comp c1, Comp c2);
 void                            matchShape(std::string name);
 double                          computeBC(Hist h1, Hist h2);
 
@@ -50,21 +51,22 @@ int main(int argc, char** argv) {
 
     // input model
     if (argc==2){
-        fileInput = argv[1];
-        std::cout << fileInput << std::endl;    
+        fileInput = argv[1];         
     } else {
         std::cerr << "--->      ./hist_matching <inputFile>" << std::endl;
         return -1;
     }
-    
+    std::cout << fileInput << std::endl << std::endl;  
     // read histogram files
     openFiles("Histograms//");    
     matchShape(fileInput);
     
+    std::sort (compList.begin(), compList.end(), sortFunction);
+    
     // print similarity coefficient
-    //for (unsigned int i=0; i<compList.size(); i++){
-    //    std::cout << compList[i].firstName << " x " << compList[i].secondName << " : " << compList[i].bc << std::endl;
-    //}
+    for (unsigned int i=0; i<compList.size(); i++){
+        std::cout << compList[i].secondName << " : " << compList[i].bc << std::endl;
+    }
     
     return 0;
 }
@@ -74,6 +76,10 @@ bool compFunction (Hist h){
         return true;
     }
     return false;
+}
+
+bool sortFunction (Comp c1, Comp c2){
+    return (c1.bc > c2.bc);
 }
 
 void matchShape(std::string name){
@@ -94,6 +100,7 @@ double computeBC(Hist h1, Hist h2){
     double bc = 0.0;
     unsigned long long int sumCoef1 = 0, sumCoef2 = 0;
     unsigned int maxSize;
+    
     maxSize = (h1.dc.size() > h2.dc.size())? h1.dc.size() : h2.dc.size();
     
     std::vector<double> coef1;//(h1.rays);
@@ -103,22 +110,27 @@ double computeBC(Hist h1, Hist h2){
     sumCoef1 = std::accumulate(h1.rays.begin(), h1.rays.end(), 0);
     sumCoef2 = std::accumulate(h2.rays.begin(), h2.rays.end(), 0);
     
-    std::cout << sumCoef1 << std::endl;
+    //std::cout << sumCoef1 << std::endl;
     
     // coef must have the same domain...
     coef1.resize(maxSize, 0);
     coef2.resize(maxSize, 0);
     
     // and normalized
-    for (unsigned int i=0; i<maxSize; i++){
-        coef1[i] = coef1[i]/(double)sumCoef1;
-        coef2[i] = coef2[i]/(double)sumCoef2;
+    for (unsigned int i=0; i<h1.rays.size(); i++){
+        coef1[i] = h1.rays[i]/(double)sumCoef1;
+    }
+    for (unsigned int i=0; i<h2.rays.size(); i++){
+        coef2[i] = h2.rays[i]/(double)sumCoef2;
     }
     
     // find bhat... coeficient
     for (unsigned int i=0; i<maxSize; i++){
-        bc += sqrt(coef1[i] * coef2[i]);
+        bc += sqrt(coef1[i] * coef2[i]);        
     }
+    
+    //std::cout << bc << std::endl;
+    
     
     return bc;
 }

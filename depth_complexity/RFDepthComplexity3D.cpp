@@ -613,7 +613,7 @@ void RFDepthComplexity3D::insertRays(unsigned int tempMax, Segment seg){
 unsigned int RFDepthComplexity3D::findMaxValueInCounterBuffer() {
   const int pixelNumber = _fboWidth * _fboHeight;
   unsigned int colorBuffer[pixelNumber];
-  float buff[pixelNumber];
+  //float buff[pixelNumber];
   
   glBindTexture(GL_TEXTURE_2D, _counterBuffId);
   glGetTexImage( GL_TEXTURE_2D, 0 , GL_RED_INTEGER, GL_UNSIGNED_INT, colorBuffer ); 
@@ -627,15 +627,15 @@ unsigned int RFDepthComplexity3D::findMaxValueInCounterBuffer() {
   
   unsigned int max =  *(std::max_element(colorBuffer, colorBuffer + pixelNumber))-1;
   
-  for (int i=0; i<pixelNumber; i++)
-      buff[i] = (colorBuffer[i]-1)/(float)max;
+  //for (int i=0; i<pixelNumber; i++)
+  //    buff[i] = (colorBuffer[i]-1)/(float)max;
   
-  CImg<float> cb(buff,_fboWidth,_fboHeight,1,1);
+  //CImg<float> cb(buff,_fboWidth,_fboHeight,1,1);
   
-  dualDisplay.resize(_fboWidth, _fboHeight, true);
-  dualDisplay.display(cb);
+  //dualDisplay.resize(_fboWidth, _fboHeight, true);
+  //dualDisplay.display(cb);
   
-  std::cin.get();
+  //std::cin.get();
   
   return max+1;
 }
