@@ -200,9 +200,9 @@ void Texture3D::cimg2Tex(unsigned int maxDC){
         }
     }
     
-    std::cout << "Creating 3D texture..." << std::endl;
+    //std::cout << "Creating 3D texture..." << std::endl;
     _texID = createOpenglTexture3D2(_tex3D.width(), _tex3D.height(), _tex3D.depth(), interlaced_data);
-    if (_texID!=0) { std::cout << "[OK] 3D texture succefful" << std::endl;}
+    if (_texID!=0) { std::clog << "  --> [OK] 3D TEXTURE CREATED" << std::endl;}
     delete[] interlaced_data;
     
 }
@@ -244,9 +244,9 @@ void Texture3D::buildGLTexture(){
     }
     
     
-    std::cout << "Creating 3D texture..." << std::endl;
+    //std::cout << "Creating 3D texture..." << std::endl;
     _texID = createOpenglTexture3D(_tex3D.width(), _tex3D.height(), _tex3D.depth(), _glTex3d);
-    if (_texID!=0) { std::cout << "[OK] 3D texture succefful" << std::endl;}
+    if (_texID!=0) { std::clog << "  --> [OK] 3D TEXTURE CREATED" << std::endl;}
     //delete[] interlaced_data;
 }
 

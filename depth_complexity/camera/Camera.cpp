@@ -561,8 +561,8 @@ void Camera::setFrustum(){
 	znear = (dn<=0 )? dNEAR : dn;
 	zfar = (afEye-bs.c).length()+bs.r;
 	
-	printme(znear);
-	printme(zfar);
+	//printme(znear);
+	//printme(zfar);
 	
 	gluPerspective( alpha, aspect, znear, zfar);
 }

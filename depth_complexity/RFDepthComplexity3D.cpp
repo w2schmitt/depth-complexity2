@@ -14,6 +14,8 @@
 #include <ctime>
 #include <cmath>
 
+#include "timer.h"
+
 const double EPS = 1.0E-5;
 double const PI = 4*atan(1); 
 
@@ -292,7 +294,7 @@ void RFDepthComplexity3D::process(const TriMesh &mesh) {
         _vpoints.clear();
 	_maximum = 0;
         _fboWidth = _fboHeight = _resolution;
-        std::cout << _fboWidth << "x" << _fboHeight << std::endl;
+        //std::cout << _fboWidth << "x" << _fboHeight << std::endl;
                 
         
         initTextureCounter();
@@ -308,9 +310,6 @@ void RFDepthComplexity3D::process(const TriMesh &mesh) {
         }
 	
 	vec3d center = _mesh->aabb.center();
-	
-	 /* initialize random seed: */
-        //srand ( time(NULL) );
         
         float modelsizex = aabb.extents().x;
         float modelsizey = aabb.extents().y;
@@ -334,35 +333,24 @@ void RFDepthComplexity3D::process(const TriMesh &mesh) {
 
                 _vpoints.push_back(ans+center);
 
+                //tic(); 
                 unsigned int m = renderScene(ans+center);
-                //std::cout << "m: " << m << std::endl;
+                //toc("RenderScene");
                 if (m > _maximum){
                     _maximum = m;               
                 }        
             }
         }
         
-        std::cout << "vpoint: " << _vpoints.size() << std::endl;
         
-        // create histrogram
-        //_histogram.resize(_maximum+1);
-        //_histogram[_maximum] = _maximumRays.size();
-        
-        //for (unsigned i=0; i< _goodRays.size(); ++i){
-        //    _histogram[i] = _goodRays[i].size();
-        //}
-        
-        
-        //std::cout << "fuck\n";
         if (_compute3Dtexture)
               tex3d.buildGLTexture();
-        //std::cout << "fuck2\n";
         
         //tex3d.cimg2Tex(_maximum);
   
         
         // Count Intersections
-        
+        /*
         unsigned int max=0;
         std::vector<Point> inter;
         for (std::set<Segment,classcomp>::iterator it = _maximumRays.begin(); it!=_maximumRays.end(); ++it){
@@ -373,6 +361,7 @@ void RFDepthComplexity3D::process(const TriMesh &mesh) {
         }
         
         std::cout << "Count intersections: " << max << std::endl;
+        */
 }
 
 unsigned int RFDepthComplexity3D::renderScene(vec3d point){
@@ -446,7 +435,7 @@ unsigned int RFDepthComplexity3D::renderScene(vec3d point){
      // set shader to clear the counter buffer ---------
     setShaderClearCounterBuffer();
     
-    std::cout << "tttt: " << findMaxValueInCounterBuffer() << std::endl;
+    //std::cout << "tttt: " << findMaxValueInCounterBuffer() << std::endl;
     
     // Ensure that all texture writing is done
     glMemoryBarrierEXT(GL_FRAMEBUFFER_BARRIER_BIT_EXT);

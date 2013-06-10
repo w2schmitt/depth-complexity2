@@ -70,7 +70,7 @@ char* ShaderMgr::readShaderFile(const char *filename){
 			}
 			fclose(fp);
 		} else {
-			std::cerr << "[ERROR] Cannot load Vertex or Fragment Shader File! " << std::endl;
+			std::cerr << "  --> [ERROR] Cannot load Vertex or Fragment Shader File! " << std::endl;
 		}
 	}
 	
@@ -90,7 +90,7 @@ bool ShaderMgr::checkShadersStatus(GLuint shaderID, GLenum statusType, const cha
 	if (!ok){
 		int ilength; char stringBuffer[STRING_BUFFER];
 		glGetShaderInfoLog(shaderID, STRING_BUFFER, &ilength, stringBuffer);
-		std::cerr<<"[ERROR] Shader Error : (" << msg << ") " << stringBuffer<< std::endl; 
+		std::cerr<<"  --> [ERROR] Shader Error : (" << msg << ") " << stringBuffer<< std::endl; 
 		return (_shaderStatus=false);    
 	}
   

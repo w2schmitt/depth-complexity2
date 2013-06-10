@@ -270,6 +270,7 @@ void drawRays()
               }
             glEnd();
         }
+        
         // HIGHLIGHT TRIANGLES 
         if (highlightTris){
             const std::vector<Triangle> &interTris = dc3d->intersectionTriangles();
@@ -517,18 +518,25 @@ void recompute(void *data)
     //  dc3d->setComputeGoodRays(true);
     //else
     //  dc3d->setComputeGoodRays(false);
-    std::cout << "mehs faces: " << mesh->faces.size() << std::endl;
+    //std::cout << "mehs faces: " << mesh->faces.size() << std::endl;
+    
+    
     tic();    
     dc3d->process(*mesh);
-    toc("Depth Complexity");
     
-    std::clog << "Maximum: " << dc3d->maximum() << std::endl;
-    std::cout << "Number of Maximum Rays: " << dc3d->maximumRays().size() << std::endl;
+    
+    std::clog << std::endl << "=== RESULTS ===" << std::endl;
+    std::clog << "  --> NUM SAMPLES: " << dc3d->visualizationPoints().size() << std::endl;
+    std::clog << "  --> DC MAX: " << dc3d->maximum() << std::endl;
+    std::clog << "  --> NUM MAXIMUM RAYS: " << dc3d->maximumRays().size() << std::endl;
     //if(doGoodRays) {
-      unsigned numRays = 0;
-      for(unsigned i = dc3d->getThreshold() ; i <= dc3d->maximum() ; ++i)
+    unsigned numRays = 0;
+    for(unsigned i = dc3d->getThreshold() ; i <= dc3d->maximum() ; ++i)
         numRays += dc3d->goodRays(i).size();
-      std::clog << "Number of good rays: " << numRays << std::endl;
+    std::clog << "  --> NUM GOOD RAYS: " << numRays << std::endl;
+    
+    std::cout << std::endl;
+    toc("Depth Complexity");
     //}
       
     // create color scale
@@ -673,12 +681,13 @@ void initializeGraphics(){
     }
     
     // Print OPENGL, SHADER and GLEW versions
-    std::clog << "----- << VERSION >>\n";
-    std::clog << "OPENGL VERSION: " << glGetString(GL_VERSION) << std::endl;
-    std::clog << "SHADER VERSION: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
-    std::cerr << "GLEW VERSION: "<<glewGetString(GLEW_VERSION)<<std::endl;
-    std::clog << "---------------- \n";
+    std::clog << std::endl << "=== SYSTEM INFO ===" << std::endl;
+    std::clog << "  --> OPENGL VERSION: " << glGetString(GL_VERSION) << std::endl;
+    std::clog << "  --> SHADER VERSION: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
+    std::cerr << "  --> GLEW VERSION: "<<glewGetString(GLEW_VERSION)<<std::endl;
+    //std::clog << "----------------" std::endl;
  
+    std::clog << std::endl << "=== DEBUG ===" << std::endl;
 
     glfwEnable(GLFW_MOUSE_CURSOR);
     glfwEnable(GLFW_KEY_REPEAT);
@@ -769,7 +778,7 @@ int doInteractive(TriMesh& mesh)
 
     //Camera cam;
     BoundingBox aabb = mesh.aabb;
-    std::cout << "aabb: " << aabb.center() << std::endl;
+    //std::cout << "aabb: " << aabb.center() << std::endl;
     
     camera.bbox(float3(aabb.min.x,aabb.min.y,aabb.min.z), float3(aabb.max.x,aabb.max.y,aabb.max.z), true );
 		camera.front();
@@ -846,7 +855,7 @@ std::string getExtension(const std::string& filename)
 #ifndef COMPUTE_OFFLINE
 int main(int argc, char **argv)
 {
-    std::cout << "*--- ONLINE RENDERING ---*" << std::endl;
+    std::cout << "*----- ONLINE RENDERING -----*" << std::endl;
     if (argc == 1) {
         std::cerr << "[ERROR] Missing Input File!" << std::endl;
         return 1;
@@ -871,7 +880,7 @@ int main(int argc, char **argv)
         
         // setup opengl, glut, glew stuff.
         initializeGraphics();       
-        dc3d = new RFDepthComplexity3D(512, 50);
+        dc3d = new RFDepthComplexity3D(256, 50);
         
         if (doInteractive(mesh))
             return 1;

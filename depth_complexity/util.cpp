@@ -18,7 +18,7 @@ const double EPS = 1.0E-5;
 
 TriMesh
 loadOFFMesh(std::istream& in){
-  std::clog << "Loading OFF file" << std::endl;
+  std::clog << std::endl << "=== MODEL INFO ===" << std::endl;
 
   std::string head;
   in >> head;
@@ -47,9 +47,13 @@ loadOFFMesh(std::istream& in){
     t.b = vertices.at(b);
     t.c = vertices.at(c);
     
-    t.ca = vec4d(0.057f, 0.25f, 0.42f, 0.35f);
-    t.cb = vec4d(0.057f, 0.25f, 0.42f, 0.35f);
-    t.cc = vec4d(0.057f, 0.25f, 0.42f, 0.35f);
+    t.ca = vec4d(0.657f, 0.75f, 0.32f, 0.85f);
+    t.cb = vec4d(0.657f, 0.75f, 0.32f, 0.85f);
+    t.cc = vec4d(0.657f, 0.75f, 0.32f, 0.85f);
+          
+    //t.ca = vec4d(0.057f, 0.25f, 0.42f, 0.35f);
+    //t.cb = vec4d(0.057f, 0.25f, 0.42f, 0.35f);
+    //t.cc = vec4d(0.057f, 0.25f, 0.42f, 0.35f);
     
     mesh.faces.push_back(t);
 
@@ -64,7 +68,10 @@ loadOFFMesh(std::istream& in){
     }
   }
   mesh.vertices = vertices;
-  std::clog << "Loaded " << mesh.faces.size() << " faces" << std::endl;
+  std::clog << "  --> TYPE: " << "OFF" << std::endl;
+  std::clog << "  --> VERTICES: " << mesh.vertices.size() << std::endl;
+  std::clog << "  --> FACES: " << mesh.faces.size() << std::endl;
+  //std::clog << "Loaded " << mesh.faces.size() << " faces" << std::endl;
 
   // now build the normals
   for (unsigned i=0; i<mesh.faces.size(); ++i) {
@@ -76,7 +83,8 @@ loadOFFMesh(std::istream& in){
     t.na = t.nb = t.nc = n;
   }
   
-  std::cout << "mesh vertices: " << mesh.vertices.size() << std::endl;
+  
+  //std::cout << "mesh vertices: " << mesh.vertices.size() << std::endl;
   
    // e Bounding Box 
     mesh.aabb.merge(mesh.aabb.min - mesh.aabb.extents()/10.0);
@@ -123,7 +131,7 @@ loadOFFMesh(std::istream& in){
 
 TriMesh
 loadOBJMesh(std::istream& in) {
-  std::clog << "Loading OBJ file" << std::endl;
+  std::clog << "=== MODEL INFO ===" << std::endl;
 
   std::string line;
 
@@ -265,10 +273,11 @@ loadOBJMesh(std::istream& in) {
       //std::cout << t.tcb << std::endl;
       //std::cout << t.tcc << std::endl;
   }
+  std::clog << "  --> TYPE: OBJ " << std::endl;
+  std::clog << "  --> VERTICES: " << mesh.vertices.size() << std::endl;
+  std::clog << "  --> FACES: " << mesh.faces.size() << std::endl;
 
-  
-
-  std::clog << "Loaded " << mesh.faces.size() << " faces" << std::endl;
+  //std::clog << "Loaded " << mesh.faces.size() << " faces" << std::endl;
 
   return mesh;
 }

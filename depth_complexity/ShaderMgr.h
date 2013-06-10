@@ -22,9 +22,9 @@ public:
   
   void checkShaderStatus(){ 
     if (_shaderStatus)
-      std::clog << "[OK] Shaders Ok." << std::endl;
+      std::clog << "  --> [OK] SHADERS." << std::endl;
     else
-      std::clog << "[ERROR] Verify Shaders" << std::endl;
+      std::clog << "  --> [ERROR] SHADERS" << std::endl;
   }
    
 private:
