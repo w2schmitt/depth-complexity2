@@ -19,6 +19,7 @@ using namespace std;
 
 // STRUCTURES ------------------------------>
 struct Hist {
+    int index;
     std::string name;
     std::vector<int> dc;
     std::vector<unsigned long long int> rays;
@@ -30,12 +31,12 @@ struct Comp {
     double bc;
 };
 
-
 // GLOBALS --------------------------------->
 std::vector<std::string> filelist;
 std::vector<Hist> histlist;
 std::string fileInput;
 std::vector<Comp> compList;                         // bhattacharya coef.
+std::vector<float> distanceMatrix;
 
 
 // FUNCTIONS DECLARATION ------------------->
@@ -45,32 +46,80 @@ bool                            compFunction (Hist h);
 bool                            sortFunction  (Comp c1, Comp c2);
 void                            matchShape(std::string name);
 double                          computeBC(Hist h1, Hist h2);
+void                            createMatrixDistance();
+bool                            compIndexFunction (Hist h1, Hist h2);
+Hist                            findHist(int index);
 
 // DEFINITIONS ----------------------------->
 int main(int argc, char** argv) {
 
     // input model
-    if (argc==2){
-        fileInput = argv[1];         
-    } else {
-        std::cerr << "--->      ./hist_matching <inputFile>" << std::endl;
-        return -1;
-    }
-    std::cout << fileInput << std::endl << std::endl;  
+    //if (argc==2){
+    //    fileInput = argv[1];         
+    //} else {
+    //    std::cerr << "--->      ./hist_matching <inputFile>" << std::endl;
+    //    return -1;
+    //}
+    //std::cout << fileInput << std::endl << std::endl;  
     // read histogram files
-    openFiles("Histograms//");    
-    matchShape(fileInput);
+    openFiles ("Histograms//");    
+    std::sort (histlist.begin(), histlist.end(), compIndexFunction);
     
-    std::sort (compList.begin(), compList.end(), sortFunction);
+    //for (unsigned int i=0; i< histlist.size(); i++){
+    //    std::cout << histlist[i].index << " - " << histlist[i].name << std::endl;
+    //}
+    
+    
+    createMatrixDistance();
+    
+    FILE * pFile;
+    pFile = fopen ("distanceMatrix.bin", "wb");
+    //float *t = new float[distanceMatrix.size()]; 
+    
+    //distanceMatrix.begin();
+    //for (unsigned int i=0; i<distanceMatrix.size(); i++){
+    //    t[i] = distanceMatrix[i];
+    //}
+    
+    //std::cout << distanceMatrix.size() << "\n";
+    //distanceMatrix.
+    fwrite (distanceMatrix.data(), sizeof(float), distanceMatrix.size(), pFile);
+    fclose (pFile);
+    //for (unsigned int i=0; i< distanceMatrix.size(); i++){
+        //std::cout << distanceMatrix[i] << std::endl;
+    //}
+    
+    
+    //distanceMatrix
+    
+    //matchShape(fileInput);    
+    //std::sort (compList.begin(), compList.end(), sortFunction);
     
     // print similarity coefficient
-    for (unsigned int i=0; i<compList.size(); i++){
-        std::cout << compList[i].secondName << " : " << compList[i].bc << std::endl;
-    }
+    //for (unsigned int i=0; i<compList.size(); i++){
+    //    std::cout << compList[i].secondName << " : " << compList[i].bc << std::endl;
+    //}
     
     return 0;
 }
 
+bool compIndexFunction (Hist h1, Hist h2){
+    return h1.index < h2.index;
+}
+
+Hist findHist(int index){
+    for (unsigned int i=0; i < histlist.size(); i++){
+        if (histlist[i].index == index)
+            return histlist[i];
+    }
+    
+    return histlist[0];
+    //return NULL;
+}
+
+//bool compFunction (Hist h){
+//    if ()
+//}
 bool compFunction (Hist h){
     if (h.name.compare(fileInput) == 0){
         return true;
@@ -82,10 +131,30 @@ bool sortFunction (Comp c1, Comp c2){
     return (c1.bc > c2.bc);
 }
 
+void createMatrixDistance(){
+    distanceMatrix.resize(histlist.size()*histlist.size(), 0);
+    
+    //[valor](T elem) { return elem == valor; }
+    for (unsigned int i=0; i < histlist.size(); i++){
+        Hist h1 = findHist(i);
+        for (unsigned int j=0; j < histlist.size(); j++){
+            //std::cout << histlist.size()  << " - " << j << std::endl;
+            Hist h2 = findHist(j);
+            //std::cout << h2.index << std::endl;
+            float bc = computeBC(h1,h2);
+            //std::cout << bc << std::endl;
+            //std::cout << -log(bc) << std::endl;
+            distanceMatrix[i*histlist.size() + j] = -log(bc);
+            //std::cout << j << std::endl;
+            //std::vector<Hist>::iterator it = std::find_if(histlist.begin(), histlist.end(), [](int i){return i+1;});
+        }        
+    }
+}
+
 void matchShape(std::string name){
+    
     // check if name is registred
     std::vector<Hist>::iterator it = std::find_if(histlist.begin(), histlist.end(), compFunction);
-    
     
     for (unsigned int i=0; i<histlist.size(); i++){
         Comp c;
@@ -97,11 +166,14 @@ void matchShape(std::string name){
 }
 
 double computeBC(Hist h1, Hist h2){
+    //std::cout << "pica2\n";
     double bc = 0.0;
     unsigned long long int sumCoef1 = 0, sumCoef2 = 0;
     unsigned int maxSize;
     
+    
     maxSize = (h1.dc.size() > h2.dc.size())? h1.dc.size() : h2.dc.size();
+    
     
     std::vector<double> coef1;//(h1.rays);
     std::vector<double> coef2;//(h2.rays);
@@ -109,8 +181,6 @@ double computeBC(Hist h1, Hist h2){
     // normalize coefs
     sumCoef1 = std::accumulate(h1.rays.begin(), h1.rays.end(), 0);
     sumCoef2 = std::accumulate(h2.rays.begin(), h2.rays.end(), 0);
-    
-    //std::cout << sumCoef1 << std::endl;
     
     // coef must have the same domain...
     coef1.resize(maxSize, 0);
@@ -128,9 +198,6 @@ double computeBC(Hist h1, Hist h2){
     for (unsigned int i=0; i<maxSize; i++){
         bc += sqrt(coef1[i] * coef2[i]);        
     }
-    
-    //std::cout << bc << std::endl;
-    
     
     return bc;
 }
@@ -153,9 +220,11 @@ void openFiles(std::string filepath){
             
             // new histogram
             Hist h;
+            char temp;
             h.name = filelist[i];
+            sscanf(filelist[i].c_str(), "%c%d", &temp, &h.index );           
            
-            //std::cout << "Reading: " << h.name << std::endl;
+            //std::clog << "Reading: " << filelist[i] << std::endl;
             in >> label1 >> label2;            
             while (in){            
                 in >> dc >> Nrays;

@@ -33,7 +33,7 @@ LDFLAGS = $(ATB_LDFLAGS) $(GLEW_LDFLAGS) -Wall -Werror
 #all : depthcomplexity2d depthcomplexity3d_offline depthcomplexity3d \
       newrandomdepthcomplexity3d mergeOFF
 
-all : newrandomdepthcomplexity3d depthcomplexity3d_offline thickness_2d hist_matching mergeOFF
+all : newrandomdepthcomplexity3d depthcomplexity3d_offline thickness_2d hist_matching distanceMatrix mergeOFF
 	
 	
 clean:
@@ -61,6 +61,9 @@ thickness_2d: thickness_2d.o
 	
 hist_matching: HistMatching.o
 	g++ -g -o $@ $^ $(LDFLAGS) #(GLUT_LDFLAGS)
+	
+distanceMatrix: DistanceMatrix.o
+	g++ -g -o  $@ $^ $(LDFLAGS)
 	
 	
 #main_joao: main_joao.o
