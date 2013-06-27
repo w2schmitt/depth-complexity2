@@ -53,52 +53,17 @@ Hist                            findHist(int index);
 // DEFINITIONS ----------------------------->
 int main(int argc, char** argv) {
 
-    // input model
-    //if (argc==2){
-    //    fileInput = argv[1];         
-    //} else {
-    //    std::cerr << "--->      ./hist_matching <inputFile>" << std::endl;
-    //    return -1;
-    //}
-    //std::cout << fileInput << std::endl << std::endl;  
-    // read histogram files
+
     openFiles ("Histograms//");    
-    std::sort (histlist.begin(), histlist.end(), compIndexFunction);
-    
-    //for (unsigned int i=0; i< histlist.size(); i++){
-    //    std::cout << histlist[i].index << " - " << histlist[i].name << std::endl;
-    //}
-    
+    std::sort (histlist.begin(), histlist.end(), compIndexFunction);  
     
     createMatrixDistance();
     
     FILE * pFile;
     pFile = fopen ("distanceMatrix.bin", "wb");
-    //float *t = new float[distanceMatrix.size()]; 
     
-    //distanceMatrix.begin();
-    //for (unsigned int i=0; i<distanceMatrix.size(); i++){
-    //    t[i] = distanceMatrix[i];
-    //}
-    
-    //std::cout << distanceMatrix.size() << "\n";
-    //distanceMatrix.
     fwrite (distanceMatrix.data(), sizeof(float), distanceMatrix.size(), pFile);
     fclose (pFile);
-    //for (unsigned int i=0; i< distanceMatrix.size(); i++){
-        //std::cout << distanceMatrix[i] << std::endl;
-    //}
-    
-    
-    //distanceMatrix
-    
-    //matchShape(fileInput);    
-    //std::sort (compList.begin(), compList.end(), sortFunction);
-    
-    // print similarity coefficient
-    //for (unsigned int i=0; i<compList.size(); i++){
-    //    std::cout << compList[i].secondName << " : " << compList[i].bc << std::endl;
-    //}
     
     return 0;
 }
@@ -114,12 +79,8 @@ Hist findHist(int index){
     }
     
     return histlist[0];
-    //return NULL;
 }
 
-//bool compFunction (Hist h){
-//    if ()
-//}
 bool compFunction (Hist h){
     if (h.name.compare(fileInput) == 0){
         return true;
@@ -134,7 +95,6 @@ bool sortFunction (Comp c1, Comp c2){
 void createMatrixDistance(){
     distanceMatrix.resize(histlist.size()*histlist.size(), 0);
     
-    //[valor](T elem) { return elem == valor; }
     for (unsigned int i=0; i < histlist.size(); i++){
         Hist h1 = findHist(i);
         for (unsigned int j=0; j < histlist.size(); j++){
@@ -142,11 +102,13 @@ void createMatrixDistance(){
             Hist h2 = findHist(j);
             //std::cout << h2.index << std::endl;
             float bc = computeBC(h1,h2);
-            //std::cout << bc << std::endl;
-            //std::cout << -log(bc) << std::endl;
-            distanceMatrix[i*histlist.size() + j] = -log(bc);
-            //std::cout << j << std::endl;
-            //std::vector<Hist>::iterator it = std::find_if(histlist.begin(), histlist.end(), [](int i){return i+1;});
+            float similarity = -log(bc);
+            similarity = (similarity<1.E-7)? 0.00f : similarity;
+            
+            if (i==1119 && j==1134){
+                std::clog << similarity << std::endl;
+            }
+            distanceMatrix[i*histlist.size() + j] = similarity;
         }        
     }
 }

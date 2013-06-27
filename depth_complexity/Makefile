@@ -33,13 +33,13 @@ LDFLAGS = $(ATB_LDFLAGS) $(GLEW_LDFLAGS) -Wall -Werror
 #all : depthcomplexity2d depthcomplexity3d_offline depthcomplexity3d \
       newrandomdepthcomplexity3d mergeOFF
 
-all : newrandomdepthcomplexity3d depthcomplexity3d_offline thickness_2d hist_matching distanceMatrix mergeOFF
+all : newrandomdepthcomplexity3d depthcomplexity3d_offline #thickness_2d #hist_matching distanceMatrix convertJS convertCla generateCSV mergeOFF
 	
 	
 clean:
-	rm -f *.o camera/*.o depthcomplexity3d hist_matching thickness_2d depthcomplexity2d main_joao \
+	rm -f *.o camera/*.o *.bin depthcomplexity3d hist_matching thickness_2d depthcomplexity2d main_joao \
 	test_intersection test depthcomplexity3d_offline randomdepthcomplexity3d \
-	randomdepthcomplexity3d_offline newrandomdepthcomplexity3d mergeOFF
+	randomdepthcomplexity3d_offline newrandomdepthcomplexity3d generateCSV sphereray mergeOFF distanceMatrix convertJS convertCla
 	
 hard_clean: clean
 	rm -f *.off hist*.txt *.svg toPlot.txt
@@ -63,6 +63,15 @@ hist_matching: HistMatching.o
 	g++ -g -o $@ $^ $(LDFLAGS) #(GLUT_LDFLAGS)
 	
 distanceMatrix: DistanceMatrix.o
+	g++ -g -o  $@ $^ $(LDFLAGS)
+	
+convertJS: convertToJsFiles.o
+	g++ -g -o  $@ $^ $(LDFLAGS)
+	
+convertCla: convertClaToJs.o
+	g++ -g -o  $@ $^ $(LDFLAGS)
+	
+generateCSV: generateCsv.o
 	g++ -g -o  $@ $^ $(LDFLAGS)
 	
 	
