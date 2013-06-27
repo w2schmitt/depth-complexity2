@@ -91,7 +91,7 @@ private:
   void initTextureCounter();
   unsigned int renderScene(vec3d point);
   void setShaderClearCounterBuffer();
-  void setShaderCountDC();
+  void setShaderCountDC(float znear, float zfar);
   unsigned int findMaxValueInCounterBuffer();
   void erodeTriangle(vec3d &v1, vec3d &v2, vec3d &v3);
   
@@ -109,6 +109,7 @@ public:
 private:
   //buffers 
   GLuint						_counterBuffId;
+  GLuint                                                _thicknessBuffId;
   GLuint                                		_rboId;
   
   // Shaders
@@ -119,34 +120,28 @@ private:
   Texture3D                                             tex3d;
 
   // Input
-  const TriMesh *_mesh;
-  std::vector<Triangle> _sorted_faces;
-  int _resolution;
-  int _fboWidth;
-  int _fboHeight;
-  int _discretSteps; 
-  unsigned _maximum;
-  unsigned _threshold;
-  
-  
-
-//std::vector<Segment> _raysFromFile;
+  const TriMesh                                         *_mesh;
+  std::vector<Triangle>                                 _sorted_faces;
+  int                                                   _resolution;
+  int                                                   _fboWidth;
+  int                                                   _fboHeight;
+  int                                                   _discretSteps; 
+  unsigned                                              _maximum;
+  unsigned                                              _threshold;
 
   // State
-  bool _computeHistogram;
-  bool _computeMaximumRays;
-  bool _computeGoodRays;
-  //bool _computeRaysFromFile;
+  bool                                                  _computeHistogram;
+  bool                                                  _computeMaximumRays;
+  bool                                                  _computeGoodRays;
 
   // Output
-  std::set<Segment,classcomp> _maximumRays;
-  std::vector< std::set<Segment,classcomp> > _goodRays;
-  std::vector<Segment> _usedPlanes;
-  std::vector<unsigned long long> _histogram;
-  std::vector<Point> _intersectionPoints;
-  std::vector<Triangle> _intersectionTriangles;
-  //  std::vector<Segment> _intersectionSegments;
-  std::vector<vec3d> _vpoints;
+  std::set<Segment,classcomp>                           _maximumRays;
+  std::vector< std::set<Segment,classcomp> >            _goodRays;
+  std::vector<Segment>                                  _usedPlanes;
+  std::vector<unsigned long long>                       _histogram;
+  std::vector<Point>                                    _intersectionPoints;
+  std::vector<Triangle>                                 _intersectionTriangles;
+  std::vector<vec3d>                                    _vpoints;
 
   friend int doInteractive(TriMesh& mesh);
   friend void drawRays();

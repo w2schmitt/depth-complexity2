@@ -183,11 +183,6 @@ void initialize(){
             obj.vlist.push_back(vec3d(-5/5.0,0,0));
             obj.vlist.push_back(vec3d(-4/5.0,-3/5.0,0));
             obj.vlist.push_back(vec3d(4/5.0,-3/5.0,0));
-            
-            
-            
-            
-            
         break;
         
         case OBJ_TRIANGLE:
