@@ -94,10 +94,10 @@ struct TriMesh {
 struct classcomp {
 	bool operator() (const Segment& lhs, const Segment& rhs) const
 	{
-		float seg1[6] = { lhs.a.x, lhs.a.y, lhs.a.z, 
+		double seg1[6] = { lhs.a.x, lhs.a.y, lhs.a.z, 
 						  lhs.b.x, lhs.b.y, lhs.b.z};
 						  
-		float seg2[6] = { rhs.a.x, rhs.a.y, rhs.a.z, 
+		double seg2[6] = { rhs.a.x, rhs.a.y, rhs.a.z, 
 						  rhs.b.x, rhs.b.y, rhs.b.z}; 
 		
 		return std::lexicographical_compare(seg1,seg1+6,seg2,seg2+6);	

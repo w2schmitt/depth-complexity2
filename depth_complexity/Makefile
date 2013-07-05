@@ -12,7 +12,7 @@ ifeq "$(OS)" "Darwin"
 	GLEW_LDFLAGS = -L/opt/local/lib -lGLEW
 else
     ifeq "$(OS)" "Linux"
-	    GLUT_LDFLAGS = -lglut -lGLU -lGL
+	    GLUT_LDFLAGS = -lglut -lGLU -lGL -lX11
     else
 	    GLUT_LDFLAGS = -lglut
     endif
