@@ -96,6 +96,7 @@ private:
   void erodeTriangle(vec3d &v1, vec3d &v2, vec3d &v3);
   
   CImgDisplay dualDisplay;
+  CImgDisplay zDisplay;
   
 //bool readRaysFromFile(std::istream& in);
   

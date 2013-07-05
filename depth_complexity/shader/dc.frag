@@ -33,7 +33,10 @@ void main(void){
    if(coords.x>=0 && coords.y>=0 && coords.x<resolution.x && coords.y<resolution.y ){
      int abidx = (int)imageAtomicIncWrap( counterBuff, coords, 65535 );
      float zval_linear = zLinearization(zval);
-     imageStore(thicknessBuff, coords, vec4(zval_linear, zval_linear, 0.1,0.1));
+     vec4 stored_frag = imageLoad(thicknessBuff, coords);
+     if (zval < stored_frag.x){
+        imageStore(thicknessBuff, coords, vec4(zval_linear, zval_linear, 0.0,0.0));
+     }
    }
   
    //-- Discard fragment so nothing is writen to the framebuffer

@@ -587,7 +587,8 @@ unsigned int RFDepthComplexity3D::findMaxValueInCounterBuffer() {
   const int pixelNumber = _fboWidth * _fboHeight;
   unsigned int colorBuffer[pixelNumber];
   float thicknessBuffer[pixelNumber*2];
-  //float buff[pixelNumber];
+  float buff[pixelNumber];
+  float thick[pixelNumber*2];
   
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, _counterBuffId);
@@ -600,23 +601,37 @@ unsigned int RFDepthComplexity3D::findMaxValueInCounterBuffer() {
   glGetTexImage( GL_TEXTURE_2D, 0 , GL_RG, GL_FLOAT, thicknessBuffer ); 
   glBindTexture(GL_TEXTURE_2D, 0);
   
-   for (int i=0; i<pixelNumber; i++){
-       std::cout << std::fixed << std::setprecision(12) << thicknessBuffer[i] << std::endl;
+  //for (int i=0; i<pixelNumber; i++){
+  //    std::cout << std::fixed << std::setprecision(12) << thicknessBuffer[i] << std::endl;
        //if (thicknessBuffer[i]==0)
        //std::cin.get();
-   }
+   //}
   
   unsigned int max =  *(std::max_element(colorBuffer, colorBuffer + pixelNumber))-1;
   
-  //for (int i=0; i<pixelNumber; i++)
-  //    buff[i] = (colorBuffer[i]-1)/(float)max;
+  for (int i=0; i<pixelNumber; i++)
+      buff[i] = (colorBuffer[i]-1)/(float)max;
   
-  //CImg<float> cb(buff,_fboWidth,_fboHeight,1,1);
+  for (int i=0; i<pixelNumber; i++){
+        thick[i] = thicknessBuffer[2*i];
+        thick[i + pixelNumber]=thicknessBuffer[i];
+  }
   
-  //dualDisplay.resize(_fboWidth, _fboHeight, true);
-  //dualDisplay.display(cb);
+  CImg<float> cb(thick,_fboWidth,_fboHeight,1,1);
+  cb.normalize(0,1);
   
-  //std::cin.get();
+  CImg<float> zb(buff, _fboWidth, _fboHeight, 1, 1);
+  
+  dualDisplay.resize(_fboWidth, _fboHeight, true);
+  dualDisplay.display(zb);
+    
+  zDisplay.resize(_fboWidth, _fboHeight, true);
+  
+  zDisplay.display(cb);
+  
+
+  
+  std::cin.get();
   
   return max+1;
 }
