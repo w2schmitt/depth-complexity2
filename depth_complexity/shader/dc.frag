@@ -35,7 +35,9 @@ void main(void){
      float zval_linear = zLinearization(zval);
      vec4 stored_frag = imageLoad(thicknessBuff, coords);
      if (zval < stored_frag.x){
-        imageStore(thicknessBuff, coords, vec4(zval_linear, zval_linear, 0.0,0.0));
+        imageStore(thicknessBuff, coords, vec4(zval, zval, 0.0,0.0));
+     } else if (zval < stored_frag.y){
+        imageStore(thicknessBuff, coords, vec4(zval, zval, 0.0,0.0));
      }
    }
   

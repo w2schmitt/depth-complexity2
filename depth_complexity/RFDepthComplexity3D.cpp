@@ -65,7 +65,9 @@ RFDepthComplexity3D::RFDepthComplexity3D(int res, int discretSteps):
     _limitRays = 100000;
     _computeRays = false;
     _compute3Dtexture = false;
-    _isRaysLimited = false;    
+    _isRaysLimited = false;   
+    
+    histogram2D = CImg<float>(res,res,1,1,0);
     
     //Set up Shaders
     ShaderMgr shaderMgr; 

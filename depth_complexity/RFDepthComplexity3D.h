@@ -98,6 +98,8 @@ private:
   CImgDisplay dualDisplay;
   CImgDisplay zDisplay;
   
+  CImg<float> histogram2D;
+  
 //bool readRaysFromFile(std::istream& in);
   
 public:

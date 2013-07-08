@@ -20,7 +20,7 @@ void main(void){
 
    if(coords.x>=0 && coords.y>=0 && coords.x<resolution.x && coords.y<resolution.y ){
      imageStore(counterBuff, coords, uvec4(1));
-     imageStore(thicknessBuff, coords, vec4(0,0,0,0));
+     imageStore(thicknessBuff, coords, vec4(999,999,0,0));
    }
   
    //-- Discard fragment so nothing is writen to the framebuffer
