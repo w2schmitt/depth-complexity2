@@ -443,6 +443,7 @@ unsigned int RFDepthComplexity3D::renderScene(vec3d point){
     // Disable Shaders
     unsigned int max = findMaxValueInCounterBuffer()-1;
     findMaximumRaysAndHistogram(point, forward, side, pos);
+    computeThickness();
            
     glUseProgram(0);
     
@@ -473,6 +474,18 @@ Affine3f getModelview(){
     return Affine3f(Matrix4f(m));
 }
 
+void RFDepthComplexity3D::computeThickness(){
+    const int pixelNumber = _fboWidth * _fboHeight;
+    float buff[pixelNumber];
+    float thick[pixelNumber*2];
+    float thicknessBuffer[pixelNumber*2];
+  
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, _thicknessBuffId);
+    glGetTexImage( GL_TEXTURE_2D, 0 , GL_RG, GL_FLOAT, thicknessBuffer ); 
+    glBindTexture(GL_TEXTURE_2D, 0);
+  
+}
 
 
 
@@ -589,8 +602,7 @@ unsigned int RFDepthComplexity3D::findMaxValueInCounterBuffer() {
   const int pixelNumber = _fboWidth * _fboHeight;
   unsigned int colorBuffer[pixelNumber];
   float thicknessBuffer[pixelNumber*2];
-  float buff[pixelNumber];
-  float thick[pixelNumber*2];
+
   
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, _counterBuffId);
@@ -598,11 +610,7 @@ unsigned int RFDepthComplexity3D::findMaxValueInCounterBuffer() {
   glBindTexture(GL_TEXTURE_2D, 0);
   
     
-  glActiveTexture(GL_TEXTURE1);
-  glBindTexture(GL_TEXTURE_2D, _thicknessBuffId);
-  glGetTexImage( GL_TEXTURE_2D, 0 , GL_RG, GL_FLOAT, thicknessBuffer ); 
-  glBindTexture(GL_TEXTURE_2D, 0);
-  
+ 
   //for (int i=0; i<pixelNumber; i++){
   //    std::cout << std::fixed << std::setprecision(12) << thicknessBuffer[i] << std::endl;
        //if (thicknessBuffer[i]==0)
@@ -611,6 +619,9 @@ unsigned int RFDepthComplexity3D::findMaxValueInCounterBuffer() {
   
   unsigned int max =  *(std::max_element(colorBuffer, colorBuffer + pixelNumber))-1;
   
+  for (int i=0; i<pixelNumber; i++)
+      std::cout << std::fixed << std::setprecision(12) << thicknessBuffer[i] << std::endl;
+  /*
   for (int i=0; i<pixelNumber; i++)
       buff[i] = (colorBuffer[i]-1)/(float)max;
   
@@ -631,11 +642,12 @@ unsigned int RFDepthComplexity3D::findMaxValueInCounterBuffer() {
   
   zDisplay.display(cb);
   
+  */
 
   
-  std::cin.get();
+  //std::cin.get();
   
-  return max+1;
+  return max-1;
 }
 
 

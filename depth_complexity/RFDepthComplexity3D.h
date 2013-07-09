@@ -87,6 +87,7 @@ private:
   bool intersectTriangleSegment(const Segment& segment, const Triangle& tri, Point *pnt);
   bool intersectPlaneSegment(const vec4d& plane, const vec3d& p0, const vec3d& p1, vec3d *pt);
   vec4d makePlane(const vec3d& a, const vec3d& b, const vec3d& c);
+  void computeThickness();
 
   void initTextureCounter();
   unsigned int renderScene(vec3d point);
