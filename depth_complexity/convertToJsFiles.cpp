@@ -57,7 +57,7 @@ Hist                            findHist(int index);
 // DEFINITIONS ----------------------------->
 int main(int argc, char** argv) {
 
-    openFiles ("Histograms//");    
+    openFiles ("thickness//");    
     std::sort (histlist.begin(), histlist.end(), compIndexFunction);  
     
     //allocate matrix size

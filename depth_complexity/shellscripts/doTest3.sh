@@ -15,7 +15,7 @@ do
     DSTEPS=$STEP_LIMIT
     ITH=1
     #BEST=0
-    ./${EXEC_NAME} -f ${MODEL_DIR}/${NAME} -dsteps ${DSTEPS} -res ${RESOLUTION} -fh "hist.txt" -fr "bestRays.off" -it 1 > info.txt
+    ./${EXEC_NAME} -f ${MODEL_DIR}/${NAME} -dsteps ${DSTEPS} -res ${RESOLUTION} -fth "thick_hist.txt" -fh "hist.txt" -fr "bestRays.off" -it 1 > info.txt
 
     #until [ $DSTEPS -gt $STEP_LIMIT ]; do
     #    echo "Current DSTEPS is ${DSTEPS}"
@@ -26,7 +26,8 @@ do
     #    fi
     #    ITH=$((ITH-(ITH/5)))
     mkdir -p  ${CURR_DIR}/${DSTEPS}
-    mv hist.txt bestRays.off info.txt ${CURR_DIR}/${DSTEPS}
+    mv hist.txt thick_hist.txt bestRays.off info.txt ${CURR_DIR}/${DSTEPS}
+    mv $m analysed/$NAME
     #    let DSTEPS+=10
     #done
     #echo "BEST: ${BEST}" > ${CURR_DIR}/comp.txt

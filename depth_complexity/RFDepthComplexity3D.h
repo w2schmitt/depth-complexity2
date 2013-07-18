@@ -63,12 +63,14 @@ public:
   const std::vector<Point> &intersectionPoints() const { return _intersectionPoints; }
   const std::vector<Triangle> &intersectionTriangles() const { return _intersectionTriangles;}
   const std::vector<vec3d> &visualizationPoints() const { return _vpoints;}
+  const std::vector<Segment> &cameraRays() const { return _cameraRays;}
   unsigned getThreshold() { return _threshold; }
   GLuint getTextureID() { return tex3d.texture3DId();}
   void setShaderTex3d(){ tex3d.setShaderTex3d(_maximum); }
   
   // 
   void writeHistogram(std::ostream& out);
+  void writeThicknessHistogram(std::ostream& out);
   void writeRays(std::ostream& out);
   void writeRays(std::ostream& out, const std::set<Segment,classcomp> & _rays);
   void writeRaysSpherical(std::ostream& out, int k);
@@ -99,7 +101,7 @@ private:
   CImgDisplay dualDisplay;
   CImgDisplay zDisplay;
   
-  CImg<float> histogram2D;
+  
   
 //bool readRaysFromFile(std::istream& in);
   
@@ -146,6 +148,11 @@ private:
   std::vector<Point>                                    _intersectionPoints;
   std::vector<Triangle>                                 _intersectionTriangles;
   std::vector<vec3d>                                    _vpoints;
+  std::vector<Segment>                                  _cameraRays;
+  
+  float                                                 _nIntervals;
+  std::vector<long long unsigned int>                   _histogramThickness;
+  CImg<float>                                           _histogram2D;
 
   friend int doInteractive(TriMesh& mesh);
   friend void drawRays();

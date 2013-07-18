@@ -33,7 +33,7 @@ void                            normalize();
 
 // DEFINITIONS ----------------------------->
 int main(int argc, char** argv) {
-    openFiles ("Histograms//");    
+    openFiles ("thickness//");    
     std::sort (histlist.begin(), histlist.end(), compIndexFunction); 
     
     

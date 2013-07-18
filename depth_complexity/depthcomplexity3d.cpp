@@ -253,6 +253,20 @@ void drawMesh(const TriMesh& mesh, const vec3f& dir)
     
 void drawRays()
 {
+    /*
+    const std::vector<Segment> &s = dc3d->cameraRays();
+    
+    if (s.size() > 0){
+        glLineWidth(2.5);
+        glBegin(GL_LINES);
+        glColor3f(0.5, 0.0, 0.5);
+        for (unsigned int i=0; i<s.size(); i++){
+            glVertex3f(s[i].a.x, s[i].a.y, s[i].a.z);
+            glVertex3f(s[i].b.x, s[i].b.y, s[i].b.z);
+        }
+        glEnd();
+    }
+    /**/ 
     
     if (showMaxRays){
         const std::set<Segment,classcomp>& rays = dc3d->maximumRays();
@@ -796,8 +810,11 @@ int doInteractive(TriMesh& mesh)
         
         #ifdef COMPUTE_OFFLINE
             //std::cout<<"OFFLINE RENDERING --" << std::endl;
+            //std::cout << "before" << std::endl;
             recompute((void*)&mesh);
+            //std::cout << "finalize" << std::endl;
             break;
+            
         #endif
        
         /*camera.update();	
@@ -855,7 +872,7 @@ std::string getExtension(const std::string& filename)
 #ifndef COMPUTE_OFFLINE
 int main(int argc, char **argv)
 {
-    std::cout << "*----- ONLINE RENDERING -----*" << std::endl;
+    std::clog << "*----- ONLINE RENDERING -----*" << std::endl;
     if (argc == 1) {
         std::cerr << "[ERROR] Missing Input File!" << std::endl;
         return 1;
@@ -907,6 +924,7 @@ int main (int argc, char **argv) {
   const int discretSteps = cmd_option("-dsteps", 50, "Discrete steps.");
   const char *filenameParallelData = cmd_option("-fpr", "", "Save a *.txt containing rays informaton");
   const char *filenameHistogram = cmd_option("-fh", "", "Save a *.txt file with histogram information");
+  const char *filenameThicknessHistogram = cmd_option("-fth", "", "Save a *.txt file with thickness histogram information");
   //const char *filenameRays = cmd_option("-fr", "", "Save a *.off file with rays in ");
   const char *filenameRaysSpherical = cmd_option("-frs", "", "Save a *.txt file with rays in spherical coordinates");
   const int sphericalThreshold = cmd_option("-k",  0, "Spherical coordinates are calculated for rays with DC between MDC-k and MDC");
@@ -967,6 +985,17 @@ int main (int argc, char **argv) {
         std::ofstream fileHistogram(filenameHistogram);
         dc3d->writeHistogram(fileHistogram);
         fileHistogram.close();
+      } else throw "Histogram's file should be *.txt!";
+    }
+    
+    
+     // Saving Thickness Histogram file
+    if (strcmp(filenameThicknessHistogram, "")!=0) {
+      std::string extTxt = getExtension(filenameThicknessHistogram);
+      if (extTxt == "txt" || extTxt == "TXT") {
+        std::ofstream fileThicknessHistogram(filenameThicknessHistogram);
+        dc3d->writeThicknessHistogram(fileThicknessHistogram);
+        fileThicknessHistogram.close();
       } else throw "Histogram's file should be *.txt!";
     }
 
