@@ -12,8 +12,10 @@
 #include <list>
 #include <set>
 
+
+
 #include <GL/glew.h>
-#include <GL/glfw.h>
+#include <GLFW/glfw3.h>
 #include <AntTweakBar.h>
 #ifdef __APPLE__
 #include <GLUT/glut.h>
@@ -40,8 +42,11 @@ bool showGoodRays = false;
 bool thresholdRays = false;
 bool highlightTris = false;
 bool discretePts = true;
+bool showScale = false;
 vec4f sphereColor(0.0, 1.0, 0.0, 1.0);
 unsigned int showRayIndex = 0;
+unsigned int showRayThicknessIndex = 0;
+GLFWwindow* window;
 
 // for 3d textue display
 CImgDisplay main_disp;
@@ -106,7 +111,7 @@ static int winWidth, winHeight;
 
 
 // Callback function called by GLFW when window size changes
-void GLFWCALL WindowSizeCB(int width, int height)
+void WindowSizeCB(GLFWwindow* w, int width, int height)
 {
     //std::cout << width << " " << height << std::endl;
     winWidth = width;
@@ -250,6 +255,8 @@ void drawMesh(const TriMesh& mesh, const vec3f& dir)
 //    }
 //    glEnd();
 //}
+
+unsigned rayIndexT = 0;
     
 void drawRays()
 {
@@ -267,25 +274,32 @@ void drawRays()
         glEnd();
     }
     /**/ 
+
+
     
     if (showMaxRays){
         const std::set<Segment,classcomp>& rays = dc3d->maximumRays();
         std::set<Segment,classcomp>::const_iterator it = rays.begin();
         if (rays.size()>0){
-            //std::cout << "desenhando..." << std::endl;
             // draw rays
             glLineWidth(2.5);
             glBegin(GL_LINES);
             glColor3f(0.5, 0.0, 0.5);
               for (; it!=rays.end(); ++it) {
                 const Segment &r = *it;
-                glVertex3f(r.a.x, r.a.y, r.a.z);
-                glVertex3f(r.b.x, r.b.y, r.b.z);
+                
+                //glVertex3f(0,0,0);
+                //glVertex3f(50,50,50);
+
+                glVertex3f(100*r.a.x, 100*r.a.y, 100*r.a.z);
+                glVertex3f(100*r.b.x, 100*r.b.y, 100*r.b.z);
               }
             glEnd();
         }
+    }
         
         // HIGHLIGHT TRIANGLES 
+        /*
         if (highlightTris){
             const std::vector<Triangle> &interTris = dc3d->intersectionTriangles();
             for  (std::vector<Triangle>::const_iterator it=interTris.begin(); it!=interTris.end(); ++it){ // interTris.size()>0){
@@ -329,10 +343,25 @@ void drawRays()
             }
         }
     }
+    */
+
+    
+    const std::vector<Segment>& thicknessRays = dc3d->thicknessRays(showRayThicknessIndex);
+    std::vector<Segment>::const_iterator it = thicknessRays.begin();
+    
+    glBegin(GL_LINES);
+    glColor3f(1, 0, 0);
+        for (; it!=thicknessRays.end(); ++it) {
+          const Segment &r = *it;
+          glVertex3f(r.a.x, r.a.y, r.a.z);
+          glVertex3f(r.b.x, r.b.y, r.b.z);
+        }
+    glEnd();
 
     
     if (showGoodRays){
         for(unsigned i = dc3d->_threshold ; i < dc3d->_maximum ; ++i) {
+
           const std::set<Segment,classcomp>& gRays = dc3d->goodRays(i);
           std::set<Segment,classcomp>::const_iterator it = gRays.begin();
           // draw rays
@@ -355,12 +384,31 @@ void drawRays()
           //glLineWidth( (i - dc3d->_threshold)*3 + 1 );
           glBegin(GL_LINES);
           glColor3f(color.x, color.y, color.z);
-            for (; it!=gRays.end(); ++it) {
-              const Segment &r = *it;
-              glVertex3f(r.a.x, r.a.y, r.a.z);
-              glVertex3f(r.b.x, r.b.y, r.b.z);
-            }
+          unsigned value=0; 
+          std::vector<Point> points;
+          for (; it!=gRays.end(); ++it) {
+                if (value++ == rayIndexT){                    
+                    const Segment &r = *it;
+                    dc3d->processMeshSegment(r, &points);
+                    //if (points.size() != dc3d->_threshold){
+                        glVertex3f(r.a.x, r.a.y, r.a.z);
+                        glVertex3f(r.b.x, r.b.y, r.b.z);
+                     //   std::cout << points.size() << std::endl;
+                   // }
+                }
+          }
           glEnd();
+          for (unsigned int t = 0; t < points.size(); t++){
+            double inc = (double)t/(double)points.size();
+            glColor3f(1.f-inc,0.f+inc,0);
+            glPointSize(20.f);
+              glBegin(GL_POINTS);
+              glVertex3f(points[t].x, points[t].y, points[t].z);
+              printf("[%f, %f, %f]\n",points[t].x, points[t].y, points[t].z);
+              glEnd();
+          }
+          std::cout << std::endl;
+          points.clear();
           if (thresholdRays) break;
         }
     }
@@ -424,7 +472,7 @@ void setupCamera(Camera& camera)
     glViewport(0, 0, winWidth, winHeight);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    camera.setPerspec(50, (double)winWidth/winHeight, 0.1, 20000);
+    camera.setPerspec(50, (double)winWidth/winHeight, 0.01, 500);
    // gluPerspective(50, (double)winWidth/winHeight, 0.1, 1000);
 
     glMatrixMode(GL_MODELVIEW);
@@ -552,19 +600,26 @@ void recompute(void *data)
     std::cout << std::endl;
     toc("Depth Complexity");
     //}
+    
+    // get 2D histogram
+    //dc3d->display2dHistogram();
+    
       
     // create color scale
     unsigned int val = dc3d->maximum();
-    cscale = color_scale(40,500); 
-
-    float color[3] = {0.0, 0.0, 0.0};
-    cscale.draw_text(3, 2  , "%d", color, 0, 1, 18, val*0/4);
-    cscale.draw_text(3, 127, "%d", color, 0, 1, 18, val*1/4);
-    cscale.draw_text(3, 252, "%d", color, 0, 1, 18, val*2/4);
-    cscale.draw_text(3, 377, "%d", color, 0, 1, 18, val*3/4);
-    cscale.draw_text(3, 482, "%d", color, 0, 1, 18, val*4/4);
     
-    main_disp.display(cscale);
+    if (showScale){
+        cscale = color_scale(40,500); 
+
+        float color[3] = {0.0, 0.0, 0.0};
+        cscale.draw_text(3, 2  , "%d", color, 0, 1, 18, val*0/4);
+        cscale.draw_text(3, 127, "%d", color, 0, 1, 18, val*1/4);
+        cscale.draw_text(3, 252, "%d", color, 0, 1, 18, val*2/4);
+        cscale.draw_text(3, 377, "%d", color, 0, 1, 18, val*3/4);
+        cscale.draw_text(3, 482, "%d", color, 0, 1, 18, val*4/4);
+
+        main_disp.display(cscale);
+    }
     
     
     Tex3DTweakBar();
@@ -617,22 +672,22 @@ drawBackground(const vec3f& top, const vec3f& mid, const vec3f& bot)
 Camera camera;
 
 //______________ MOUSE
-int mDx = 0;
-int mDy = 0;
+double mDx = 0;
+double mDy = 0;
 bool mclicked;
 int mbutton;
 
 //_______________________________________________________________ Called when a mouse button is pressed or released
-void GLFWCALL mouse_click(int button, int action){
+void mouse_click(GLFWwindow* w,int button, int action, int mod){
 	if(TwEventMouseButtonGLFW(button,action))
 		return;
-	glfwGetMousePos(&mDx,&mDy);
+	glfwGetCursorPos(window, &mDx,&mDy);
 	mclicked=action==GLFW_PRESS;
 	mbutton=button;
 }
 
 //_______________________________________________________________ Called when a mouse move and a button is pressed
-void GLFWCALL mouse_motion(int x, int y){
+void mouse_motion(GLFWwindow* w, double x, double y){
 	if(TwEventMousePosGLFW(x,y))
 		return;
 	if( mclicked ){
@@ -673,20 +728,27 @@ void GLFWCALL mouse_motion(int x, int y){
 }
 
 void initializeGraphics(){
-    
     //std::cout << dc3d << std::endl;
     glfwInit();
     std::atexit(glfwTerminate);
     
-    GLFWvidmode mode;
+    //GLFWvidmode mode;
     
-    glfwGetDesktopMode(&mode);
-    if( !glfwOpenWindow(1024, 768, mode.RedBits, mode.GreenBits, mode.BlueBits, 
-                        0, 16, 0, GLFW_WINDOW) )
+    //glfwGetDesktopMode(&mode);
+#ifdef COMPUTE_OFFLINE
+    glfwWindowHint(GLFW_VISIBLE, GL_FALSE);
+#endif
+    window = glfwCreateWindow(1024, 768, "Shape Retrieval", NULL, NULL);
+    
+    if(!window)
     {
         std::cerr << "failed to open window!" << std::endl;
+        glfwTerminate();
         return;
     }
+    
+    /* Make the window's context current */
+    glfwMakeContextCurrent(window);
     
     // initialize GLEW
     GLenum glewStatus = glewInit();
@@ -703,9 +765,9 @@ void initializeGraphics(){
  
     std::clog << std::endl << "=== DEBUG ===" << std::endl;
 
-    glfwEnable(GLFW_MOUSE_CURSOR);
-    glfwEnable(GLFW_KEY_REPEAT);
-    glfwSetWindowTitle("Plane-Triangle intersection test");
+    //glfwEnable(GLFW_MOUSE_CURSOR);
+    //glfwEnable(GLFW_KEY_REPEAT);
+    //glfwSetWindowTitle("Plane-Triangle intersection test");
 
 	
     // Initialize AntTweakBar
@@ -714,14 +776,16 @@ void initializeGraphics(){
         std::cerr << "AntTweakBar initialization failed: " << TwGetLastError() << std::endl;
         return;
     }
+    TwWindowSize(1024, 768);
+    
     // Set GLFW event callbacks
-    glfwSetWindowSizeCallback(WindowSizeCB);
+    glfwSetWindowSizeCallback(window, WindowSizeCB);
 
-    glfwSetMouseButtonCallback(mouse_click);
-    glfwSetMousePosCallback(mouse_motion);
-    glfwSetMouseWheelCallback((GLFWmousewheelfun)TwEventMouseWheelGLFW);
-    glfwSetKeyCallback((GLFWkeyfun)TwEventKeyGLFW);
-    glfwSetCharCallback((GLFWcharfun)TwEventCharGLFW);
+    glfwSetMouseButtonCallback(window,mouse_click);
+    glfwSetCursorPosCallback(window,mouse_motion);
+    glfwSetScrollCallback(window,(GLFWscrollfun)TwEventMouseWheelGLFW);
+    glfwSetKeyCallback(window, (GLFWkeyfun)TwEventKeyGLFW);
+    glfwSetCharCallback(window, (GLFWcharfun)TwEventCharGLFW);
     
 }
 
@@ -739,17 +803,6 @@ int doInteractive(TriMesh& mesh)
     vec4f objdiff(0.55, 0.5, 0, 0.5), objspec(.75, .75, .75, .2);
     GLfloat shine = 50;
     bool showObj = true;
-    
-  
-    
-//#ifdef USE_RANDOM_DC3D
-    
-//#else
-    //dc3d = new RFDepthComplexity3D(512, 10);
-//#endif
-    //dc3d->setComputeMaximumRays(true);
-    //dc3d->setComputeHistogram(true);
-    //dc3d->setThreshold(10);
     
     TwAddVarRW(bar, "showPlanes", TW_TYPE_BOOLCPP, &showPlanes, " label='show discret. planes' ");
 
@@ -769,8 +822,13 @@ int doInteractive(TriMesh& mesh)
     TwAddVarRW(bar, "Show Max", TW_TYPE_BOOLCPP, &showMaxRays, " group='Rays' label='Show Max'");
     TwAddVarRW(bar, "Show Good", TW_TYPE_BOOLCPP, &showGoodRays, " group='Rays' label='Show Good'");
     TwAddVarRW(bar, "Threshold Rays", TW_TYPE_BOOLCPP, &thresholdRays, " group='Rays' label='Threshold Rays'");
+    TwAddVarRW(bar, "Good Rays", TW_TYPE_UINT32, &rayIndexT, " group='Rays' label='Good rays Index'");
+
+    
     TwAddVarRW(bar, "highlight Tris", TW_TYPE_BOOLCPP, &highlightTris, " group='Rays' label='Highlight Tris'");
     
+    TwAddVarRW(bar, "thickness0", TW_TYPE_BOOLCPP, &dc3d->_computeThicknessFlag, "group='Thickness' label='Compute Thickness'");
+    TwAddVarRW(bar, "thickness1", TW_TYPE_UINT32, &showRayThicknessIndex, " min=0 max=999 group='Thickness' label='thickness index'");    
 
     TwAddVarRW(bar, "top", TW_TYPE_COLOR3F, &top.x, " group='background' ");
     TwAddVarRW(bar, "mid", TW_TYPE_COLOR3F, &mid.x, " group='background' ");
@@ -800,8 +858,7 @@ int doInteractive(TriMesh& mesh)
     //cam.target = aabb.center();
     //cam.up = vec3f(0, 1, 0);
     //cam.pos = cam.target + vec3f(0, 0, 2*aabb.extents().z);
-
-    while( glfwGetWindowParam(GLFW_OPENED) && !glfwGetKey(GLFW_KEY_ESC) ) {
+    while( !glfwWindowShouldClose(window) && !glfwGetKey(window,GLFW_KEY_ESCAPE) ) {
         glClear( GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT );
 
         drawBackground(top, mid, bot);
@@ -851,13 +908,14 @@ int doInteractive(TriMesh& mesh)
         TwDraw();
 
         // Present frame buffer
-        glfwSwapBuffers();
+        glfwSwapBuffers(window);
+        glfwPollEvents();
         
         
     }
                 
 
-
+    glfwTerminate(); 
     return 0;
 }
 
@@ -918,6 +976,7 @@ int main (int argc, char **argv) {
   cmd_usage("Program to find depth complexity out (offline mode)");
   
   const char *filename = cmd_option("-f", "models/suzanne.obj", "Model in OBJ or OFF format.");
+  const char *file_basename = cmd_option("-fb", "hist2D", "the basename of the filename");
   //const int fboWidth  = cmd_option("-fboWidth",  512, "Framebuffer width.");
   //const int fboHeight = cmd_option("-fboHeight", 512, "Framebuffer height.");
   const int resolution = cmd_option("-res", 512, "Framebuffer Resolution.");  
@@ -925,6 +984,7 @@ int main (int argc, char **argv) {
   const char *filenameParallelData = cmd_option("-fpr", "", "Save a *.txt containing rays informaton");
   const char *filenameHistogram = cmd_option("-fh", "", "Save a *.txt file with histogram information");
   const char *filenameThicknessHistogram = cmd_option("-fth", "", "Save a *.txt file with thickness histogram information");
+  const char *filename2DHistogram = cmd_option("-f2dh", "", "Save a *.js file with a 2D histogram");
   //const char *filenameRays = cmd_option("-fr", "", "Save a *.off file with rays in ");
   const char *filenameRaysSpherical = cmd_option("-frs", "", "Save a *.txt file with rays in spherical coordinates");
   const int sphericalThreshold = cmd_option("-k",  0, "Spherical coordinates are calculated for rays with DC between MDC-k and MDC");
@@ -956,6 +1016,7 @@ int main (int argc, char **argv) {
     //toc("Loading Mesh");
 
     // TODO(jpocom) Look for another way to call glewInit() and work in offscreen.
+    // found and working =)
     
     
     std::cout << "*---- RENDERING OFFLINE ----*" << std::endl;
@@ -981,9 +1042,9 @@ int main (int argc, char **argv) {
     // Saving Histogram file
     if (strcmp(filenameHistogram, "")!=0) {
       std::string extTxt = getExtension(filenameHistogram);
-      if (extTxt == "txt" || extTxt == "TXT") {
+      if (extTxt == "js" || extTxt == "JS") {
         std::ofstream fileHistogram(filenameHistogram);
-        dc3d->writeHistogram(fileHistogram);
+        dc3d->writeHistogram(fileHistogram, file_basename);
         fileHistogram.close();
       } else throw "Histogram's file should be *.txt!";
     }
@@ -992,11 +1053,23 @@ int main (int argc, char **argv) {
      // Saving Thickness Histogram file
     if (strcmp(filenameThicknessHistogram, "")!=0) {
       std::string extTxt = getExtension(filenameThicknessHistogram);
-      if (extTxt == "txt" || extTxt == "TXT") {
+      if (extTxt == "js" || extTxt == "JS") {
         std::ofstream fileThicknessHistogram(filenameThicknessHistogram);
-        dc3d->writeThicknessHistogram(fileThicknessHistogram);
+        dc3d->writeThicknessHistogram(fileThicknessHistogram,file_basename);
         fileThicknessHistogram.close();
       } else throw "Histogram's file should be *.txt!";
+    }
+
+    // Saving 2D Histograma JS
+    if (strcmp(filename2DHistogram, "")!=0) {
+      //std::string extTxt = getExtension(filename2DHistogram);
+      //if (extTxt == "js" || extTxt == "JS") {
+        std::string basename(filename2DHistogram);
+        basename+=".js";
+        std::ofstream file2DHistogram(basename.c_str());
+        dc3d->write2dHistogram(file2DHistogram, file_basename);
+        file2DHistogram.close();
+      //} else throw "Histogram's file should be *.js!";
     }
 
     // Saving Rays file

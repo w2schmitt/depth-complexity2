@@ -54,8 +54,14 @@ loadOFFMesh(std::istream& in){
     //t.ca = vec4d(0.057f, 0.25f, 0.42f, 0.35f);
     //t.cb = vec4d(0.057f, 0.25f, 0.42f, 0.35f);
     //t.cc = vec4d(0.057f, 0.25f, 0.42f, 0.35f);
-    
-    mesh.faces.push_back(t);
+    if (i > 0){
+      Triangle ant = mesh.faces.back();
+      if (ant.a != t.a || ant.b != t.b || ant.c != t.c){
+        mesh.faces.push_back(t);
+      }
+    } else {
+      mesh.faces.push_back(t);  
+    }
 
     for (int j=3; j<sz; ++j) {
       //std::clog << "triangulating face " << i << std::endl;

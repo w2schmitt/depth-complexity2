@@ -1,7 +1,7 @@
 OS=$(shell uname -s)
 
-GLFW_CFLAGS = $(shell pkg-config --cflags libglfw)
-GLFW_LDFLAGS = $(shell pkg-config --libs libglfw)
+GLFW_CFLAGS = $(shell pkg-config glfw3 --static --cflags --libs)
+GLFW_LDFLAGS = $(shell pkg-config glfw3 --static --cflags --libs)#-lXxf86vm -lglfw3 # $(shell pkg-config --libs glfw3)
 
 ATB_CFLAGS = 
 ATB_LDFLAGS = -lAntTweakBar
@@ -19,7 +19,7 @@ else
 	GLEW_LDFLAGS = -lGLEW
 endif
 
-CPPFLAGS = $(GLFW_CFLAGS) $(ATB_CFLAGS) $(GLEW_CFLAGS) -O3 #-Wall -O3 #-Werror -O3
+CPPFLAGS =  $(ATB_CFLAGS) $(GLEW_CFLAGS) $(GLFW_CFLAGS) -O3 #-Wall -O3 #-Werror -O3
 #CPPFLAGS = $(GLFW_CFLAGS) $(ATB_CFLAGS) $(GLEW_CFLAGS) -Wall -Werror -g
 LDFLAGS = $(ATB_LDFLAGS) $(GLEW_LDFLAGS) #-Wall -Werror
 #LDFLAGS = $(ATB_LDFLAGS) $(GLEW_LDFLAGS) -Wall -Werror -g
@@ -33,13 +33,13 @@ LDFLAGS = $(ATB_LDFLAGS) $(GLEW_LDFLAGS) #-Wall -Werror
 #all : depthcomplexity2d depthcomplexity3d_offline depthcomplexity3d \
       newrandomdepthcomplexity3d mergeOFF
 
-all : newrandomdepthcomplexity3d depthcomplexity3d_offline generateCSV convertJS #thickness_2d #hist_matching distanceMatrix convertJS convertCla generateCSV mergeOFF
+all : newrandomdepthcomplexity3d depthcomplexity3d_offline distanceMatrix2D generateCSV convertJS #thickness_2d #hist_matching distanceMatrix convertJS convertCla generateCSV mergeOFF
 	
 	
 clean:
 	rm -f *.o camera/*.o *.bin depthcomplexity3d hist_matching thickness_2d depthcomplexity2d main_joao \
 	test_intersection test depthcomplexity3d_offline randomdepthcomplexity3d \
-	randomdepthcomplexity3d_offline newrandomdepthcomplexity3d generateCSV sphereray mergeOFF distanceMatrix convertJS convertCla
+	randomdepthcomplexity3d_offline newrandomdepthcomplexity3d generateCSV sphereray mergeOFF distanceMatrix2D distanceMatrix convertJS convertCla
 	
 hard_clean: clean
 	rm -f *.off hist*.txt *.svg toPlot.txt
@@ -54,7 +54,7 @@ hard_clean: clean
 depthcomplexity3d_offline: \
 	RFDepthComplexity3D.o camera/Camera.o camera/float3.o util.o ShaderMgr.o Texture3D.o timer.o flags.o
 	g++ -g -o $@ depthcomplexity3d.cpp -D "COMPUTE_OFFLINE" $^ $(LDFLAGS) \
-	$(GLFW_LDFLAGS) $(GLUT_LDFLAGS) $(GLEW_CFLAGS) -lpthread
+	 $(GLUT_LDFLAGS) $(GLFW_LDFLAGS) $(GLEW_CFLAGS) -lpthread
 
 thickness_2d: thickness_2d.o
 	g++ -g -o $@ $^ $(LDFLAGS) $(GLUT_LDFLAGS)
@@ -63,6 +63,9 @@ hist_matching: HistMatching.o
 	g++ -g -o $@ $^ $(LDFLAGS) #(GLUT_LDFLAGS)
 	
 distanceMatrix: DistanceMatrix.o
+	g++ -g -o  $@ $^ $(LDFLAGS)
+
+distanceMatrix2D: DistanceMatrix2D.o
 	g++ -g -o  $@ $^ $(LDFLAGS)
 	
 convertJS: convertToJsFiles.o
@@ -88,7 +91,7 @@ generateCSV: generateCsv.o
 newrandomdepthcomplexity3d: \
 	RFDepthComplexity3D.o camera/Camera.o camera/float3.o util.o ShaderMgr.o Texture3D.o timer.o flags.o
 	g++ -g -o $@ depthcomplexity3d.cpp $^ $(LDFLAGS) \
-	$(GLFW_LDFLAGS) $(GLUT_LDFLAGS) $(GLEW_CFLAGS) -lpthread
+	 $(GLUT_LDFLAGS) $(GLFW_LDFLAGS) $(GLEW_CFLAGS) -lpthread
 	
 #randomdepthcomplexity3d_offline: dc_3d_random.o flags.o util.o timer.o flags.o
 #	g++ -g -o $@ depthcomplexity3d_offline.cpp -D "USE_RANDOM_DC3D" $^ \

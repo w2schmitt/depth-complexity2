@@ -54,6 +54,7 @@ public:
   void setThreshold(unsigned threshold);
   void setDiscreteSteps(int _dc);
   void setResolution(int _res);
+  void setComputeThickness(bool comp_thickness);
   
   // gets
   unsigned maximum() const { return _maximum; }
@@ -64,20 +65,26 @@ public:
   const std::vector<Triangle> &intersectionTriangles() const { return _intersectionTriangles;}
   const std::vector<vec3d> &visualizationPoints() const { return _vpoints;}
   const std::vector<Segment> &cameraRays() const { return _cameraRays;}
+  const std::vector<Segment> &thicknessRays(int index) const { return _raysThickness[index]; }
   unsigned getThreshold() { return _threshold; }
   GLuint getTextureID() { return tex3d.texture3DId();}
   void setShaderTex3d(){ tex3d.setShaderTex3d(_maximum); }
+  void writeHistogram2DValues(std::ostream& out);
   
   // 
-  void writeHistogram(std::ostream& out);
-  void writeThicknessHistogram(std::ostream& out);
+  void writeHistogram(std::ostream& out, std::string varname);
+  void writeThicknessHistogram(std::ostream& out, std::string varname);
+  void save2dHistogram();
   void writeRays(std::ostream& out);
   void writeRays(std::ostream& out, const std::set<Segment,classcomp> & _rays);
   void writeRaysSpherical(std::ostream& out, int k);
   void writeMaximumRays(std::ostream& out);
   void writeGoodRays(std::ostream& out);
+  void write2dHistogram(std::ostream& out, std::string varname);
   void writeRays(std::ostream& out, const std::set<Segment,classcomp> & _rays, int dc);
   void findMaximumRaysAndHistogram(vec3d initPos, vec3d f, vec3d s, vec3d p);
+  void compute2DHistogram(vec3d initPos, vec3d f, vec3d s, vec3d p);
+  void computeThickness(vec3d initPos, vec3d f, vec3d s, vec3d p);
   void insertRays(unsigned int tempMax, Segment seg);
   
 private:
@@ -89,16 +96,20 @@ private:
   bool intersectTriangleSegment(const Segment& segment, const Triangle& tri, Point *pnt);
   bool intersectPlaneSegment(const vec4d& plane, const vec3d& p0, const vec3d& p1, vec3d *pt);
   vec4d makePlane(const vec3d& a, const vec3d& b, const vec3d& c);
-  void computeThickness();
+  
 
   void initTextureCounter();
-  unsigned int renderScene(vec3d point);
+  unsigned int renderScene(vec3d point, float distance);
   void setShaderClearCounterBuffer();
   void setShaderCountDC(float znear, float zfar);
   unsigned int findMaxValueInCounterBuffer();
   void erodeTriangle(vec3d &v1, vec3d &v2, vec3d &v3);
+
+  
+  void displayHistogram2D();
   
   CImgDisplay dualDisplay;
+  CImgDisplay histogram2D_display;
   CImgDisplay zDisplay;
   
   
@@ -111,15 +122,16 @@ public:
     bool                                                _computeRays;
     bool                                                _compute3Dtexture;
     bool                                                _isRaysLimited;
+    bool                                                _computeThicknessFlag;
     
 private:
   //buffers 
-  GLuint						_counterBuffId;
+  GLuint						                                    _counterBuffId;
   GLuint                                                _thicknessBuffId;
-  GLuint                                		_rboId;
+  GLuint                                		            _rboId;
   
   // Shaders
-  GLuint 						_shaderclearBuffer;
+  GLuint 						                                    _shaderclearBuffer;
   GLuint                                                _shaderCountDC;
   
   // texture 3D
@@ -144,15 +156,16 @@ private:
   std::set<Segment,classcomp>                           _maximumRays;
   std::vector< std::set<Segment,classcomp> >            _goodRays;
   std::vector<Segment>                                  _usedPlanes;
-  std::vector<unsigned long long>                       _histogram;
   std::vector<Point>                                    _intersectionPoints;
   std::vector<Triangle>                                 _intersectionTriangles;
   std::vector<vec3d>                                    _vpoints;
   std::vector<Segment>                                  _cameraRays;
+  std::vector< std::vector<Segment> >                   _raysThickness;
   
   float                                                 _nIntervals;
   std::vector<long long unsigned int>                   _histogramThickness;
-  CImg<float>                                           _histogram2D;
+  std::vector<unsigned long long>                       _histogram;
+  CImg<unsigned long long int>                          _histogram_2D;
 
   friend int doInteractive(TriMesh& mesh);
   friend void drawRays();

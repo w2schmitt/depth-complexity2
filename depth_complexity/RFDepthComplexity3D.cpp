@@ -13,6 +13,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <cmath>
+#include <numeric>      // std::accumulate
 
 #include "timer.h"
 
@@ -66,10 +67,14 @@ RFDepthComplexity3D::RFDepthComplexity3D(int res, int discretSteps):
     _computeRays = false;
     _compute3Dtexture = false;
     _isRaysLimited = false;   
+    _computeThicknessFlag = false;
     
-    _histogram2D = CImg<float>(res,res,1,1,0);
-    _nIntervals = 1000;
+    //_histogram2D = CImg<float>(res,res,1,1,0);
+    _nIntervals = 100;
+    _histogram_2D =  CImg<unsigned long long int>(_nIntervals,_nIntervals,1,1,0);
+    
     _histogramThickness.resize(_nIntervals,0);
+    _raysThickness.resize(_nIntervals, std::vector<Segment>());
     
     //Set up Shaders
     ShaderMgr shaderMgr; 
@@ -164,6 +169,10 @@ void RFDepthComplexity3D::setComputeGoodRays(bool computeGoodRays) {
 	this->_computeGoodRays = computeGoodRays;
 }
 
+void RFDepthComplexity3D::setComputeThickness(bool comp_thickness){
+    this->_computeThicknessFlag = comp_thickness;
+}
+
 void RFDepthComplexity3D::writeRaysSpherical(std::ostream& out, int k) {
   //assert(_computeGoodRays);
   long long unsigned int total = 0;
@@ -211,18 +220,75 @@ void RFDepthComplexity3D::setResolution(int _res){
     _resolution = _res;
 }
 
-void RFDepthComplexity3D::writeHistogram(std::ostream& out) {
-    std::cout << "-- Computing Histogram --" << std::endl;
-	out << "Intersections Frequency\n";
-	for (unsigned i=0; i< _histogram.size(); ++i)
-		out << std::left << std::setw(14) << i << _histogram[i] << "\n";
+void RFDepthComplexity3D::writeHistogram(std::ostream& out, std::string varname) {
+  std::clog << "-- Computing Histogram --" << std::endl;
+
+  char comma = ' ';
+  out << varname << " = [";
+
+  unsigned long sum = std::accumulate(_histogram.begin(), _histogram.end(), 0); 
+
+	//out << "Intersections Frequency\n";
+	for (unsigned i=0; i< _histogram.size(); ++i){
+		out << std::fixed << comma << (double)_histogram[i]/(double)sum;
+    comma = ',';
+  }
+
+  out << "];";
 }
 
-void RFDepthComplexity3D::writeThicknessHistogram(std::ostream& out) {
-    std::cout << "-- Computing Thickness Histogram --" << std::endl;
-    out << "Intersections Frequency\n";
-    for (unsigned i=0; i< _histogramThickness.size(); ++i)
-		out << std::left << std::setw(14) << i << _histogramThickness[i] << "\n";
+void RFDepthComplexity3D::writeHistogram2DValues(std::ostream& out) {
+  std::clog << "-- Writing 2D Histogram --" << std::endl;
+
+  unsigned long long sum = 0;
+  for (int j=0; j<_histogram_2D.height(); j++){
+      for (int i=0; i<_histogram_2D.width(); i++){ 
+        sum += _histogram_2D(i,j,0,0);
+      }
+    }
+
+  for (int j=0; j<_histogram_2D.height(); j++){
+      for (int i=0; i<_histogram_2D.width(); i++){ 
+        out << std::fixed << (double)_histogram_2D(i,j,0,0)/(double)sum << std::endl;
+          //if (_histogram_2D(i,j,0,0)!=0){     
+            //out << comma << "["<<i<<","<<j<<","<< _histogram_2D(i,j,0,0) <<"]";
+          //  comma = ',';
+          //}
+      }
+  }
+
+}
+
+void RFDepthComplexity3D::writeThicknessHistogram(std::ostream& out, std::string varname) {
+    std::clog << "-- Computing Thickness Histogram --" << std::endl;
+
+    char comma = ' ';
+    out << varname << " = [";
+
+    unsigned long sum = std::accumulate(_histogramThickness.begin(), _histogramThickness.end(), 0); 
+
+    for (unsigned i=0; i< _histogramThickness.size(); ++i){
+		  out << std::fixed << comma << (double)_histogramThickness[i]/(double)sum;
+      comma = ',';
+    }
+
+    out << "];";
+}
+
+void RFDepthComplexity3D::write2dHistogram(std::ostream& out, std::string varname){
+
+  char comma = ' ';
+  out << varname << " = [";
+
+  for (int j=0; j<_histogram_2D.height(); j++){
+      for (int i=0; i<_histogram_2D.width(); i++){ 
+          if (_histogram_2D(i,j,0,0)!=0){     
+            out << comma << "["<<i<<","<<j<<","<< _histogram_2D(i,j,0,0) <<"]";
+            comma = ',';
+          }
+      }
+  }
+  out << "];";
 }
 
 void RFDepthComplexity3D::writeRays(std::ostream& out) {
@@ -290,103 +356,84 @@ void RFDepthComplexity3D::initTextureCounter(){
   
 }
 
+void RFDepthComplexity3D::displayHistogram2D(){
+  CImg<float> img = CImg<float>(_histogram_2D.width(),_histogram_2D.height(),1,1,0);
+  unsigned long long val = _histogram_2D.max();
+  for (int i=0; i<_histogram_2D.width(); i++){
+    for (int j=0; j<_histogram_2D.height(); j++){
+      if (_histogram_2D(i,j,0,0)>0)
+        img(i,j,0,0) = 1.0f;
+    }
+  }
+
+  histogram2D_display.display(img);
+}
+
 
 void RFDepthComplexity3D::process(const TriMesh &mesh) {
 	this->_mesh = &mesh;
-        _intersectionTriangles.clear();                 
+  _intersectionTriangles.clear();                 
 	_usedPlanes.clear();
 	_goodRays.clear();
 	_goodRays.resize(1);
 	_histogram.clear();
 	_histogram.resize(1,0);
-        _vpoints.clear();
+  _vpoints.clear();
 	_maximum = 0;
-        _fboWidth = _fboHeight = _resolution;
+  _fboWidth = _fboHeight = _resolution;
         
         
-        initTextureCounter();
+  initTextureCounter();
 
 	BoundingBox aabb = _mesh->aabb;
         
-        // initialize 3D texture
-        if (_compute3Dtexture){
-            tex3d.CreateTexture3D(512,512,1,3,0);
-            tex3d.setMeshBoundingbox(aabb);
-        }
+  // initialize 3D texture
+  if (_compute3Dtexture){
+      tex3d.CreateTexture3D(512,512,1,3,0);
+      tex3d.setMeshBoundingbox(aabb);
+  }
 	
-	vec3d center = _mesh->aabb.center();
-        //vec3d modelSize = _mesh->aabb.extents();
-        
-        float modelsize[] = {aabb.extents().x, aabb.extents().y, aabb.extents().z};
-        //float modelsizex = aabb.extents().x;
-        //float modelsizey = aabb.extents().y;
-        //float modelsizez = aabb.extents().z;
-       
-        double distance = *std::max_element(modelsize, modelsize+3)/2.0;
-        //double distance = sqrt(modelSize.x*modelSize.x + modelSize.y*modelSize.y + modelSize*modelSize)/2.0;
-        //distance = 1;
-        //std::cout << "mdsize:" << distance << std::endl;
-        //distance *= 1.1;
-        
-        int qty = _discretSteps;        
-        double inc = M_PI/60.0;
-        vec3d ans;
-        
-        
-        
-        for (float theta=0; theta <= M_PI/2.0; theta+=M_PI/(double)qty){ 
-            /**/            
-            int length = round((double)qty*2.0 * sin(theta));
-            if (length==0) length = 1;
-            inc = 2*M_PI/(double)length;
-            for (float phi=-M_PI; phi < M_PI; phi+=inc){
-                
-                ans.x = distance*sin(theta)*cos(phi); 
-                ans.y = distance*sin(theta)*sin(phi);
-                ans.z = distance*cos(theta);
-                
-                
+	vec3d center = _mesh->aabb.center(); 
+  
+  float modelsize[] = {aabb.extents().x, aabb.extents().y, aabb.extents().z};
+  float diagonal = sqrt(modelsize[0]*modelsize[0] + modelsize[1]*modelsize[1] + modelsize[2]*modelsize[2]);
+  
+  double distance = diagonal/2.0; 
+  
+  int qty = _discretSteps;        
+  double inc = M_PI/60.0;
+  vec3d ans;
+  
+  for (float theta=0; theta <= M_PI/2.0; theta+=M_PI/(double)qty){            
+      int length = round((double)qty*2.0 * sin(theta));
+      if (length==0) length = 1;
+      inc = 2*M_PI/(double)length;
+      for (float phi=-M_PI; phi < M_PI; phi+=inc){                
+          ans.x = distance*sin(theta)*cos(phi); 
+          ans.y = distance*sin(theta)*sin(phi);
+          ans.z = distance*cos(theta);
+          
+          _vpoints.push_back(ans+center); 
+          unsigned int m = renderScene(ans+center, distance);
 
-                _vpoints.push_back(ans+center); 
-                unsigned int m = renderScene(ans+center);
-                
-               
-                //std::cin.get();
+          if (m > _maximum){
+              _maximum = m;               
+          }        
+      }
+  }
 
-                if (m > _maximum){
-                    _maximum = m;               
-                }        
-            }
-        }
-        
-        
-        // save for js compatibility        
-        std::cout << "Intersections\tFrequency" << std::endl;
-        /*
-        std::cout << "thick = {"; 
-        char comma = ' ';
-        for (unsigned int i=0; i<_histogramThickness.size(); i++){
-            //std::cout << "["<<i/(1.0*_nIntervals)<< "," << i/(1.0*_nIntervals) + 1.0/(1.0*_nIntervals) <<"]" << "\t" << _histogramThickness[i] << std::endl;
-            std::cout << comma << i << ":" << _histogramThickness[i];
-            comma = ',';
-        }
-        std::cout << "};";
-        */
-        //i/(1.0*_nIntervals) + 1.0/(1.0*_nIntervals) <<
-        
-        for (unsigned int i=0; i<_histogramThickness.size(); i++){
-            //std::cout << "["<<i/(1.0*_nIntervals)<< "," << i/(1.0*_nIntervals) + 1.0/(1.0*_nIntervals) <<"]" << "\t" << _histogramThickness[i] << std::endl;
-            std::cout << i << "\t" << _histogramThickness[i] << std::endl;
-            //std::cout << comma << i << ":" << _histogramThickness[i];
-            //comma = ',';
-        }
-        
-        if (_compute3Dtexture)
-              tex3d.buildGLTexture();
+//std::ofstream fileRays(filenameRays);
+  std::ofstream out("teste.txt");
+  writeHistogram2DValues(out);
+
+  //writeThicknessHistogram(out, std::string("teste"));
+  
+  //if (_compute3Dtexture)
+  //      tex3d.buildGLTexture();
         
 }
 
-unsigned int RFDepthComplexity3D::renderScene(vec3d point){
+unsigned int RFDepthComplexity3D::renderScene(vec3d point, float distance){
 
     glPushAttrib(GL_VIEWPORT_BIT | GL_ENABLE_BIT);
     glViewport(0, 0, _fboWidth, _fboHeight);
@@ -416,8 +463,8 @@ unsigned int RFDepthComplexity3D::renderScene(vec3d point){
     vec3d radius = _mesh->aabb.extents();
     //std::cout << "radius: " << radius.x << std::endl;
     
-    float znear = 0.1f;
-    float zfar = 2*pos.z;
+    float znear = distance*0.01f;
+    float zfar = 2*distance-znear;
     
     Segment s;
     s.a = point;
@@ -495,9 +542,10 @@ unsigned int RFDepthComplexity3D::renderScene(vec3d point){
     glMemoryBarrierEXT(GL_TEXTURE_UPDATE_BARRIER_BIT_EXT);
     
     // Disable Shaders
-    unsigned int max = findMaxValueInCounterBuffer()-1;
+    unsigned int max = findMaxValueInCounterBuffer();
     findMaximumRaysAndHistogram(point, forward, side, pos);
-    computeThickness();
+    computeThickness(point, forward, side, pos);
+    compute2DHistogram(point, forward, side, pos);
            
     glUseProgram(0);
     
@@ -528,27 +576,88 @@ Affine3f getModelview(){
     return Affine3f(Matrix4f(m));
 }
 
-void RFDepthComplexity3D::computeThickness(){
+void RFDepthComplexity3D::compute2DHistogram(vec3d initPos, vec3d f, vec3d s, vec3d p){
     const int pixelNumber = _fboWidth * _fboHeight;
-    //float buff[pixelNumber];
-    //float thick[pixelNumber*2];
+    
     float thicknessBuffer[pixelNumber*2];
-  
+    unsigned int colorBuffer[pixelNumber];
+    
+    // get Depth Complexity Texture
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, _counterBuffId);
+    glGetTexImage( GL_TEXTURE_2D, 0 , GL_RED_INTEGER, GL_UNSIGNED_INT, colorBuffer ); 
+    glBindTexture(GL_TEXTURE_2D, 0);
+    
+    // get Thickness Texture
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, _thicknessBuffId);
     glGetTexImage( GL_TEXTURE_2D, 0 , GL_RG, GL_FLOAT, thicknessBuffer ); 
     glBindTexture(GL_TEXTURE_2D, 0);
     
     
+    //compute ray
+    
+    // compute up vector
+    vec3d up = cross(s,f);
+    up.normalize();
+    s.normalize();
+    
+    double factor = static_cast<double>(1.0)/_nIntervals;
+    
     for (int i=0; i<2*pixelNumber; i+=2){
-        float val = thicknessBuffer[i+1] - thicknessBuffer[i];
-        if (val!=0 && val < 1 && val > -1){
-            double factor = static_cast<double>(1.0)/_nIntervals;
-            _histogramThickness[val/factor] += 1;    
-            //std::cout << std::fixed << std::setprecision(12) << val << std::endl;
+        int r = (i/2)/_fboHeight;
+        int c = (i/2)%_fboWidth;        
+        
+        float thick_val = thicknessBuffer[i+1] - thicknessBuffer[i];
+        unsigned int dc_val = colorBuffer[r*_fboWidth+c]-1;
+        
+        unsigned int thick_pos = thick_val/factor;
+        unsigned int dc_pos = dc_val;
+        
+        if (thick_val!=0 && thick_val < 1 && thick_val > -1 && dc_val > 1 && dc_val<500){          
+          _histogram_2D(thick_pos, dc_pos, 0, 0) += 1;
+        } else if (dc_val == 1){
+          _histogram_2D(0, dc_pos, 0, 0) += 1;  
         }
     }
+}
+
+void RFDepthComplexity3D::computeThickness(vec3d initPos, vec3d f, vec3d s, vec3d p){
+    const int pixelNumber = _fboWidth * _fboHeight;
+    float thicknessBuffer[pixelNumber*2];
+  
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, _thicknessBuffId);
+    glGetTexImage( GL_TEXTURE_2D, 0 , GL_RG, GL_FLOAT, thicknessBuffer ); 
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    // compute up vector
+    vec3d up = cross(s,f);
+    up.normalize();
+    s.normalize();
     
+    double factor = static_cast<double>(1.0)/_nIntervals;
+    
+    for (int i=0; i<2*pixelNumber; i+=2){
+        int r = (i/2)/_fboHeight;
+        int c = (i/2)%_fboWidth;        
+        float val = thicknessBuffer[i+1] - thicknessBuffer[i];
+        
+        if (val!=0 && val < 1 && val > -1){
+            if (_computeThicknessFlag){
+                Segment seg;
+                double pxSizeX = (2.0*p.x)/(double)_fboWidth;
+                double pxSizeY = (2.0*p.y)/(double)_fboHeight;
+                double translationX = (double)c*pxSizeX - p.x + pxSizeX/2.0;
+                double translationY = (double)r*pxSizeY - p.y + pxSizeY/2.0;
+                seg.a = initPos + translationX*s + translationY*up;
+                seg.b = seg.a + 2*p.z*f;
+                _raysThickness[val/factor].push_back(seg);
+            }            
+            
+            _histogramThickness[val/factor] += 1;   
+        }
+    }
 }
 
 unsigned int RFDepthComplexity3D::findMaxValueInCounterBuffer() {
@@ -630,7 +739,7 @@ void RFDepthComplexity3D::findMaximumRaysAndHistogram(vec3d initPos, vec3d f, ve
         double translationX = (double)c*pxSizeX - p.x + pxSizeX/2.0;
         double translationY = (double)r*pxSizeY - p.y + pxSizeY/2.0;
         seg.a = initPos + translationX*s + translationY*up;
-        seg.b = seg.a + p.z*f;
+        seg.b = seg.a + 2*p.z*f;
         
         insertRays(val, seg);
       }
@@ -720,11 +829,11 @@ void RFDepthComplexity3D::processMeshSegment(const Segment& segment, std::vector
 		Point p;
 		if (intersectTriangleSegment(segment, _mesh->faces[i], &p)){
 			points->push_back(p);
-                        _intersectionTriangles.push_back(_mesh->faces[i]);
-                        _intersectionTriangles.back().ca = vec4d(1,0,0,1);
-                        _intersectionTriangles.back().cb = vec4d(1,0,0,1);
-                        _intersectionTriangles.back().cc = vec4d(1,0,0,1);
-                }
+      //_intersectionTriangles.push_back(_mesh->faces[i]);
+      //_intersectionTriangles.back().ca = vec4d(1,0,0,1);
+      //_intersectionTriangles.back().cb = vec4d(1,0,0,1);
+      //_intersectionTriangles.back().cc = vec4d(1,0,0,1);
+    }
 	}
 }
 

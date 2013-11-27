@@ -23,7 +23,7 @@ struct Hist {
     int index;
     std::string name;
     std::vector<int> dc;
-    std::vector<unsigned long long int> rays;
+    std::vector<float> rays;
 };
 
 struct Comp {
@@ -36,8 +36,10 @@ struct Comp {
 std::vector<std::string> filelist;
 std::vector<Hist> histlist;
 std::string fileInput;
+std::string output_dir;
 std::vector<Comp> compList;                         // bhattacharya coef.
 std::vector< std::vector<float> > distanceMatrix;
+bool useWeights = false;
 
 
 // FUNCTIONS DECLARATION ------------------->
@@ -56,20 +58,25 @@ Hist                            findHist(int index);
 
 // DEFINITIONS ----------------------------->
 int main(int argc, char** argv) {
+    //"thickness//"
 
-    openFiles ("thickness//");    
+    openFiles (argv[1]);    
     std::sort (histlist.begin(), histlist.end(), compIndexFunction);  
+    
+    output_dir = argv[2];
     
     //allocate matrix size
     unsigned int NoModels = histlist.size();
     distanceMatrix.resize(NoModels);
     for (unsigned int i=0; i<NoModels; i++){
+        
         distanceMatrix[i].resize(NoModels,0);
     }
     
-    
+    std::cout << "creating matrix\n" << std::endl;
     createMatrixDistance();
     
+    std::cout << "printing data\n" << std::endl;
     printdataInJs();
     //FILE * pFile;
     //pFile = fopen ("distanceMatrix.bin", "wb");
@@ -94,19 +101,19 @@ bool IsFiniteNumber(double x)
 void printdataInJs(){
     for (unsigned int i=0; i<distanceMatrix.size(); i++){
         char filename[100];
-        sprintf(filename,"js//m%d.js", i);
+        sprintf(filename,"%s//m%d.js", output_dir.c_str(), i);
         
         //create new js file
         FILE * pFile;        
         pFile = fopen (filename,"w");
         
         char comma=' ';
-        fprintf(pFile, "m%d = {", i);
+        fprintf(pFile, "m%d = [", i);
         for (unsigned int j=0; j<distanceMatrix[i].size(); j++){
-                fprintf(pFile, "%c%d:%f", comma, j, distanceMatrix[i][j]);
+                fprintf(pFile, "%c%f", comma, distanceMatrix[i][j]);
                 comma=',';
         }
-        fprintf(pFile, "};");
+        fprintf(pFile, "];");
         fclose (pFile);
     }
 }
@@ -139,18 +146,25 @@ void createMatrixDistance(){
     //distanceMatrix.resize(histlist.size()*histlist.size(), 0);
     
     for (unsigned int i=0; i < histlist.size(); i++){
+        std::cout << "computing... " << i << std::endl; 
         Hist h1 = findHist(i);
         for (unsigned int j=0; j < histlist.size(); j++){
             //std::cout << histlist.size()  << " - " << j << std::endl;
             Hist h2 = findHist(j);
             //std::cout << h2.index << std::endl;
             float bc = computeBC(h1,h2);
+            //std::cout << bc << std::endl;
             float similarity = -log(bc);
+       
             if (IsNumber(similarity) && IsFiniteNumber(similarity)){
                 similarity = (similarity<1.E-7)? 0.00f : similarity;
             } else {
+                //std::clog << "Warning: histogram " << i << " and " << j << " --> " << similarity << std::endl;
                 similarity = 999.0;
+
             }
+                 //std::cout << bc << " - " << similarity << std::endl;
+            //std::cin.get();
             
             //if (i==1119 && j==1134){
             //    std::clog << similarity << std::endl;
@@ -177,43 +191,54 @@ void matchShape(std::string name){
 double computeBC(Hist h1, Hist h2){
     //std::cout << "pica2\n";
     double bc = 0.0;
-    unsigned long long int sumCoef1 = 0, sumCoef2 = 0;
-    unsigned int maxSize;
+    unsigned int minSize;
+    //unsigned long long int sumCoef1 = 0, sumCoef2 = 0;
+    //unsigned int maxSize;
     
     
-    maxSize = (h1.dc.size() > h2.dc.size())? h1.dc.size() : h2.dc.size();
+    //maxSize = (h1.dc.size() > h2.dc.size())? h1.dc.size() : h2.dc.size();
+    minSize = (h1.rays.size() > h2.rays.size())? h2.rays.size() : h1.rays.size();
+    //std::cout << minSize << std::endl;
+    //for (unsigned int i=0; i<h1.rays.size(); i++){
+    //    std::cout << h1.rays[i] << " ";
+    //}
+    //std::cout << std::endl;
+
+    //std::cout <<  << std::endl;
     
-    
-    std::vector<double> coef1;//(h1.rays);
-    std::vector<double> coef2;//(h2.rays);
+    //std::vector<double> coef1;//(h1.rays);
+    //std::vector<double> coef2;//(h2.rays);
     
     // normalize coefs
-    sumCoef1 = std::accumulate(h1.rays.begin(), h1.rays.end(), 0);
-    sumCoef2 = std::accumulate(h2.rays.begin(), h2.rays.end(), 0);
+    //sumCoef1 = std::accumulate(h1.rays.begin(), h1.rays.end(), 0);
+    //sumCoef2 = std::accumulate(h2.rays.begin(), h2.rays.end(), 0);
     
     // coef must have the same domain...
-    coef1.resize(maxSize, 0);
-    coef2.resize(maxSize, 0);
+    //coef1.resize(maxSize, 0);
+    //coef2.resize(maxSize, 0);
     
     // and normalized
-    for (unsigned int i=0; i<h1.rays.size(); i++){
-        coef1[i] = h1.rays[i]/(double)sumCoef1;
-    }
-    for (unsigned int i=0; i<h2.rays.size(); i++){
-        coef2[i] = h2.rays[i]/(double)sumCoef2;
-    }
+    //for (unsigned int i=0; i<h1.rays.size(); i++){
+    //    coef1[i] = h1.rays[i]/(double)sumCoef1;
+   // }
+    //for (unsigned int i=0; i<h2.rays.size(); i++){
+    //    coef2[i] = h2.rays[i]/(double)sumCoef2;
+    //}
     
     // find bhat... coeficient
-    for (unsigned int i=0; i<maxSize; i++){
-        bc += sqrt(coef1[i] * coef2[i]);        
+    for (unsigned int i=0; i<minSize; i++){
+        bc += (sqrt(h1.rays[i] * h2.rays[i])); //*(useWeights? i*10: 1));        
     }
+
+    //std::cout << bc << std::endl;
+    //std::cin.get();
     
     return bc;
 }
 
 
 
-
+/*
 void openFiles(std::string filepath){
     
     filelist = searchFiles(filepath);
@@ -243,6 +268,63 @@ void openFiles(std::string filepath){
                 //std::cout << dc << " " << Nrays << std::endl;
             }     
             histlist.push_back(h);
+        } else {
+             std::cerr << "Cannot open " << filepath+filelist[i] << std::endl;
+        }
+    }
+    
+    std::clog << "loaded " << histlist.size() << " histograms" << std::endl; 
+}*/
+
+    void openFiles(std::string filepath){
+    
+    filelist = searchFiles(filepath);
+    
+    char var_name[50], label2[50];    
+    //unsigned long long int Nrays;
+    //int dc,thickness;
+    //unsigned long int value;
+    int dc = 0;
+    float frequency = 0.0f;
+    int v=0;
+    bool success;
+    
+    for (unsigned int i=0; i<filelist.size(); i++){
+        dc = 0;
+        FILE* pFile = fopen( (filepath+filelist[i]).c_str(), "r+" );
+        if (pFile){
+            success = true;     
+            // new histogram
+            Hist h;
+            char temp;
+            h.name = filelist[i];
+            v = sscanf(filelist[i].c_str(), "%c%d", &temp, &h.index );           
+
+            v = fscanf(pFile, "%s = [ ", var_name);
+            char c = ',';
+            while ( c==','){            
+                v = fscanf(pFile,"%f%c", &frequency, &c);
+                h.dc.push_back(dc++);
+                h.rays.push_back(frequency);
+                //std::cout << h.name << frequency << std::endl;
+                //std::cin.get();
+                //std::pair<int,int> p = std::make_pair(thickness, dc);
+                //h->values.insert( std::pair< std::pair<int,int>, unsigned long> (p,value));
+                if (v<2){
+                    success=false;
+                    break;
+                }
+            }   
+
+            if (success){  
+                //printf("loaded %d hist: %s\n", i,var_name);
+                //std::cout << "testando" << std::endl;
+                histlist.push_back(h);
+                //std::cout << "testando2" << std::endl;
+            } else {
+                printf("error loading %s\n", var_name);
+            }
+            fclose(pFile);
         } else {
              std::cerr << "Cannot open " << filepath+filelist[i] << std::endl;
         }
