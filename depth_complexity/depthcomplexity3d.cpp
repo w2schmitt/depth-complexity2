@@ -206,16 +206,16 @@ void drawMesh(const TriMesh& mesh, const vec3f& dir)
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     glEnableClientState(GL_VERTEX_ARRAY);    
-    glVertexPointer(3, GL_DOUBLE, 3*sizeof(vec3d)+sizeof(vec4d), &sorted_faces[0].a.x);
+    glVertexPointer(3, GL_DOUBLE, 3*sizeof(vec3d)+sizeof(vec4d)+sizeof(double), &sorted_faces[0].a.x);
     
     glEnableClientState (GL_TEXTURE_COORD_ARRAY);
-    glTexCoordPointer(3, GL_DOUBLE, 3*sizeof(vec3d)+sizeof(vec4d), &sorted_faces[0].tca.x);
+    glTexCoordPointer(3, GL_DOUBLE, 3*sizeof(vec3d)+sizeof(vec4d)+sizeof(double), &sorted_faces[0].tca.x);
     
     glEnableClientState(GL_COLOR_ARRAY);
-    glColorPointer(4, GL_DOUBLE, 3*sizeof(vec3d)+sizeof(vec4d), &sorted_faces[0].ca.x);
+    glColorPointer(4, GL_DOUBLE, 3*sizeof(vec3d)+sizeof(vec4d)+sizeof(double), &sorted_faces[0].ca.x);
 
     glEnableClientState(GL_NORMAL_ARRAY);
-    glNormalPointer(GL_DOUBLE, 3*sizeof(vec3d)+sizeof(vec4d), &sorted_faces[0].na.x);
+    glNormalPointer(GL_DOUBLE, 3*sizeof(vec3d)+sizeof(vec4d)+sizeof(double), &sorted_faces[0].na.x);
 
     glDrawArrays(GL_TRIANGLES, 0, sorted_faces.size()*3);
    
@@ -257,7 +257,9 @@ void drawMesh(const TriMesh& mesh, const vec3f& dir)
 //}
 
 unsigned rayIndexT = 0;
-    
+unsigned geoSelected = 0;
+
+
 void drawRays()
 {
     /*
@@ -274,9 +276,46 @@ void drawRays()
         glEnd();
     }
     /**/ 
+    //if (geoSelected >= dc3d->geoTest.size()){
+    //    geoSelected = dc3d->geoTest.size()-1;
+   // }
+
+    if (geoSelected < dc3d->geoTest.size()){
+        GeoTest gg = dc3d->getGeoTest(geoSelected);
+
+        //std::cout << gg.cost << std::endl;
+        // draw rays
+        glLineWidth(4.5);
+        glBegin(GL_LINES);
+        glColor3f(0.5, 0.0, 0.5);
+            const Segment r = gg.segment;            
+            glVertex3f(r.a.x, r.a.y, r.a.z);
+            glVertex3f(r.b.x, r.b.y, r.b.z);
+        glEnd();
+
+        glLineWidth(4.5);
+        glBegin(GL_LINE_STRIP);
+        glColor3f(0.8, 0.0, 0.0);
+            for (unsigned i=0; i<gg.path.size(); i++){
+                const vec3d &v1 = gg.path[i];            
+                glVertex3f(v1.x, v1.y, v1.z);
+            }
+        glEnd();
+
+        glPointSize(5.5);
+        glBegin(GL_POINTS);
+        glColor3f(0.0, 0.5, 0.0);
+            glVertex3f(gg.src.x, gg.src.y, gg.src.z);
+            glVertex3f(gg.dst.x, gg.dst.y, gg.dst.z);
+            glColor3f(0.0, 0.0, 0.8);
+            glVertex3f(gg.closeSrc.x, gg.closeSrc.y, gg.closeSrc.z);
+            glVertex3f(gg.closeDst.x, gg.closeDst.y, gg.closeDst.z);
+            //std::cout << gg.closeSrc << gg.closeDst << std::endl;
+        glEnd();
+    }
 
 
-    
+    /*
     if (showMaxRays){
         const std::set<Segment,classcomp>& rays = dc3d->maximumRays();
         std::set<Segment,classcomp>::const_iterator it = rays.begin();
@@ -345,7 +384,7 @@ void drawRays()
     }
     */
 
-    
+    /*
     const std::vector<Segment>& thicknessRays = dc3d->thicknessRays(showRayThicknessIndex);
     std::vector<Segment>::const_iterator it = thicknessRays.begin();
     
@@ -357,7 +396,7 @@ void drawRays()
           glVertex3f(r.b.x, r.b.y, r.b.z);
         }
     glEnd();
-
+    */
     
     if (showGoodRays){
         for(unsigned i = dc3d->_threshold ; i < dc3d->_maximum ; ++i) {
@@ -426,6 +465,7 @@ void drawRays()
         glEnd();
     }
     
+    glLineWidth(2.5f);
     glBegin(GL_LINES);
     //for(unsigned i=0; i<dc3d->visualizationPoints().size(); i++){
         glVertex3f(0,0,0);
@@ -823,6 +863,8 @@ int doInteractive(TriMesh& mesh)
     TwAddVarRW(bar, "Show Good", TW_TYPE_BOOLCPP, &showGoodRays, " group='Rays' label='Show Good'");
     TwAddVarRW(bar, "Threshold Rays", TW_TYPE_BOOLCPP, &thresholdRays, " group='Rays' label='Threshold Rays'");
     TwAddVarRW(bar, "Good Rays", TW_TYPE_UINT32, &rayIndexT, " group='Rays' label='Good rays Index'");
+    TwAddVarRW(bar, "geoSelect", TW_TYPE_UINT32, &geoSelected, " min=0 group='Rays' label='geo Select'");    
+    //TwAddVarRO(bar, "geoCost", TW_TYPE_DOUBLE, &dc3d->geoTest[geoSelected].cost, " label='geoCost' ");
 
     
     TwAddVarRW(bar, "highlight Tris", TW_TYPE_BOOLCPP, &highlightTris, " group='Rays' label='Highlight Tris'");

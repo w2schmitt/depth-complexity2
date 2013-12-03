@@ -128,6 +128,11 @@ vec3<T> cross(const vec3<T>& a, const vec3<T>& b)
         );
 }
 
+template<class T>
+double dist(const vec3<T>& a, const vec3<T>& b){
+    return (a-b).length(); 
+}
+
 
 
 typedef vec3<float> vec3f;

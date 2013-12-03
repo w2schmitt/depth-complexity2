@@ -43,6 +43,11 @@ loadOFFMesh(std::istream& in){
     int sz, a, b, c;
     Triangle t;
     in >> sz >> a >> b >> c;
+    
+    t.ia = a;
+    t.ib = b;
+    t.ic = c;
+    
     t.a = vertices.at(a);
     t.b = vertices.at(b);
     t.c = vertices.at(c);
@@ -70,6 +75,8 @@ loadOFFMesh(std::istream& in){
       in >> c;
       t.b = vertices.at(b);
       t.c = vertices.at(c);
+      //t.ib = b;
+      //t.ic = c;
       mesh.faces.push_back(t);
     }
   }
@@ -124,12 +131,13 @@ loadOFFMesh(std::istream& in){
       pos.y = pos.y/bblen.y;
       pos.z = pos.z/bblen.z;
       t.tcc = pos;    
-      
 
       //std::cout << t.tca << std::endl;
       //std::cout << t.tcb << std::endl;
       //std::cout << t.tcc << std::endl;
   }
+    
+  createBoostGraph(mesh);
 
   return mesh;
 }
@@ -451,6 +459,96 @@ loadOBJMesh(std::istream& in, vec3d rotation) {
 
   return mesh;
 }
+
+MyGraph *createGraphFromModel(TriMesh& mesh){    
+    MyGraph* modelGraph = new MyGraph;
+    modelGraph->edges.assign(mesh.vertices.size(), std::vector< std::pair<int,float> >());
+    
+    for (int i=0; i<mesh.faces.size(); i++){
+        const Triangle t = mesh.faces[i];
+        int v1 = t.ia;
+        int v2 = t.ib;
+        int v3 = t.ic;     
+        
+        modelGraph->edges[v1].push_back(std::make_pair<int,float>(v2,dist(t.a,t.b)));
+        //modelGraph->edges[v1].push_back(std::make_pair<int,float>(v3,dist(t.a,t.c)));
+        
+       
+        //modelGraph->edges[v2].push_back(std::make_pair<int,float>(v1,dist(t.b,t.a)));
+        modelGraph->edges[v2].push_back(std::make_pair<int,float>(v3,dist(t.b,t.c)));
+        
+        modelGraph->edges[v3].push_back(std::make_pair<int,float>(v1,dist(t.c,t.a)));
+        //modelGraph->edges[v3].push_back(std::make_pair<int,float>(v2,dist(t.c,t.b)));        
+    }
+
+    // check repeated vertices
+    for (unsigned i=0; i<mesh.vertices.size()-1; i++){
+      for (unsigned j=i+1; j<mesh.vertices.size(); j++){
+        if (dist(mesh.vertices[i],mesh.vertices[j]) < 0.01){
+          modelGraph->edges[i].push_back(std::make_pair<int,float>(j,0));
+          //modelGraph->edges[j].push_back(std::make_pair<int,float>(i,0));    
+        }
+      }
+    }
+    
+    return modelGraph;
+}
+
+ // graph is an adjacency list represented by vectors
+typedef adjacency_list<vecS, vecS, undirectedS,VertexInformation,EdgeInformation> Graph;
+typedef graph_traits<Graph>::vertex_descriptor Node;
+typedef graph_traits<Graph>::edge_descriptor Edge;
+    
+Graph gg;
+
+
+void createBoostGraph(TriMesh& mesh){
+    MyGraph* model = createGraphFromModel(mesh);
+    gg = Graph(mesh.vertices.size()); 
+    
+    for (unsigned i=0; i<model->edges.size(); i++){
+        for (unsigned j=0; j<model->edges[i].size(); j++){
+            Edge e = add_edge(i,model->edges[i][j].first, gg).first;
+            gg[e].weight = model->edges[i][j].second;
+        }
+    }
+ 
+    delete model;
+}
+
+double boost_dijkstra(int src, int dst, const TriMesh* mesh, GeoTest &debug){
+    std::vector<double> dist(num_vertices(gg));
+    std::vector<unsigned> pred(num_vertices(gg));
+    dijkstra_shortest_paths(gg, src, weight_map(get(&EdgeInformation::weight,gg)).distance_map(&dist[0]).predecessor_map(&pred[0]));
+    
+    debug.cost = dist[dst];
+    
+    int node = dst;
+    while (pred[node]!=src){
+      debug.path.push_back(mesh->vertices[node]);
+      node = pred[node]; 
+      //std::cout << dist[node] << std::endl;
+    }
+    debug.path.push_back(mesh->vertices[src]);
+    //std::cout << dist[src] << std::endl;
+    //std::cout << "finished\n";
+    
+    //graph_traits < Graph >::vertex_iterator vi, vend;
+    //for (tie(vi, vend) = vertices(gg); vi != vend; ++vi) {
+    //    std::cout << "distance(" << *vi << ") = " << dist[*vi] << ", ";
+    //    std::cout << "parent(" << *vi << ") = " << pred[*vi] << std::
+    //      endl;
+    //    }
+    //std::cout << std::endl;
+    
+    //while(pred[])
+    //for (unsigned i=0; i< mesh->vertices.size(); i++){
+    //  if (i%10==0) std::cout << std::endl;
+    // std::cout << pred[i] << " - ";
+    //}
+    return dist[dst];
+}
+
 
 
 #define perp(u,v)  ((u).x * (v).y - (u).y * (v).x)  // perp product (2D)

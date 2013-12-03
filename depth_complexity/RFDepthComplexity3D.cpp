@@ -118,6 +118,7 @@ void RFDepthComplexity3D::setShaderClearCounterBuffer(){
     // Pass Counter Buffer Texture
     glProgramUniform1iEXT(_shaderclearBuffer, glGetUniformLocation(_shaderclearBuffer, "counterBuff"), 0);
     glProgramUniform1iEXT(_shaderclearBuffer, glGetUniformLocation(_shaderclearBuffer, "thicknessBuff"), 1);
+    //glProgramUniform1iEXT(_shaderclearBuffer, glGetUniformLocation(_shaderclearBuffer, "geodesicBuff"), 2);
     
     glBegin(GL_QUADS);
       glVertex2f(-1.0f , 2.0f);
@@ -149,6 +150,7 @@ void RFDepthComplexity3D::setShaderCountDC(float znear, float zfar){
     // Pass counter buff texture
     glProgramUniform1iEXT(_shaderCountDC, glGetUniformLocation(_shaderCountDC, "counterBuff"), 0);
     glProgramUniform1iEXT(_shaderCountDC, glGetUniformLocation(_shaderCountDC, "thicknessBuff"), 1);
+    //glProgramUniform1iEXT(_shaderclearBuffer, glGetUniformLocation(_shaderclearBuffer, "geodesicBuff"), 2);
 }
 
 
@@ -354,6 +356,18 @@ void RFDepthComplexity3D::initTextureCounter(){
   glBindImageTexture(1, _thicknessBuffId, 0, GL_FALSE, 0,  GL_READ_WRITE, GL_RG32F);
   glBindTexture(GL_TEXTURE_2D, 0);
   
+  //Use a texture to save intersection positions
+//  glGenTextures(1, &_geodesicBuffId);
+//  glBindTexture(GL_TEXTURE_1D, _geodesicBuffId);
+//  glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+//  glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+//  glTexParameterf(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+//  glTexParameterf(GL_TEXTURE_1D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+//  
+//   //bind texture to a image unit  
+//  glTexImage1D(GL_TEXTURE_1D, 0, GL_R32F, _fboWidth*_fboHeight*6, 0,  GL_RED, GL_FLOAT, 0);
+//  glBindImageTexture(2, _geodesicBuffId, 0, GL_FALSE, 0,  GL_READ_WRITE, GL_R32F);
+//  glBindTexture(GL_TEXTURE_1D, 0);
 }
 
 void RFDepthComplexity3D::displayHistogram2D(){
@@ -515,9 +529,14 @@ unsigned int RFDepthComplexity3D::renderScene(vec3d point, float distance){
      glActiveTexture(GL_TEXTURE1);
      glEnable(GL_TEXTURE_2D);
      glBindTexture(GL_TEXTURE_2D, _thicknessBuffId);  
+     
+     // Active geodesic texture
+     //glActiveTexture(GL_TEXTURE2);
+     //glEnable(GL_TEXTURE_1D);
+     //glBindTexture(GL_TEXTURE_1D, _geodesicBuffId);  
     
      // set shader to clear the counter buffer ---------
-    setShaderClearCounterBuffer();
+     setShaderClearCounterBuffer();
     
     // Ensure that all texture writing is done
     glMemoryBarrierEXT(GL_FRAMEBUFFER_BARRIER_BIT_EXT);
@@ -543,6 +562,7 @@ unsigned int RFDepthComplexity3D::renderScene(vec3d point, float distance){
     
     // Disable Shaders
     unsigned int max = findMaxValueInCounterBuffer();
+    //readGeodesicBuffer();
     findMaximumRaysAndHistogram(point, forward, side, pos);
     computeThickness(point, forward, side, pos);
     compute2DHistogram(point, forward, side, pos);
@@ -595,7 +615,7 @@ void RFDepthComplexity3D::compute2DHistogram(vec3d initPos, vec3d f, vec3d s, ve
     glBindTexture(GL_TEXTURE_2D, 0);
     
     
-    //compute ray
+    //compute raya
     
     // compute up vector
     vec3d up = cross(s,f);
@@ -622,10 +642,58 @@ void RFDepthComplexity3D::compute2DHistogram(vec3d initPos, vec3d f, vec3d s, ve
     }
 }
 
+float RFDepthComplexity3D::computeGeodesicDistance(float Xf, float Yf, float Zf, float Xi, float Yi, float Zi){
+    GLint viewport[4];
+    GLdouble modelview[16];
+    GLdouble projection[16];
+    
+    glGetDoublev( GL_MODELVIEW_MATRIX, modelview );
+    glGetDoublev( GL_PROJECTION_MATRIX, projection );
+    glGetIntegerv( GL_VIEWPORT, viewport );
+    
+    vec3d posi, posf;    
+    
+    gluUnProject(Xi, Yi, Zi, modelview, projection, viewport, &posi.x, &posi.y, &posi.z);
+    gluUnProject(Xf, Yf, Zf, modelview, projection, viewport, &posf.x, &posf.y, &posf.z);
+    
+    currentGeo.src = vec3d(posi.x, posi.y, posi.z);
+    currentGeo.dst = vec3d(posf.x, posf.y, posf.z);
+
+    vec3d posOuti, posOutf;
+    int indexi, indexf;
+    getClosestVertex(posi, posOuti, indexi);
+    getClosestVertex(posf, posOutf, indexf);
+
+    currentGeo.closeSrc = posOuti;
+    currentGeo.closeDst = posOutf;
+    //ttt
+    return geodesicDistance(indexi, indexf);
+    
+}
+
+
+double RFDepthComplexity3D::geodesicDistance(int posOuti, int posOutf){
+    return boost_dijkstra(posOuti,posOutf,_mesh, currentGeo);
+}
+
+void RFDepthComplexity3D::getClosestVertex(vec3d pos, vec3d &posOut, int &index){
+    double minDist = INFINITY;
+    for (int i=0; i<_mesh->vertices.size(); i++){
+        const vec3d &v = _mesh->vertices[i];
+        double dist = sqrt((v.x-pos.x)*(v.x-pos.x) + (v.y-pos.y)*(v.y-pos.y) + (v.z-pos.z)*(v.z-pos.z));        
+        if (dist < minDist){
+            minDist = dist;
+            posOut = v;
+            index = i;
+        }
+    }
+}
+    
+
 void RFDepthComplexity3D::computeThickness(vec3d initPos, vec3d f, vec3d s, vec3d p){
     const int pixelNumber = _fboWidth * _fboHeight;
     float thicknessBuffer[pixelNumber*2];
-  
+
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, _thicknessBuffId);
     glGetTexImage( GL_TEXTURE_2D, 0 , GL_RG, GL_FLOAT, thicknessBuffer ); 
@@ -637,13 +705,21 @@ void RFDepthComplexity3D::computeThickness(vec3d initPos, vec3d f, vec3d s, vec3
     s.normalize();
     
     double factor = static_cast<double>(1.0)/_nIntervals;
-    
+
     for (int i=0; i<2*pixelNumber; i+=2){
         int r = (i/2)/_fboHeight;
-        int c = (i/2)%_fboWidth;        
+        int c = (i/2)%_fboWidth; 
+
+        currentGeo = GeoTest();
+        
+        
         float val = thicknessBuffer[i+1] - thicknessBuffer[i];
         
         if (val!=0 && val < 1 && val > -1){
+            double geodesicDist = computeGeodesicDistance(c,r, thicknessBuffer[i+1], c,r,thicknessBuffer[i]);
+            
+            currentGeo.dist = geodesicDist;            
+        
             if (_computeThicknessFlag){
                 Segment seg;
                 double pxSizeX = (2.0*p.x)/(double)_fboWidth;
@@ -653,11 +729,31 @@ void RFDepthComplexity3D::computeThickness(vec3d initPos, vec3d f, vec3d s, vec3
                 seg.a = initPos + translationX*s + translationY*up;
                 seg.b = seg.a + 2*p.z*f;
                 _raysThickness[val/factor].push_back(seg);
-            }            
-            
+                currentGeo.segment = seg;        
+            } 
+
+            //std::cout << "dist: " << geodesicDist << std::endl;
+            geoTest.push_back(currentGeo);  
+
+            //teste
             _histogramThickness[val/factor] += 1;   
         }
     }
+}
+
+void RFDepthComplexity3D::readGeodesicBuffer() {
+    //const int pixelNumber = _fboWidth * _fboHeight * 6;
+    //unsigned int buffer[pixelNumber];
+    
+    //glActiveTexture(GL_TEXTURE2);
+    //glBindTexture(GL_TEXTURE_1D, _geodesicBuffId);
+    //glGetTexImage( GL_TEXTURE_1D, 0 , GL_RED, GL_FLOAT, buffer ); 
+    //glBindTexture(GL_TEXTURE_1D, 0);
+    
+    //for (int i=0; i<pixelNumber; i++){
+    //    if (i%6==0) std::cout << std::endl;
+    //    std::cout << buffer[i] << ",";
+    //}
 }
 
 unsigned int RFDepthComplexity3D::findMaxValueInCounterBuffer() {

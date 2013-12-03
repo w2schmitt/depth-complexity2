@@ -21,6 +21,7 @@
 #include <cstring>
 #include <time.h>
 
+
 // LINEAR ALGEBRA LIBRARY
 #undef Success 
 #include "Eigen/Dense"
@@ -46,7 +47,12 @@ public:
     RFDepthComplexity3D();
     RFDepthComplexity3D(const RFDepthComplexity3D& orig);
     virtual ~RFDepthComplexity3D();
-    
+
+
+
+  public: std::vector<GeoTest> geoTest;
+  public: GeoTest currentGeo;
+
   // sets
   void setComputeHistogram(bool computeHistogram);
   void setComputeMaximumRays(bool computeMaximumRays);
@@ -66,6 +72,7 @@ public:
   const std::vector<vec3d> &visualizationPoints() const { return _vpoints;}
   const std::vector<Segment> &cameraRays() const { return _cameraRays;}
   const std::vector<Segment> &thicknessRays(int index) const { return _raysThickness[index]; }
+  const GeoTest getGeoTest(int i) { return geoTest[i];}
   unsigned getThreshold() { return _threshold; }
   GLuint getTextureID() { return tex3d.texture3DId();}
   void setShaderTex3d(){ tex3d.setShaderTex3d(_maximum); }
@@ -104,7 +111,11 @@ private:
   void setShaderCountDC(float znear, float zfar);
   unsigned int findMaxValueInCounterBuffer();
   void erodeTriangle(vec3d &v1, vec3d &v2, vec3d &v3);
-
+  void readGeodesicBuffer();
+  
+  float computeGeodesicDistance(float Xf, float Yf, float Zf, float Xi, float Yi, float Zi);  
+  void getClosestVertex(vec3d pos, vec3d &posOut, int &index);
+  double geodesicDistance(int posOuti, int posOutf);
   
   void displayHistogram2D();
   
@@ -126,12 +137,13 @@ public:
     
 private:
   //buffers 
-  GLuint						                                    _counterBuffId;
+  GLuint						_counterBuffId;
   GLuint                                                _thicknessBuffId;
-  GLuint                                		            _rboId;
+  //GLuint                                                _geodesicBuffId;
+  GLuint                                		_rboId;
   
   // Shaders
-  GLuint 						                                    _shaderclearBuffer;
+  GLuint 						_shaderclearBuffer;
   GLuint                                                _shaderCountDC;
   
   // texture 3D

@@ -1,20 +1,36 @@
 #ifndef UTIL_H_
 #define UTIL_H_
 
+#include <boost/config.hpp>
+
 #include <vector>
+#include <utility>
 #include <algorithm>
 #include <iomanip>
 
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/connected_components.hpp>
+#include <boost/graph/dijkstra_shortest_paths.hpp>
+
+using namespace boost;
+
 #include "vector.hpp"
 
+// do not change this structure parameters
 struct Triangle {
-    vec3d tca, a, na; 
+    vec3d tca, a, na;
     vec4d ca;
+    double ia;
     vec3d tcb, b, nb;
     vec4d cb;
+    double ib;
     vec3d tcc, c, nc;
     vec4d cc;
+    double ic;
 };
+
+
+
 
 struct Sphere {
   vec3d center;
@@ -41,11 +57,36 @@ struct Segment {
 };
 bool operator<(const Segment &s1, const Segment &s2);
 
+struct GeoTest{
+  Segment segment;
+  vec3d src;
+  vec3d dst;
+  vec3d closeSrc;
+  vec3d closeDst;
+  std::vector<vec3d> path;
+  double cost;
+  double dist;
+};
 /*struct CuttingSegment: Segment {
   CuttingSegment() : intersect(0) {}
   CuttingSegment(const Segment &s, const int intersect_ = 0):intersect(intersect_) {}
   int intersect;
 };*/
+
+struct MyGraph {
+    std::vector<std::vector< std::pair<int,float> > > edges;
+};
+
+// information stored in vertices
+struct VertexInformation {
+  unsigned component;
+};
+
+// information stored in edges
+struct EdgeInformation {
+  double weight;
+};
+
 
 
 struct BoundingBox {
@@ -115,5 +156,8 @@ bool segmentIntersection2D(const Segment &seg1, const Segment &seg2, double *t1,
 bool segmentIntersection3D(const Segment &seg1, const Segment &seg2, double *t1, double *t2);
 bool segmentSphereIntersection3D(const Segment &seg, const Sphere sph, vec3d & out0, vec3d & out1);
 vec3d cartesianToSpherical(vec3d point);
+void createBoostGraph(TriMesh& mesh);
+double boost_dijkstra(int src, int dst, const TriMesh* mesh, GeoTest &debug);
+MyGraph *createGraphFromModel(TriMesh& mesh);
 
 #endif
