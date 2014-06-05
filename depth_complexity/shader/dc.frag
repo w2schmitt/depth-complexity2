@@ -10,6 +10,7 @@ layout(pixel_center_integer) in vec4 gl_FragCoord;
 //-- fragment counter texture
 coherent uniform layout(size1x32) uimage2D counterBuff;
 coherent uniform layout(size2x32) image2D thicknessBuff;
+coherent uniform layout(binding = 2, r32f) image2DArray arrayBuff;
 
 //-- screen resolution
 uniform ivec2 resolution;
@@ -31,6 +32,9 @@ void main(void){
    float zval = gl_FragCoord.z;
 
    if(coords.x>=0 && coords.y>=0 && coords.x<resolution.x && coords.y<resolution.y ){
+     for (int i=0; i<64; i++) {
+   	   imageStore(arrayBuff, ivec3(coords, i), vec4(0.5, 0.5, 0.5, 0.5));
+   	 }
      int abidx = (int)imageAtomicIncWrap( counterBuff, coords, 65535 );
      float zval_linear = zLinearization(zval);
      vec4 stored_frag = imageLoad(thicknessBuff, coords);
@@ -40,7 +44,7 @@ void main(void){
         imageStore(thicknessBuff, coords, vec4(stored_frag.x, zval, 0.0,0.0));
      }
    }
-  
+ 
    //-- Discard fragment so nothing is writen to the framebuffer
    discard;
 }

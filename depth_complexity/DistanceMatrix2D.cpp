@@ -24,10 +24,11 @@ enum TYPE {
     EMD,
     BASIC,
     PROPORTION,
-    PROPORTION_2
+    PROPORTION_2,
+    DIVIDED_BY_MAXIMUM
 };
 
-TYPE algorithm = PROPORTION_2;
+TYPE algorithm = DIVIDED_BY_MAXIMUM;
 
 
 // STRUCTURES ------------------------------>
@@ -85,16 +86,19 @@ bool                            IsFiniteNumber(double x);
 Hist2D*                         findHist(int index);
 void                            saveSimilarityToJs(int file, std::vector<double> similarityList);
 double                          proportionalSimilarity2(Hist2D *h1, Hist2D *h2);
+double                          computeSimilarity2DDividedByMaximum(Hist2D *h1, Hist2D *h2);
 
 
 // DEFINITIONS ----------------------------->
 int main(int argc, char** argv) {
     
+
     numOfFiles = atoi(argv[1]);
-    histlist2D.resize(numOfFiles, NULL); 
+    
 
     std::cout << "Loading Histograms..." << std::endl;
     openFiles (argv[2]);
+    histlist2D.resize(numOfFiles, NULL); 
 
     //std::cout << "Sorting Histograms..." << std::endl;
     //std::sort (histlist2D.begin(), histlist2D.end(), compIndexFunction);  
@@ -194,6 +198,8 @@ void createMatrixDistance(){
                     //similarity = computeSimilarity2DByDC(h1,h2);
                 } else if (algorithm == PROPORTION_2){
                     similarity = proportionalSimilarity2(h1,h2);
+                } else if (algorithm = DIVIDED_BY_MAXIMUM){
+                    similarity = computeSimilarity2DDividedByMaximum(h1,h2);
                 }
                 
 
@@ -398,6 +404,52 @@ double computeSimilarity2DByDC(Hist2D *h1, Hist2D *h2){
     return (std::accumulate(similarity.begin(), similarity.end(), 0.0));
 }
 
+double computeSimilarity2DDividedByMaximum(Hist2D *h1, Hist2D *h2){
+    double similarity = 0.0;
+    unsigned long long int sumCoef1 = 0, sumCoef2 = 0;
+
+    //sumCoef1 = h1->totalSum; //std::accumulate(h1->values.begin(), h1->values.end(), 0, addMaps);
+    //sumCoef2 = h2->totalSum; //std::accumulate(h2->values.begin(), h2->values.end(), 0, addMaps);
+
+    std::map< std::pair<int,int>, unsigned long int >::iterator it1=h1->values.begin();
+    std::map< std::pair<int,int>, unsigned long int >::iterator it2=h2->values.begin();
+
+    while(true){
+        double v1 = (double)it1->second/(double)h1->totalSum;
+        double v2 = (double)it2->second/(double)h2->totalSum;
+        double max = std::max(v1,v2);        
+
+        if (it1->first == it2->first){
+            similarity += fabs(v1-v2)/max;
+            ++it1;
+            ++it2;
+        } else if (it1->first < it2->first){
+            similarity += v1;
+            ++it1;
+        } else {
+            similarity += v2;
+            ++it2;
+        }
+
+        if (it1 == h1->values.end()){
+            while (it2 != h2->values.end()){
+                similarity += v2;
+                ++it2;
+            }
+            break;
+        }
+        if (it2 == h2->values.end()){
+            while (it1 != h1->values.end()){
+                similarity += v1;
+                ++it1;
+            }
+            break;
+        }
+    }
+
+    return (similarity);
+}
+
 double computeSimilarity2D(Hist2D *h1, Hist2D *h2){
     double similarity = 0.0;
     unsigned long long int sumCoef1 = 0, sumCoef2 = 0;
@@ -444,6 +496,7 @@ double computeSimilarity2D(Hist2D *h1, Hist2D *h2){
 void openFiles(std::string filepath){
     
     filelist = searchFiles(filepath);
+    
     
     char var_name[50], label2[50];    
     unsigned long long int Nrays;

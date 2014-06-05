@@ -118,6 +118,7 @@ void RFDepthComplexity3D::setShaderClearCounterBuffer(){
     // Pass Counter Buffer Texture
     glProgramUniform1iEXT(_shaderclearBuffer, glGetUniformLocation(_shaderclearBuffer, "counterBuff"), 0);
     glProgramUniform1iEXT(_shaderclearBuffer, glGetUniformLocation(_shaderclearBuffer, "thicknessBuff"), 1);
+    glProgramUniform1iEXT(_shaderclearBuffer, glGetUniformLocation(_shaderclearBuffer, "arrayBuff"), 2);
     
     glBegin(GL_QUADS);
       glVertex2f(-1.0f , 2.0f);
@@ -149,6 +150,7 @@ void RFDepthComplexity3D::setShaderCountDC(float znear, float zfar){
     // Pass counter buff texture
     glProgramUniform1iEXT(_shaderCountDC, glGetUniformLocation(_shaderCountDC, "counterBuff"), 0);
     glProgramUniform1iEXT(_shaderCountDC, glGetUniformLocation(_shaderCountDC, "thicknessBuff"), 1);
+    glProgramUniform1iEXT(_shaderCountDC, glGetUniformLocation(_shaderCountDC, "arrayBuff"), 2);
 }
 
 
@@ -249,7 +251,7 @@ void RFDepthComplexity3D::writeHistogram2DValues(std::ostream& out) {
 
   for (int j=0; j<_histogram_2D.height(); j++){
       for (int i=0; i<_histogram_2D.width(); i++){ 
-        out << std::fixed << (double)_histogram_2D(i,j,0,0)/(double)sum << std::endl;
+        out << std::fixed << std::setprecision(10) << (double)_histogram_2D(i,j,0,0)/(double)sum << std::endl;
           //if (_histogram_2D(i,j,0,0)!=0){     
             //out << comma << "["<<i<<","<<j<<","<< _histogram_2D(i,j,0,0) <<"]";
           //  comma = ',';
@@ -353,7 +355,22 @@ void RFDepthComplexity3D::initTextureCounter(){
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, _fboWidth, _fboHeight, 0,  GL_RG, GL_FLOAT, 0);
   glBindImageTexture(1, _thicknessBuffId, 0, GL_FALSE, 0,  GL_READ_WRITE, GL_RG32F);
   glBindTexture(GL_TEXTURE_2D, 0);
-  
+
+
+  //Array textures
+  glGenTextures(1, &_buffArrayId);
+  std::cout << "texture alloc: " << _buffArrayId << std::endl;
+  glBindTexture(GL_TEXTURE_2D_ARRAY, _buffArrayId);
+  //glTexStorage3D(GL_TEXTURE_2D_ARRAY, 0, GL_R32F, _fboWidth, _fboHeight, 256)
+
+  glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameterf(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameterf(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+  glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_R32F, _fboWidth, _fboHeight, 64, 0, GL_RED, GL_FLOAT, 0);
+  glBindImageTexture(2, _buffArrayId, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F);
+  glBindTexture(GL_TEXTURE_2D_ARRAY, 0); 
 }
 
 void RFDepthComplexity3D::displayHistogram2D(){
@@ -413,7 +430,8 @@ void RFDepthComplexity3D::process(const TriMesh &mesh) {
           ans.y = distance*sin(theta)*sin(phi);
           ans.z = distance*cos(theta);
           
-          _vpoints.push_back(ans+center); 
+          //_vpoints.push_back(ans+center); 
+          //unsigned int m=10;
           unsigned int m = renderScene(ans+center, distance);
 
           if (m > _maximum){
@@ -421,10 +439,10 @@ void RFDepthComplexity3D::process(const TriMesh &mesh) {
           }        
       }
   }
-
-//std::ofstream fileRays(filenameRays);
-  std::ofstream out("teste.txt");
-  writeHistogram2DValues(out);
+    
+  //std::ofstream fileRays(filenameRays);
+  //std::ofstream out("teste.txt");
+  //writeHistogram2DValues(out);
 
   //writeThicknessHistogram(out, std::string("teste"));
   
@@ -512,9 +530,14 @@ unsigned int RFDepthComplexity3D::renderScene(vec3d point, float distance){
     glBindTexture(GL_TEXTURE_2D, _counterBuffId);  
     
     // Active counter buff texture
-     glActiveTexture(GL_TEXTURE1);
-     glEnable(GL_TEXTURE_2D);
-     glBindTexture(GL_TEXTURE_2D, _thicknessBuffId);  
+    glActiveTexture(GL_TEXTURE1);
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, _thicknessBuffId);  
+
+    // Active counter buff texture
+    glActiveTexture(GL_TEXTURE2);
+    glEnable(GL_TEXTURE_2D_ARRAY);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, _buffArrayId);  
     
      // set shader to clear the counter buffer ---------
     setShaderClearCounterBuffer();
@@ -531,7 +554,6 @@ unsigned int RFDepthComplexity3D::renderScene(vec3d point, float distance){
         vec3d   v1(_mesh->faces[i].a.x, _mesh->faces[i].a.y, _mesh->faces[i].a.z),
                 v2(_mesh->faces[i].b.x, _mesh->faces[i].b.y, _mesh->faces[i].b.z),
                 v3(_mesh->faces[i].c.x, _mesh->faces[i].c.y, _mesh->faces[i].c.z);
-        
         glVertex3f(v1.x,v1.y,v1.z);
         glVertex3f(v2.x,v2.y,v2.z);
         glVertex3f(v3.x,v3.y,v3.z);
@@ -542,11 +564,15 @@ unsigned int RFDepthComplexity3D::renderScene(vec3d point, float distance){
     glMemoryBarrierEXT(GL_TEXTURE_UPDATE_BARRIER_BIT_EXT);
     
     // Disable Shaders
+   
+
     unsigned int max = findMaxValueInCounterBuffer();
-    findMaximumRaysAndHistogram(point, forward, side, pos);
-    computeThickness(point, forward, side, pos);
-    compute2DHistogram(point, forward, side, pos);
-           
+    if (true) {
+      findMaximumRaysAndHistogram(point, forward, side, pos);
+      computeThickness(point, forward, side, pos);
+      compute2DHistogram(point, forward, side, pos); 
+    }
+   
     glUseProgram(0);
     
     glActiveTexture(GL_TEXTURE0);
@@ -581,6 +607,7 @@ void RFDepthComplexity3D::compute2DHistogram(vec3d initPos, vec3d f, vec3d s, ve
     
     float thicknessBuffer[pixelNumber*2];
     unsigned int colorBuffer[pixelNumber];
+    float arrayBuffer[pixelNumber*64];
     
     // get Depth Complexity Texture
     glActiveTexture(GL_TEXTURE0);
@@ -591,9 +618,22 @@ void RFDepthComplexity3D::compute2DHistogram(vec3d initPos, vec3d f, vec3d s, ve
     // get Thickness Texture
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, _thicknessBuffId);
-    glGetTexImage( GL_TEXTURE_2D, 0 , GL_RG, GL_FLOAT, thicknessBuffer ); 
+    glGetTexImage(GL_TEXTURE_2D, 0 , GL_RG, GL_FLOAT, thicknessBuffer ); 
     glBindTexture(GL_TEXTURE_2D, 0);
+
+    // get 2D Array Texture
+     glActiveTexture(GL_TEXTURE2);
+     glBindTexture(GL_TEXTURE_2D_ARRAY, _buffArrayId);
+     glGetTexImage(GL_TEXTURE_2D_ARRAY, 0, GL_RED, GL_FLOAT, arrayBuffer);
+
+    for (int i=0; i<pixelNumber*64; i++) { //arrayBuffer[i]
+      std::cout << "value: " << arrayBuffer[i] << std::endl; 
+    }
+
+    std::cout << "deu" << std::endl;
+    std::cin.get();
     
+
     
     //compute ray
     
@@ -614,7 +654,7 @@ void RFDepthComplexity3D::compute2DHistogram(vec3d initPos, vec3d f, vec3d s, ve
         unsigned int thick_pos = thick_val/factor;
         unsigned int dc_pos = dc_val;
         
-        if (thick_val!=0 && thick_val < 1 && thick_val > -1 && dc_val > 1 && dc_val<500){          
+        if (thick_val!=0 && thick_val < 1 && thick_val > -1 && dc_val > 1 && dc_val<100){          
           _histogram_2D(thick_pos, dc_pos, 0, 0) += 1;
         } else if (dc_val == 1){
           _histogram_2D(0, dc_pos, 0, 0) += 1;  
@@ -731,8 +771,8 @@ void RFDepthComplexity3D::findMaximumRaysAndHistogram(vec3d initPos, vec3d f, ve
           
          
         unsigned int val = colorBuffer[r*_fboWidth+c]-1;        
-        if (val < _threshold) continue;        
-                
+        if (val < _threshold) continue; 
+
         Segment seg;
         double pxSizeX = (2.0*p.x)/(double)_fboWidth;
         double pxSizeY = (2.0*p.y)/(double)_fboHeight;
@@ -778,6 +818,8 @@ bool RFDepthComplexity3D::intersectTriangleSegment(const Segment& segment, const
 }
    
 void RFDepthComplexity3D::insertRays(unsigned int tempMax, Segment seg){
+    return;
+
     bool includeRay = !_computeRays;
     
     if (!_computeRays) {

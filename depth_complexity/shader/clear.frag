@@ -10,6 +10,7 @@ layout(pixel_center_integer) in vec4 gl_FragCoord;
 //-- fragment counter texture
 coherent uniform layout(size1x32) uimage2D counterBuff;
 coherent uniform layout(size2x32) image2D thicknessBuff;
+coherent uniform layout(binding = 2, r32f) image2DArray arrayBuff;
 
 //-- screen resolution
 uniform ivec2 resolution;
@@ -21,6 +22,9 @@ void main(void){
    if(coords.x>=0 && coords.y>=0 && coords.x<resolution.x && coords.y<resolution.y ){
      imageStore(counterBuff, coords, uvec4(1));
      imageStore(thicknessBuff, coords, vec4(999,999,0,0));
+     for (int i=0; i<64; i++) {
+   	   imageStore(arrayBuff, ivec3(coords, i), vec4(0.0, 0.0, 0.0, 0.0));
+   	 }
    }
   
    //-- Discard fragment so nothing is writen to the framebuffer

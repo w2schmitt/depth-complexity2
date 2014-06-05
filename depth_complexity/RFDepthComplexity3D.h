@@ -39,7 +39,6 @@ using namespace cimg_library;
 class RFDepthComplexity3D {
 public:    
     RFDepthComplexity3D(int _res, int discretSteps);
-    //RDepthComplexity3D(int fboWidith, int fboHeight, int discretSteps, const char* filenameRays);
         
     void process(const TriMesh &mesh);
     
@@ -128,6 +127,7 @@ private:
   //buffers 
   GLuint						                                    _counterBuffId;
   GLuint                                                _thicknessBuffId;
+  GLuint                                                _buffArrayId;
   GLuint                                		            _rboId;
   
   // Shaders

@@ -59,7 +59,7 @@ int main(int argc, char** argv) {
     }
     std::cout << "FILE INPUT: " << fileInput << std::endl << std::endl;  
     // read histogram files
-    openFiles("Histograms//");    
+    openFiles(fileInput);    
     matchShape(fileInput);
     
     std::sort (compList.begin(), compList.end(), sortFunction);

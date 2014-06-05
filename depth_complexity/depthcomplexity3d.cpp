@@ -585,7 +585,7 @@ void recompute(void *data)
     
     tic();    
     dc3d->process(*mesh);
-    
+    toc("Depth Complexity");
     
     std::clog << std::endl << "=== RESULTS ===" << std::endl;
     std::clog << "  --> NUM SAMPLES: " << dc3d->visualizationPoints().size() << std::endl;
@@ -598,13 +598,16 @@ void recompute(void *data)
     std::clog << "  --> NUM GOOD RAYS: " << numRays << std::endl;
     
     std::cout << std::endl;
-    toc("Depth Complexity");
+    std::cout << "tri " << mesh->faces.size() << "\n";
+    std::cout << "vert " << mesh->vertices.size(); 
+    
     //}
     
     // get 2D histogram
     //dc3d->display2dHistogram();
     
       
+      /*
     // create color scale
     unsigned int val = dc3d->maximum();
     
@@ -620,9 +623,10 @@ void recompute(void *data)
 
         main_disp.display(cscale);
     }
+    */
     
     
-    Tex3DTweakBar();
+    //Tex3DTweakBar();
     
     // check interception
     //const std::list<unsigned int>& ilist = dc3d->intersectionTris();
@@ -1028,7 +1032,7 @@ int main (int argc, char **argv) {
     dc3d->setResolution(resolution);
     dc3d->setComputeHistogram(strcmp(filenameHistogram, "")!=0);
     dc3d->setComputeMaximumRays(strcmp(filenameRays, "")!=0);
-    dc3d->setComputeGoodRays(true);
+    dc3d->setComputeGoodRays(false);
     dc3d->setThreshold(intersectionThreshold);
     
     //std::cout << "parameters: " << resolution << << std::endl;

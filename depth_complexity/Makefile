@@ -31,9 +31,9 @@ LDFLAGS = $(ATB_LDFLAGS) $(GLEW_LDFLAGS) #-Wall -Werror
 	  #randomdepthcomplexity3d randomdepthcomplexity3d_offline newrandomdepthcomplexity3d mergeOFF
 
 #all : depthcomplexity2d depthcomplexity3d_offline depthcomplexity3d \
-      newrandomdepthcomplexity3d mergeOFF
+#      newrandomdepthcomplexity3d mergeOFF
 
-all : newrandomdepthcomplexity3d depthcomplexity3d_offline distanceMatrix2D generateCSV convertJS #thickness_2d #hist_matching distanceMatrix convertJS convertCla generateCSV mergeOFF
+all : newrandomdepthcomplexity3d depthcomplexity3d_offline distanceMatrix2D generateCSV convertJS hist_matching convertCla #thickness_2d  distanceMatrix convertJS  generateCSV mergeOFF
 	
 	
 clean:

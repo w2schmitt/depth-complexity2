@@ -24,13 +24,13 @@ inline unsigned long tictoc(const bool is_tic, const char *message="") {
     esec = (unsigned int)((dt - edays*86400000.0 - ehours*3600000.0 - emin*60000.0)/1000.0),
     ems = (unsigned int)(dt - edays*86400000.0 - ehours*3600000.0 - emin*60000.0 - esec*1000.0);
   if (!edays && !ehours && !emin && !esec)
-    std::printf("[TIME: %s] Elapsed time : %u ms\n", message, ems);
+    std::printf("ms %u\n", ems);
   else {
     if (!edays && !ehours && !emin)
-      std::printf("[TIME: %s] Elapsed time : %u sec %u ms\n", message, esec,ems);
+      std::printf("s %u\nms %u\n", esec,ems);
     else {
       if (!edays && !ehours)
-        std::printf("[TIME: %s] Elapsed time : %u min %u sec %u ms\n", message, emin,esec,ems);
+        std::printf("m %u\ns %u\nms %u\n", emin,esec,ems);
       else{
         if (!edays)
           std::printf("[TIME: %s] Elapsed time : %u hours %u min %u sec %u ms\n", message, ehours,emin,esec,ems);
@@ -39,6 +39,19 @@ inline unsigned long tictoc(const bool is_tic, const char *message="") {
         }
       }
     }
+    // if (!edays && !ehours && !emin)
+    //   std::printf("[TIME: %s] Elapsed time : %u sec %u ms\n", message, esec,ems);
+    // else {
+    //   if (!edays && !ehours)
+    //     std::printf("[TIME: %s] Elapsed time : %u min %u sec %u ms\n", message, emin,esec,ems);
+    //   else{
+    //     if (!edays)
+    //       std::printf("[TIME: %s] Elapsed time : %u hours %u min %u sec %u ms\n", message, ehours,emin,esec,ems);
+    //     else{
+    //       std::printf("[TIME: %s] Elapsed time : %u days %u hours %u min %u sec %u ms\n", message, edays,ehours,emin,esec,ems);
+    //     }
+    //   }
+    // }
   }
   return t;
 }
