@@ -114,6 +114,7 @@ void RFDepthComplexity3D::setShaderClearCounterBuffer(){
     glProgramUniformMatrix4fv(_shaderclearBuffer, glGetUniformLocation(_shaderclearBuffer, "modelViewMat"), 1, GL_FALSE, model);
     glProgramUniformMatrix4fv(_shaderclearBuffer, glGetUniformLocation(_shaderclearBuffer, "projectionMat"), 1, GL_FALSE, projection);
     glProgramUniform2i(_shaderclearBuffer, glGetUniformLocation(_shaderclearBuffer, "resolution"), _fboWidth, _fboHeight);
+    glProgramUniform1i(_shaderCountDC, glGetUniformLocation(_shaderCountDC, "maxDepth"), MAX_LAYER_DEPTH);
     
     // Pass Counter Buffer Texture
     glProgramUniform1iEXT(_shaderclearBuffer, glGetUniformLocation(_shaderclearBuffer, "counterBuff"), 0);
@@ -146,6 +147,7 @@ void RFDepthComplexity3D::setShaderCountDC(float znear, float zfar){
     glProgramUniformMatrix4fv(_shaderCountDC, glGetUniformLocation(_shaderCountDC, "projectionMat"), 1, GL_FALSE, projection);
     glProgramUniform2i(_shaderCountDC, glGetUniformLocation(_shaderCountDC, "resolution"), _fboWidth, _fboHeight);
     glProgramUniform2f(_shaderCountDC, glGetUniformLocation(_shaderCountDC, "zvalues"), znear, zfar);
+    glProgramUniform1i(_shaderCountDC, glGetUniformLocation(_shaderCountDC, "maxDepth"), MAX_LAYER_DEPTH);
 
     // Pass counter buff texture
     glProgramUniform1iEXT(_shaderCountDC, glGetUniformLocation(_shaderCountDC, "counterBuff"), 0);
@@ -368,7 +370,7 @@ void RFDepthComplexity3D::initTextureCounter(){
   glTexParameterf(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
   glTexParameterf(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-  glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_R32F, _fboWidth, _fboHeight, 64, 0, GL_RED, GL_FLOAT, 0);
+  glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_R32F, _fboWidth, _fboHeight, MAX_LAYER_DEPTH, 0, GL_RED, GL_FLOAT, 0);
   glBindImageTexture(2, _buffArrayId, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F);
   glBindTexture(GL_TEXTURE_2D_ARRAY, 0); 
 }
@@ -605,9 +607,9 @@ Affine3f getModelview(){
 void RFDepthComplexity3D::compute2DHistogram(vec3d initPos, vec3d f, vec3d s, vec3d p){
     const int pixelNumber = _fboWidth * _fboHeight;
     
-    float thicknessBuffer[pixelNumber*2];
+    //float thicknessBuffer[pixelNumber*2];
     unsigned int colorBuffer[pixelNumber];
-    float arrayBuffer[pixelNumber*64];
+    float arrayBuffer[pixelNumber*maxDepth];
     
     // get Depth Complexity Texture
     glActiveTexture(GL_TEXTURE0);
@@ -616,22 +618,22 @@ void RFDepthComplexity3D::compute2DHistogram(vec3d initPos, vec3d f, vec3d s, ve
     glBindTexture(GL_TEXTURE_2D, 0);
     
     // get Thickness Texture
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, _thicknessBuffId);
-    glGetTexImage(GL_TEXTURE_2D, 0 , GL_RG, GL_FLOAT, thicknessBuffer ); 
-    glBindTexture(GL_TEXTURE_2D, 0);
+    // glActiveTexture(GL_TEXTURE1);
+    // glBindTexture(GL_TEXTURE_2D, _thicknessBuffId);
+    // glGetTexImage(GL_TEXTURE_2D, 0 , GL_RG, GL_FLOAT, thicknessBuffer ); 
+    // glBindTexture(GL_TEXTURE_2D, 0);
 
     // get 2D Array Texture
-     glActiveTexture(GL_TEXTURE2);
-     glBindTexture(GL_TEXTURE_2D_ARRAY, _buffArrayId);
-     glGetTexImage(GL_TEXTURE_2D_ARRAY, 0, GL_RED, GL_FLOAT, arrayBuffer);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, _buffArrayId);
+    glGetTexImage(GL_TEXTURE_2D_ARRAY, 0, GL_RED, GL_FLOAT, arrayBuffer);
 
-    for (int i=0; i<pixelNumber*64; i++) { //arrayBuffer[i]
-      std::cout << "value: " << arrayBuffer[i] << std::endl; 
-    }
+    // for (int i=0; i<pixelNumber*64; i++) { //arrayBuffer[i]
+    //   std::cout << "value: " << arrayBuffer[i] << std::endl; 
+    // }
 
-    std::cout << "deu" << std::endl;
-    std::cin.get();
+    // std::cout << "deu" << std::endl;
+    // std::cin.get();
     
 
     
@@ -643,23 +645,25 @@ void RFDepthComplexity3D::compute2DHistogram(vec3d initPos, vec3d f, vec3d s, ve
     s.normalize();
     
     double factor = static_cast<double>(1.0)/_nIntervals;
+
+    // pixelNumber*maxDepth
     
-    for (int i=0; i<2*pixelNumber; i+=2){
-        int r = (i/2)/_fboHeight;
-        int c = (i/2)%_fboWidth;        
+    // for (int i=0; i<2*pixelNumber; i+=2){
+    //     int r = (i/2)/_fboHeight;
+    //     int c = (i/2)%_fboWidth;        
         
-        float thick_val = thicknessBuffer[i+1] - thicknessBuffer[i];
-        unsigned int dc_val = colorBuffer[r*_fboWidth+c]-1;
+    //     float thick_val = thicknessBuffer[i+1] - thicknessBuffer[i];
+    //     unsigned int dc_val = colorBuffer[r*_fboWidth+c]-1;
         
-        unsigned int thick_pos = thick_val/factor;
-        unsigned int dc_pos = dc_val;
+    //     unsigned int thick_pos = thick_val/factor;
+    //     unsigned int dc_pos = dc_val;
         
-        if (thick_val!=0 && thick_val < 1 && thick_val > -1 && dc_val > 1 && dc_val<100){          
-          _histogram_2D(thick_pos, dc_pos, 0, 0) += 1;
-        } else if (dc_val == 1){
-          _histogram_2D(0, dc_pos, 0, 0) += 1;  
-        }
-    }
+    //     if (thick_val!=0 && thick_val < 1 && thick_val > -1 && dc_val > 1 && dc_val<100){          
+    //       _histogram_2D(thick_pos, dc_pos, 0, 0) += 1;
+    //     } else if (dc_val == 1){
+    //       _histogram_2D(0, dc_pos, 0, 0) += 1;  
+    //     }
+    // }
 }
 
 void RFDepthComplexity3D::computeThickness(vec3d initPos, vec3d f, vec3d s, vec3d p){

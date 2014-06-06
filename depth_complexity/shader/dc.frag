@@ -14,6 +14,7 @@ coherent uniform layout(binding = 2, r32f) image2DArray arrayBuff;
 
 //-- screen resolution
 uniform ivec2 resolution;
+uniform int maxDepth;
 
 //-- znear and far values
 uniform vec2 zvalues;
@@ -32,17 +33,33 @@ void main(void){
    float zval = gl_FragCoord.z;
 
    if(coords.x>=0 && coords.y>=0 && coords.x<resolution.x && coords.y<resolution.y ){
-     for (int i=0; i<64; i++) {
-   	   imageStore(arrayBuff, ivec3(coords, i), vec4(0.5, 0.5, 0.5, 0.5));
-   	 }
-     int abidx = (int)imageAtomicIncWrap( counterBuff, coords, 65535 );
+     // record thickness
      float zval_linear = zLinearization(zval);
-     vec4 stored_frag = imageLoad(thicknessBuff, coords);
-     if (zval < stored_frag.x){
-        imageStore(thicknessBuff, coords, vec4(zval, stored_frag.y, 0.0,0.0));
-     } else if (zval < stored_frag.y){
-        imageStore(thicknessBuff, coords, vec4(stored_frag.x, zval, 0.0,0.0));
-     }
+     for (int i=0; i<maxDepth; i++) {
+       vec4 stored_frag = imageLoad(arrayBuff, ivec3(coords, i));
+       if (zval_linear < stored_frag.x) {
+         // move all
+         for (int j=maxDepth-2; j>=i; j--) {
+         	vec4 toMoveFrag =  imageLoad(arrayBuff, ivec3(coords, j));
+         	if (toMoveFrag.x == 0) continue;
+         	imageStore(thicknessBuff, ivec3(coords, j+1), vec4(toMoveFrag, 0.0, 0.0, 0.0));
+         }	
+         imageStore(thicknessBuff, ivec3(coords, i), vec4(zval_linear, 0.0, 0.0, 0.0));
+       }
+   	 }
+
+   	 // record depth complexity
+     int abidx = (int)imageAtomicIncWrap( counterBuff, coords, 65535 );
+     
+
+     // old thickness
+     //float zval_linear = zLinearization(zval);
+     //vec4 stored_frag = imageLoad(thicknessBuff, coords);
+     //if (zval < stored_frag.x){
+     //   imageStore(thicknessBuff, coords, vec4(zval, stored_frag.y, 0.0,0.0));
+     //} else if (zval < stored_frag.y){
+     //   imageStore(thicknessBuff, coords, vec4(stored_frag.x, zval, 0.0,0.0));
+     //}
    }
  
    //-- Discard fragment so nothing is writen to the framebuffer

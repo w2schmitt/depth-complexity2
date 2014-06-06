@@ -116,6 +116,7 @@ private:
 //bool readRaysFromFile(std::istream& in);
   
 public:
+  const int                                             MAX_LAYER_DEPTH = 64;
     // menu input options
     unsigned                                            _limitRays;
     bool                                                _computeRays;
