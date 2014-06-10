@@ -23,8 +23,8 @@ void main(void){
    if(coords.x>=0 && coords.y>=0 && coords.x<resolution.x && coords.y<resolution.y ){
      imageStore(counterBuff, coords, uvec4(1));
      imageStore(thicknessBuff, coords, vec4(999,999,0,0));
-     for (int i=0; i<maxDepth; i++) {
-   	   imageStore(arrayBuff, ivec3(coords, i), vec4(0.0, 0.0, 0.0, 0.0));
+     for (int i=0; i<64; i++) {
+   	   imageStore(arrayBuff, ivec3(coords, i), vec4(999, 0.0, 0.0, 0.0));
    	 }
    }
   

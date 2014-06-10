@@ -35,16 +35,16 @@ void main(void){
    if(coords.x>=0 && coords.y>=0 && coords.x<resolution.x && coords.y<resolution.y ){
      // record thickness
      float zval_linear = zLinearization(zval);
-     for (int i=0; i<maxDepth; i++) {
+     for (int i=0; i<64; i++) {
        vec4 stored_frag = imageLoad(arrayBuff, ivec3(coords, i));
        if (zval_linear < stored_frag.x) {
          // move all
-         for (int j=maxDepth-2; j>=i; j--) {
+         for (int j=(64-2); j>=i; j--) {
          	vec4 toMoveFrag =  imageLoad(arrayBuff, ivec3(coords, j));
-         	if (toMoveFrag.x == 0) continue;
-         	imageStore(thicknessBuff, ivec3(coords, j+1), vec4(toMoveFrag, 0.0, 0.0, 0.0));
+         	if (toMoveFrag.x >= 998) continue;
+        	imageStore(arrayBuff, ivec3(coords, j+1), vec4(toMoveFrag.x, 0.0, 0.0, 0.0));
          }	
-         imageStore(thicknessBuff, ivec3(coords, i), vec4(zval_linear, 0.0, 0.0, 0.0));
+         imageStore(arrayBuff, ivec3(coords, i), vec4(zval_linear, 0.0, 0.0, 0.0));
        }
    	 }
 

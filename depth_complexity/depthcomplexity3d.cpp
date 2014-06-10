@@ -959,7 +959,7 @@ int main(int argc, char **argv)
         
         // setup opengl, glut, glew stuff.
         initializeGraphics();       
-        dc3d = new RFDepthComplexity3D(256, 50);
+        dc3d = new RFDepthComplexity3D(128, 50);
         
         if (doInteractive(mesh))
             return 1;
