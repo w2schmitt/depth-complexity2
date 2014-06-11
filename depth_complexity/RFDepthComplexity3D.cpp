@@ -363,7 +363,7 @@ void RFDepthComplexity3D::initTextureCounter(){
 
   //Array textures
   glGenTextures(1, &_buffArrayId);
-  std::cout << "texture alloc: " << _buffArrayId << std::endl;
+  //std::cout << "texture alloc: " << _buffArrayId << std::endl;
   glBindTexture(GL_TEXTURE_2D_ARRAY, _buffArrayId);
   //glTexStorage3D(GL_TEXTURE_2D_ARRAY, 0, GL_R32F, _fboWidth, _fboHeight, 256)
 
@@ -434,6 +434,7 @@ void RFDepthComplexity3D::process(const TriMesh &mesh) {
           ans.y = distance*sin(theta)*sin(phi);
           ans.z = distance*cos(theta);
           
+          //std::cout << "teste" << std::endl;
           //_vpoints.push_back(ans+center); 
           //unsigned int m=10;
           unsigned int m = renderScene(ans+center, distance);
@@ -612,13 +613,13 @@ void RFDepthComplexity3D::compute2DHistogram(vec3d initPos, vec3d f, vec3d s, ve
     const int pixelNumber = _fboWidth * _fboHeight;
     
     //float thicknessBuffer[pixelNumber*2];
-    unsigned int colorBuffer[pixelNumber];
-    float arrayBuffer[pixelNumber*MAX_LAYER_DEPTH];
+    unsigned int dcBuffer[pixelNumber];
+    float thicknessBuffer[pixelNumber*MAX_LAYER_DEPTH];
     
     // get Depth Complexity Texture
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, _counterBuffId);
-    glGetTexImage( GL_TEXTURE_2D, 0 , GL_RED_INTEGER, GL_UNSIGNED_INT, colorBuffer ); 
+    glGetTexImage(GL_TEXTURE_2D, 0 , GL_RED_INTEGER, GL_UNSIGNED_INT, dcBuffer ); 
     glBindTexture(GL_TEXTURE_2D, 0);
     
     //// get Thickness Texture
@@ -630,7 +631,7 @@ void RFDepthComplexity3D::compute2DHistogram(vec3d initPos, vec3d f, vec3d s, ve
     // get 2D Array Texture
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D_ARRAY, _buffArrayId);
-    glGetTexImage(GL_TEXTURE_2D_ARRAY, 0, GL_RED, GL_FLOAT, arrayBuffer);
+    glGetTexImage(GL_TEXTURE_2D_ARRAY, 0, GL_RED, GL_FLOAT, thicknessBuffer);
 
    
 
@@ -638,8 +639,8 @@ void RFDepthComplexity3D::compute2DHistogram(vec3d initPos, vec3d f, vec3d s, ve
     //   std::cout << "value: " << arrayBuffer[i] << std::endl; 
     // }
       
-     std::cout << "deu" << std::endl;
-     std::cin.get();
+     // std::cout << "deu" << std::endl;
+     // std::cin.get();
     
 
     
@@ -651,6 +652,33 @@ void RFDepthComplexity3D::compute2DHistogram(vec3d initPos, vec3d f, vec3d s, ve
     s.normalize();
     
     double factor = static_cast<double>(1.0)/_nIntervals;
+      
+   for (int h=0; h<_fboHeight; h++) {
+     for (int w=0; w<_fboWidth; w++) {
+       int dc_index = h*_fboWidth + w;
+       unsigned int dc = dcBuffer[dc_index];
+
+       if (dc <= 0 || dc > 100) continue;
+
+       std::vector<float> thicknessList;
+       for (int d=0; d<64; d+=2) {
+         int linear1 = d*_fboHeight*_fboWidth + h*_fboWidth + w; 
+         int linear2 = (d+1)*_fboHeight*_fboWidth + h*_fboWidth + w; 
+         float thick1 = thicknessBuffer[linear1];
+         float thick2 = thicknessBuffer[linear2];
+         float finalThick = 0;
+         if (thick1 > 0 && thick1 <= 1) {
+          if (thick2 > 0 && thick2 <= 1) {
+            finalThick = fabs(thick1 - thick2);
+          } else {
+            finalThick = thick1;
+          }
+          //std::cout << dc << " - " << int(finalThick/factor) << std::endl;
+          _histogram_2D(int(finalThick/factor), dc, 0, 0) += 1;    
+         }
+       }
+     }       
+   }
 
     // pixelNumber*maxDepth
     
@@ -659,7 +687,7 @@ void RFDepthComplexity3D::compute2DHistogram(vec3d initPos, vec3d f, vec3d s, ve
     //     int c = (i/2)%_fboWidth;        
         
     //     float thick_val = thicknessBuffer[i+1] - thicknessBuffer[i];
-    //     unsigned int dc_val = colorBuffer[r*_fboWidth+c]-1;
+    //     unsigned int dc_val = dcBuffer[r*_fboWidth+c]-1;
         
     //     unsigned int thick_pos = thick_val/factor;
     //     unsigned int dc_pos = dc_val;
@@ -690,9 +718,21 @@ void RFDepthComplexity3D::computeThickness(vec3d initPos, vec3d f, vec3d s, vec3
       
    for (int h=0; h<_fboHeight; h++) {
      for (int w=0; w<_fboWidth; w++) {
-       for (int d=0; d<64; d++) {
-         int linear = d*_fboHeight*_fboWidth + h*_fboWidth + w; 
-         //std::cout << "value: " << thicknessBuffer[linear] << std::endl; 
+       std::vector<float> thicknessList;
+       for (int d=0; d<64; d+=2) {
+         int linear1 = d*_fboHeight*_fboWidth + h*_fboWidth + w; 
+         int linear2 = (d+1)*_fboHeight*_fboWidth + h*_fboWidth + w; 
+         float thick1 = thicknessBuffer[linear1];
+         float thick2 = thicknessBuffer[linear2];
+         float finalThick = 0;
+         if (thick1 > 0 && thick1 <= 1) {
+          if (thick2 > 0 && thick2 <= 1) {
+            finalThick = thick1 - thick2;
+          } else {
+            finalThick = thick1;
+          }
+          _histogramThickness[finalThick/factor] += 1;    
+         }
        }
        //std::cin.get();
      }       
